@@ -1,32 +1,40 @@
 package com.ispw.uniride.config;
 
 /**
- * Configuration class that manages global application settings.
- * Specifically handles the active persistence mechanism for the application.
+ * Classe contenitore per le configurazioni globali e i parametri di sistema di UniRide.
+ * Al momento questa classe ha la priorità di determinare a "compile-time" (o esecuzione statica)
+ * il tipo di persistenza da utilizzare nei DAOFactory (Pattern Abstract Factory).
  */
 public class Config {
 
     /**
-     * Enum representing the supported types of Data Persistence.
+     * Enumerazione dei diversi meccanismi supportati per la memoria dati.
      */
     public enum DBType {
         /**
-         * Uses local in-memory data structures (e.g., HashMaps) for rapid prototyping and O(1) access.
-         * Data is lost when the application is closed.
+         * Archiviazione RAM temporanea (utilizzando strutture hash map locali).
+         * Modalità ottimale per O(1) in prototipazione rapida, ma volatile in quanto i dati si azzerano
+         * ad ogni riavvio del progetto.
          */
         MEMORY,
 
         /**
-         * Saves data physically in CSV format on the local filesystem.
-         * Utilizes thread-safe locks and static caching for read performance.
+         * Memorizzazione testuale fisica permanente dei dati (tramite i file system e l'estensione CSV).
+         * Modalità concepita con la sincronizzazione thread-safe tramite Lock e Caching per evitare
+         * continui accessi bloccanti su disco.
          */
         FILESYSTEM
     }
 
-    // Costante per switchare tra le due implementazioni del DAOFactory
+    /**
+     * SWITCH architetturale: la modifica di questo parametro farà istanziare al sistema l'intero
+     * ecosistema DAO memory piuttosto che quello legato al disco rigido.
+     */
     public static final DBType PERSISTENCE_TYPE = DBType.MEMORY;
 
+    /**
+     * Nasconde il costruttore di base. L'istanza è inutile trattandosi di classe con campi finali statici.
+     */
     private Config() {
-        // Hide implicit public constructor for utility class
     }
 }

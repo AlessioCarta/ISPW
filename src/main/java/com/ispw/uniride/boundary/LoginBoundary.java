@@ -14,8 +14,13 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 
+/**
+ * Boundary grafica (JavaFX Controller) mappata sull'XML `Login.fxml`.
+ * Acquisisce i dati grafici e li incanala al Controller BCE proteggendolo da dipendenze UI.
+ */
 public class LoginBoundary {
 
+    // Nodi dell'albero FXML iniettati automaticamente
     @FXML
     private TextField usernameField;
 
@@ -25,19 +30,27 @@ public class LoginBoundary {
     @FXML
     private Label messageLabel;
 
+    // Riferimento allo strato Control. Essendo una classe JavaFX istanziata dall'FXMLLoader, la dependency injection manuale
+    // qui funge da inizializzazione statica sicura.
     private LoginController loginController = new LoginController();
 
+    /**
+     * Intercetta l'evento di Click sul pulsante grafico di autenticazione.
+     */
     @FXML
     public void handleLogin(ActionEvent event) {
         String username = usernameField.getText();
         String password = passwordField.getText();
 
+        // Incapsula e nasconde la natura dell'I/O dal livello superiore passando solo DTO.
         UserBean bean = new UserBean(username, password);
 
+        // De-eleva la gestione applicativa al Control layer
         if (loginController.login(bean)) {
             messageLabel.setText("Login Effettuato!");
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
-            // Load Student Dashboard
+
+            // Effettua lo switch del Layout grafico solo ad operazione BCE conclusa
             loadDashboard();
         } else {
             messageLabel.setText("Credenziali non valide!");
@@ -45,14 +58,18 @@ public class LoginBoundary {
         }
     }
 
+    /**
+     * Routine di utility per caricare la pagina successiva su questa medesima finestra (Stage).
+     */
     private void loadDashboard() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/ispw/uniride/StudentDashboard.fxml"));
             Parent root = loader.load();
-            Stage stage = (Stage) usernameField.getScene().getWindow();
+            Stage stage = (Stage) usernameField.getScene().getWindow(); // Recupera l'appiglio del display corrente
             stage.setScene(new Scene(root, 600, 400));
             stage.setTitle("UniRide - Dashboard");
         } catch (IOException e) {
+            // Sfrutta il Logger custom per nascondere il noioso stack trace standard
             com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Dashboard", e);
         }
     }

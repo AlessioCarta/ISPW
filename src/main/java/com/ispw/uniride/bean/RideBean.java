@@ -1,5 +1,11 @@
 package com.ispw.uniride.bean;
 
+/**
+ * Data Transfer Object (DTO) destinato a trasportare logicamente informazioni
+ * riguardanti un Passaggio (Ride) tra i confini architetturali (ad es. da Controller Applicativo alla Boundary).
+ * Utilizzato per schermare il modulo del Dominio interno dell'Applicativo ed esporre alla UI grafica soltanto
+ * i dati sicuri.
+ */
 public class RideBean {
     private String id;
     private String departure;
@@ -8,13 +14,22 @@ public class RideBean {
     private int totalSeats;
     private double basePrice;
 
-    // Output only
+    // Campi calcolati a runtime e letti esclusivamente in output (visualizzazione dashboard)
     private int availableSeats;
     private String status;
     private String driver;
     private double computedPrice;
 
-    // For creating new ride
+    /**
+     * Costruttore DTO parziale per il caso d'uso "Offri Passaggio".
+     * Il boundary grafico racchiude qui tutti i campi compilati prima di passarli al controller
+     * dedicato alla loro validazione.
+     * @param departure la città o l'indirizzo dal quale si intende partire.
+     * @param destination la destinazione preimpostata per questo tragitto carpooling.
+     * @param date momento in cui il guidatore organizza la partenza (formato gg/mm/aaaa o custom).
+     * @param totalSeats posti a sedere fisici della vettura (eccetto l'autista).
+     * @param basePrice costo puro di partenza per benzina, usura o pedaggi da coprire globalmente.
+     */
     public RideBean(String departure, String destination, String date, int totalSeats, double basePrice) {
         this.departure = departure;
         this.destination = destination;
@@ -23,7 +38,20 @@ public class RideBean {
         this.basePrice = basePrice;
     }
 
-    // For retrieving rides
+    /**
+     * Costruttore DTO completo per il caso d'uso "Ricerca Passaggio" o "Elenco dashboard".
+     * In questo caso la logica applicativa ha già interrogato il Database e lo incapsula in
+     * un oggetto fittizio contenente tutti gli stati generati (come id o disponibili).
+     * @param id identificativo univoco assegnato (es. hash in csv o in RAM) alla Ride.
+     * @param driver nome autista assegnato alla sessione corrente della creazione.
+     * @param departure l'origine prefissata dal conducente.
+     * @param destination meta stabilita del carpooling.
+     * @param date la schedulazione testuale o oggettuale indicante il giorno d'avvio.
+     * @param totalSeats i posti a sedere massimi inseriti alla creazione.
+     * @param availableSeats il conteggio dei passeggeri in tempo reale rispetto agli slot vuoti.
+     * @param basePrice spesa base totale che sarà successivamente elaborata dallo Strategy pattern.
+     * @param status stringa testuale equivalente allo stato della macchina (AVAILABLE o FULL).
+     */
     public RideBean(String id, String driver, String departure, String destination, String date, int totalSeats, int availableSeats, double basePrice, String status) {
         this.id = id;
         this.driver = driver;
@@ -36,6 +64,7 @@ public class RideBean {
         this.status = status;
     }
 
+    // Boilerplate getter ed event-setter incapsulati per mascherare i campi originali
     public String getId() { return id; }
     public String getDeparture() { return departure; }
     public String getDestination() { return destination; }
@@ -46,5 +75,10 @@ public class RideBean {
     public String getStatus() { return status; }
     public String getDriver() { return driver; }
     public double getComputedPrice() { return computedPrice; }
+
+    /**
+     * @param computedPrice campo non dipendente dal database, viene popolato a runtime in fase
+     * di visualizzazione in base al pattern Strategy.
+     */
     public void setComputedPrice(double computedPrice) { this.computedPrice = computedPrice; }
 }

@@ -11,15 +11,32 @@ import com.ispw.uniride.model.strategy.EqualSplitStrategy;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Controller logico dedicato alla risoluzione della ricerca attiva di mezzi e della successiva prenotazione (Use Cases).
+ * Confeziona le logiche più corpose usando svariati Design Pattern come Strategy per l'addebito dinamico dei costi.
+ */
 public class SearchRideController {
 
+    /**
+     * Interroga lo strato astratto del database e processa ogni risultato traducendolo in oggetti "sicuri" e precalcolati
+     * da inviare alla Boundary grafica.
+     * @param departure origine logica del path scelto dall'utente UI
+     * @param destination meta esatta della destinazione
+     * @return Una collezione di oggetti Bean pronti per esser mappati in View (ListView o console iterativa)
+     */
     public List<RideBean> searchRides(String departure, String destination) {
+
+        // Estrazione risultati di dominio usando DAO Factory standard
         RideDAO rideDAO = DAOFactory.getInstance().getRideDAO();
         List<Ride> availableRides = rideDAO.getAvailableRides(departure, destination);
 
         List<RideBean> rideBeans = new ArrayList<>();
+
+        // Istanziazione dello Strategy pattern.
+        // Un domani questo costruttore potrebbe variare (es. DistanceCostStrategy) in base al Config di sistema
         CostStrategy costStrategy = new EqualSplitStrategy();
 
+        // Ciclo Mappatura logica tra l'Entità di Business e il DTO da esporre alla UI Grafica
         for (Ride ride : availableRides) {
             RideBean bean = new RideBean(
                     ride.getId(),
@@ -33,42 +50,55 @@ public class SearchRideController {
                     ride.getStatus()
             );
 
-            // Calculate estimated cost for current passengers
+            // Calcolo stima economica usando lo Strategy pattern applicato sul momento del rendering in base al volume passegeri
             int numPassengers = ride.getTotalSeats() - ride.getAvailableSeats();
             double estimatedCost = costStrategy.calculateCost(ride.getBasePrice(), numPassengers);
+
+            // Applica parametro custom per rendering grafico
             bean.setComputedPrice(estimatedCost);
 
             rideBeans.add(bean);
         }
 
-        return rideBeans;
+        return rideBeans; // Invio della lista generata di View object alla Boundary che l'ha chiamata.
     }
 
+    /**
+     * Operazione transazionale successiva alla "Search". Modella la richiesta concreta di aggiungersi a un viaggio.
+     * Applica internamente sia il Design Pattern State che il Design Pattern Observer invocando metodi della Entity `Ride`.
+     * @param rideId ID hash ricavato dal bean visualizzato e su cui l'utente ha manifestato intenzione.
+     * @return true se il booking (la scalata del posto a sedere in State Pattern) è valida, false in caso concorrente d'esaurimento slot.
+     * @throws Exception se cade l'autenticazione utente.
+     */
     public boolean bookRide(String rideId) throws Exception {
+
+        // Step Sicurezza Base
         Student loggedUser = Session.getInstance().getLoggedUser();
         if (loggedUser == null) {
             throw new Exception("Utente non loggato!");
         }
 
+        // Ritrova il record "reale" tramite DBMS Abstract Factory
         RideDAO rideDAO = DAOFactory.getInstance().getRideDAO();
         Ride ride = rideDAO.getRideById(rideId);
 
         if (ride == null) {
-            throw new Exception("Passaggio non trovato!");
+            throw new Exception("Passaggio non trovato! Forse è già stato eliminato.");
         }
 
-        // Simplification for prototype: passenger is not a complex observer here,
-        // we just execute the booking logic using State pattern via Ride.
+        // Esegue fisicamente la scalata. Notare il passaggio della funzione anonima Lambda
+        // che fa le veci dell'interfaccia "Observer" ai fini prototipali (reazione ad eventi inviati in Push dal Subject "Ride").
         boolean success = ride.bookSeat(message -> {
-            // Observer callback simulation
-            com.ispw.uniride.utils.LoggerCustom.info("Notification for " + loggedUser.getUsername() + ": " + message);
+            // Simulazione ricezione notifica Observer tramite Callback (Push mechanism di eventi testuali)
+            com.ispw.uniride.utils.LoggerCustom.info("Notifica Observer ricevuta da " + loggedUser.getUsername() + ": " + message);
         });
 
+        // Solo in caso di risposta logica positiva da parte dell'Entità e del suo Pattern State, viene concretizzato l'Update sul database Storage.
         if (success) {
             rideDAO.updateRide(ride);
             return true;
         }
 
-        return false;
+        return false; // Altrimenti ritorna l'informazione di rigetto dell'iscrizione.
     }
 }
