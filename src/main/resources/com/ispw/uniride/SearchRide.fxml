@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ispw.uniride.boundary.SearchRideBoundary" stylesheets="@style.css">
+    <top>
+        <HBox spacing="20" styleClass="dashboard-header">
+            <Button text="Indietro" onAction="#handleBack" />
+            <Label text="Cerca un Passaggio" styleClass="dashboard-title" />
+        </HBox>
+    </top>
+    <center>
+        <VBox alignment="TOP_CENTER" spacing="15.0">
+            <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+            <HBox spacing="10" alignment="CENTER">
+                <Label text="Partenza:" styleClass="form-label"/>
+                <TextField fx:id="departureField" />
+                <Label text="Destinazione:" styleClass="form-label"/>
+                <TextField fx:id="destinationField" />
+                <Button text="Cerca" onAction="#handleSearch" styleClass="action-button" />
+            </HBox>
+
+            <ListView fx:id="resultsList" VBox.vgrow="ALWAYS" />
+            <Button text="Prenota Selezionato" onAction="#handleBook" styleClass="action-button" />
+            <Label fx:id="messageLabel" />
+        </VBox>
+    </center>
+</BorderPane>

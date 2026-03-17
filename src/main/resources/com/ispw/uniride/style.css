@@ -1,0 +1,35 @@
+.title-label {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+.dashboard-header {
+    -fx-background-color: #336699;
+    -fx-padding: 15px;
+}
+
+.dashboard-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.welcome-label {
+    -fx-font-size: 18px;
+}
+
+.action-button {
+    -fx-font-size: 16px;
+    -fx-padding: 10px 20px;
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+}
+
+.action-button:hover {
+    -fx-background-color: #45a049;
+}
+
+.form-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}

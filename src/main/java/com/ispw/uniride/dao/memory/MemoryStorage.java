@@ -1,0 +1,38 @@
+package com.ispw.uniride.dao.memory;
+
+import com.ispw.uniride.model.Ride;
+import com.ispw.uniride.model.Student;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Singleton In-Memory storage simulation.
+ */
+public class MemoryStorage {
+    private static MemoryStorage instance = null;
+
+    private Map<String, Student> studentsMap;
+    private Map<String, Ride> ridesMap;
+
+    private MemoryStorage() {
+        studentsMap = new HashMap<>();
+        ridesMap = new HashMap<>();
+        // Preload some mock data
+        studentsMap.put("mario.rossi", new Student("mario.rossi", "password", "Mario Rossi"));
+        studentsMap.put("luigi.verdi", new Student("luigi.verdi", "password", "Luigi Verdi"));
+    }
+
+    public static synchronized MemoryStorage getInstance() {
+        if (instance == null) {
+            instance = new MemoryStorage();
+        }
+        return instance;
+    }
+
+    public Map<String, Student> getStudentsMap() { return studentsMap; }
+    public Map<String, Ride> getRidesMap() { return ridesMap; }
+    public List<Ride> getRidesList() { return new ArrayList<>(ridesMap.values()); }
+}

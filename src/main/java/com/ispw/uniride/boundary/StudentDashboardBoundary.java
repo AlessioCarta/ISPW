@@ -1,0 +1,69 @@
+package com.ispw.uniride.boundary;
+
+import com.ispw.uniride.controller.LoginController;
+import com.ispw.uniride.controller.Session;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.stage.Stage;
+
+import java.io.IOException;
+
+public class StudentDashboardBoundary {
+
+    @FXML
+    private Label welcomeLabel;
+
+    @FXML
+    public void initialize() {
+        if (Session.getInstance().getLoggedUser() != null) {
+            welcomeLabel.setText("Benvenuto, " + Session.getInstance().getLoggedUser().getFullName() + "!");
+        }
+    }
+
+    @FXML
+    public void handleOfferRide(ActionEvent event) {
+        com.ispw.uniride.utils.LoggerCustom.info("Opening Offer Ride view...");
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/ispw/uniride/OfferRide.fxml"));
+            Parent root = loader.load();
+            Stage stage = (Stage) welcomeLabel.getScene().getWindow();
+            stage.setScene(new Scene(root, 500, 400));
+            stage.setTitle("UniRide - Offri Passaggio");
+        } catch (IOException e) {
+            com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Offri Passaggio", e);
+        }
+    }
+
+    @FXML
+    public void handleSearchRide(ActionEvent event) {
+        com.ispw.uniride.utils.LoggerCustom.info("Opening Search Ride view...");
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/ispw/uniride/SearchRide.fxml"));
+            Parent root = loader.load();
+            Stage stage = (Stage) welcomeLabel.getScene().getWindow();
+            stage.setScene(new Scene(root, 600, 500));
+            stage.setTitle("UniRide - Cerca Passaggio");
+        } catch (IOException e) {
+            com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Cerca Passaggio", e);
+        }
+    }
+
+    @FXML
+    public void handleLogout(ActionEvent event) {
+        new LoginController().logout();
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/ispw/uniride/Login.fxml"));
+            Parent root = loader.load();
+            Stage stage = (Stage) welcomeLabel.getScene().getWindow();
+            stage.setScene(new Scene(root, 400, 300));
+            stage.setTitle("UniRide - Login");
+        } catch (IOException e) {
+            com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Login", e);
+        }
+    }
+}

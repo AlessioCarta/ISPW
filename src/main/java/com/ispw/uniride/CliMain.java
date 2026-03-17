@@ -1,5 +1,6 @@
 package com.ispw.uniride;
 
+import com.ispw.uniride.boundary.LoginCLI;
 import com.ispw.uniride.utils.LoggerCustom;
 
 /**
@@ -9,6 +10,6 @@ import com.ispw.uniride.utils.LoggerCustom;
 public class CliMain {
     public static void main(String[] args) {
         LoggerCustom.info("Starting UniRide CLI Mode...");
-        // TODO: Initialize CLI interface (Boundary) and run main loop
+        new LoginCLI().start();
     }
 }
