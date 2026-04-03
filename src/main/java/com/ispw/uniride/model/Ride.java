@@ -38,8 +38,11 @@ public class Ride implements Subject {
     // Riferimento di tipo State-Pattern per cambiare il comportamento in base allo stato
     private RideState state;
 
-    // Lista di listener (Passeggeri) in ascolto di modifiche sul passaggio per l'Observer Pattern
-    private List<Observer> passengers = new ArrayList<>();
+    // Lista degli username degli studenti che hanno prenotato (per la logica di dominio e DAO)
+    private List<String> passengerUsernames = new ArrayList<>();
+
+    // Lista di listener in ascolto di modifiche sul passaggio per l'Observer Pattern
+    private List<Observer> observers = new ArrayList<>();
 
     /**
      * Costruisce un Passaggio nuovo generando l'UUID interno ed impostando
@@ -72,6 +75,14 @@ public class Ride implements Subject {
     public int getAvailableSeats() { return availableSeats; }
     public void setAvailableSeats(int availableSeats) { this.availableSeats = availableSeats; }
 
+    public List<String> getPassengerUsernames() { return passengerUsernames; }
+    public void setPassengerUsernames(List<String> usernames) { this.passengerUsernames = usernames; }
+    public void addPassengerUsername(String username) {
+        if (!this.passengerUsernames.contains(username)) {
+            this.passengerUsernames.add(username);
+        }
+    }
+
     // Metodi ponte per far evolvere lo stato dinamico del viaggio
     public void setState(RideState state) { this.state = state; }
     public RideState getState() { return state; }
@@ -86,14 +97,36 @@ public class Ride implements Subject {
      * Delega l'azione di convalida alla classe di Stato in modo che questa classe (Subject)
      * non abbia if/else ciclomici (State Pattern). Se va a buon fine, si attacca all'Observer e lo notifica.
      * @param passenger L'entità (qui simulata come lambda callback) che desidera aderire e ricevere update
+     * @param username l'identificativo reale del passeggero da registrare a sistema.
      * @return true se c'era un posto vuoto e lo status lo ha permesso.
      */
-    public boolean bookSeat(Observer passenger) {
+    public boolean bookSeat(Observer passenger, String username) {
         boolean success = state.bookSeat(this);
         if (success) {
             attach(passenger);
+            addPassengerUsername(username);
             // Invia evento ai Listener/Observer
             notifyObservers("Un nuovo passeggero si è unito al passaggio da " + departure + " a " + destination);
+        }
+        return success;
+    }
+
+    /**
+     * Tenta di annullare una prenotazione. Nasconde il Pattern State all'esterno (Incapsulamento).
+     * Se l'operazione ha successo, rimuove lo username e notifica gli altri passeggeri.
+     * @param username l'utente che cancella la prenotazione.
+     * @return true se il posto è stato liberato con successo.
+     */
+    public boolean cancelSeat(String username) {
+        if (!passengerUsernames.contains(username)) {
+            return false;
+        }
+
+        boolean success = state.cancelSeat(this);
+        if (success) {
+            passengerUsernames.remove(username);
+            // In una implementazione reale cercheremmo anche di fare detach(observer) se possibile
+            notifyObservers("L'utente " + username + " ha annullato la sua prenotazione per il viaggio verso " + destination);
         }
         return success;
     }
@@ -104,8 +137,8 @@ public class Ride implements Subject {
      */
     @Override
     public void attach(Observer observer) {
-        if (!passengers.contains(observer)) {
-            passengers.add(observer);
+        if (!observers.contains(observer)) {
+            observers.add(observer);
         }
     }
 
@@ -115,7 +148,7 @@ public class Ride implements Subject {
      */
     @Override
     public void detach(Observer observer) {
-        passengers.remove(observer);
+        observers.remove(observer);
     }
 
     /**
@@ -124,7 +157,7 @@ public class Ride implements Subject {
      */
     @Override
     public void notifyObservers(String message) {
-        for (Observer obs : passengers) {
+        for (Observer obs : observers) {
             obs.update(message);
         }
     }

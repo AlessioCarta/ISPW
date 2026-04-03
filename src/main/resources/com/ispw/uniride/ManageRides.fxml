@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ispw.uniride.boundary.ManageRidesBoundary" stylesheets="@style.css">
+    <top>
+        <HBox spacing="20" styleClass="dashboard-header">
+            <Button text="Indietro" onAction="#handleBack" />
+            <Label text="Le Mie Corse" styleClass="dashboard-title" />
+        </HBox>
+    </top>
+    <center>
+        <VBox alignment="TOP_CENTER" spacing="15.0">
+            <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+            <TabPane VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE">
+                <tabs>
+                    <Tab text="Corse Offerte (Come Guidatore)">
+                        <content>
+                            <VBox spacing="10">
+                                <ListView fx:id="offeredList" VBox.vgrow="ALWAYS" />
+                            </VBox>
+                        </content>
+                    </Tab>
+                    <Tab text="Prenotazioni (Come Passeggero)">
+                        <content>
+                            <VBox spacing="10">
+                                <ListView fx:id="bookedList" VBox.vgrow="ALWAYS" />
+                                <Button text="Annulla Prenotazione" onAction="#handleCancelBooking" styleClass="action-button" />
+                            </VBox>
+                        </content>
+                    </Tab>
+                </tabs>
+            </TabPane>
+            <Label fx:id="messageLabel" />
+        </VBox>
+    </center>
+</BorderPane>

@@ -45,4 +45,26 @@ public class MemoryRideDAO implements RideDAO {
     public void updateRide(Ride ride) {
         storage.getRidesMap().put(ride.getId(), ride);
     }
+
+    @Override
+    public List<Ride> getRidesByDriver(String username) {
+        List<Ride> result = new ArrayList<>();
+        for (Ride ride : storage.getRidesList()) {
+            if (ride.getDriverUsername().equals(username)) {
+                result.add(ride);
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public List<Ride> getRidesByPassenger(String username) {
+        List<Ride> result = new ArrayList<>();
+        for (Ride ride : storage.getRidesList()) {
+            if (ride.getPassengerUsernames().contains(username)) {
+                result.add(ride);
+            }
+        }
+        return result;
+    }
 }

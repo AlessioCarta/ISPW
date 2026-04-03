@@ -21,8 +21,8 @@ public class MemoryStorage {
         studentsMap = new HashMap<>();
         ridesMap = new HashMap<>();
         // Preload some mock data
-        studentsMap.put("mario.rossi", new Student("mario.rossi", "password", "Mario Rossi"));
-        studentsMap.put("luigi.verdi", new Student("luigi.verdi", "password", "Luigi Verdi"));
+        studentsMap.put("mario.rossi", new Student("mario.rossi", "[HASHED]password", "Mario Rossi"));
+        studentsMap.put("luigi.verdi", new Student("luigi.verdi", "[HASHED]password", "Luigi Verdi"));
     }
 
     public static synchronized MemoryStorage getInstance() {

@@ -25,10 +25,10 @@ public class FsStudentDAO implements StudentDAO {
         if (!file.exists()) {
             try {
                 file.createNewFile();
-                // Add some default mock data if file is new
+                // Mock hashed initial data
                 try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
-                    pw.println("mario.rossi,password,Mario Rossi");
-                    pw.println("luigi.verdi,password,Luigi Verdi");
+                    pw.println("mario.rossi,[HASHED]password,Mario Rossi");
+                    pw.println("luigi.verdi,[HASHED]password,Luigi Verdi");
                 }
             } catch (IOException e) {
                 LoggerCustom.error("Failed to create students.csv", e);

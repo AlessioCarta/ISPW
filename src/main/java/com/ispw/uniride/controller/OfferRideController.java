@@ -3,6 +3,7 @@ package com.ispw.uniride.controller;
 import com.ispw.uniride.bean.RideBean;
 import com.ispw.uniride.dao.DAOFactory;
 import com.ispw.uniride.dao.RideDAO;
+import com.ispw.uniride.exceptions.UserNotAuthorizedException;
 import com.ispw.uniride.model.Ride;
 import com.ispw.uniride.model.Student;
 
@@ -17,15 +18,15 @@ public class OfferRideController {
      * Valida un nuovo tragitto proposto convertendo le specifiche del DTO `RideBean` in
      * un'istanza dell'entità Dominio vera e propria, gestendo le logiche implicite di collegamento utente.
      * @param rideBean contenitore base con parametri di viaggio inviati dalle View/CLI GUI.
-     * @throws Exception nel caso in cui la protezione interna fallisca (assenza autorizzazione al logging, form errato, eccezione a livello DBMS/Filesystem).
+     * @throws UserNotAuthorizedException se manca l'autenticazione.
      */
-    public void offerRide(RideBean rideBean) throws Exception {
+    public void offerRide(RideBean rideBean) throws UserNotAuthorizedException {
 
         // Autenticazione: preleva la sessione creata in precedenza per certificare
         // a quale driver o entità "Student" apparterrà l'oggetto "Ride" appena istanziato.
         Student loggedUser = Session.getInstance().getLoggedUser();
         if (loggedUser == null) {
-            throw new Exception("Utente non loggato! Accesso Negato alle funzioni dell'App.");
+            throw new UserNotAuthorizedException("Utente non loggato! Accesso Negato alle funzioni dell'App.");
         }
 
         // Il livello DAO si svincola dalle scelte implementative estraendo dinamicamente in Factory la gestione

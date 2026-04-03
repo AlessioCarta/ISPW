@@ -39,4 +39,16 @@ public interface RideDAO {
      * Sovrascrive un record preesistente aggiornandone lo Stato interno (es. posti a sedere residui).
      */
     void updateRide(Ride ride);
+
+    /**
+     * Recupera la lista dei passaggi in cui l'utente figura come autista.
+     * @param username lo username dell'utente.
+     */
+    List<Ride> getRidesByDriver(String username);
+
+    /**
+     * Recupera la lista dei passaggi a cui l'utente si è prenotato come passeggero.
+     * @param username lo username dell'utente.
+     */
+    List<Ride> getRidesByPassenger(String username);
 }

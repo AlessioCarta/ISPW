@@ -61,6 +61,19 @@ public class LoginBoundary {
     /**
      * Routine di utility per caricare la pagina successiva su questa medesima finestra (Stage).
      */
+    @FXML
+    public void handleRegister(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/ispw/uniride/Register.fxml"));
+            Parent root = loader.load();
+            Stage stage = (Stage) usernameField.getScene().getWindow();
+            stage.setScene(new Scene(root, 400, 350));
+            stage.setTitle("UniRide - Registrazione");
+        } catch (IOException e) {
+            com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Register", e);
+        }
+    }
+
     private void loadDashboard() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/ispw/uniride/StudentDashboard.fxml"));

@@ -27,10 +27,23 @@ public class Config {
     }
 
     /**
+     * Enum Strategy Pattern.
+     */
+    public enum StrategyType {
+        EQUAL_SPLIT,
+        DISTANCE_WEIGHTED
+    }
+
+    /**
      * SWITCH architetturale: la modifica di questo parametro farà istanziare al sistema l'intero
      * ecosistema DAO memory piuttosto che quello legato al disco rigido.
      */
     public static final DBType PERSISTENCE_TYPE = DBType.MEMORY;
+
+    /**
+     * Parametro dinamico per calcolare i costi.
+     */
+    public static final StrategyType COST_STRATEGY_TYPE = StrategyType.EQUAL_SPLIT;
 
     /**
      * Nasconde il costruttore di base. L'istanza è inutile trattandosi di classe con campi finali statici.

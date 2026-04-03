@@ -53,6 +53,20 @@ public class StudentDashboardBoundary {
     }
 
     @FXML
+    public void handleMyRides(ActionEvent event) {
+        com.ispw.uniride.utils.LoggerCustom.info("Opening My Rides view...");
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/ispw/uniride/ManageRides.fxml"));
+            Parent root = loader.load();
+            Stage stage = (Stage) welcomeLabel.getScene().getWindow();
+            stage.setScene(new Scene(root, 600, 500));
+            stage.setTitle("UniRide - Le Mie Corse");
+        } catch (IOException e) {
+            com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Manage Rides", e);
+        }
+    }
+
+    @FXML
     public void handleLogout(ActionEvent event) {
         new LoginController().logout();
 

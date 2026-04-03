@@ -32,18 +32,18 @@ class RideStateTest {
         Ride ride = new Ride("driver1", "Rome", "Milan", "2023-10-10", 2, 50.0);
 
         // Prima prenotazione: i posti scendono ma lo stato non cambia.
-        assertTrue(ride.bookSeat(message -> {}));
+        assertTrue(ride.bookSeat(message -> {}, "pass1"));
         assertEquals("AVAILABLE", ride.getStatus());
         assertEquals(1, ride.getAvailableSeats());
 
         // Seconda prenotazione (Ultimo posto): triggera la transizione
-        assertTrue(ride.bookSeat(message -> {}));
+        assertTrue(ride.bookSeat(message -> {}, "pass2"));
         assertEquals("FULL", ride.getStatus(), "La macchina deve cambiare stato in FULL finiti i posti");
         assertEquals(0, ride.getAvailableSeats());
 
         // Tentativo illegale in condizione di pienone.
         // L'oggetto State non permetterà il side-effect negativo (underflow).
-        assertFalse(ride.bookSeat(message -> {}), "Non è permesso prenotare su un veicolo nello stato FULL");
+        assertFalse(ride.bookSeat(message -> {}, "pass3"), "Non è permesso prenotare su un veicolo nello stato FULL");
     }
 
     /**
@@ -55,7 +55,7 @@ class RideStateTest {
         Ride ride = new Ride("driver1", "Rome", "Milan", "2023-10-10", 1, 50.0);
 
         // Macchina piena forzata con una sola prenotazione
-        ride.bookSeat(message -> {});
+        ride.bookSeat(message -> {}, "pass1");
         assertEquals("FULL", ride.getStatus());
 
         // Simula lo sganciamento del passeggero e la liberazione del seggiolino

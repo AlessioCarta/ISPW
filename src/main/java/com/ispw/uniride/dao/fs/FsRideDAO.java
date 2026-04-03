@@ -46,7 +46,7 @@ public class FsRideDAO implements RideDAO {
                         while ((line = br.readLine()) != null) {
                             String[] parts = line.split(",");
                             if (parts.length >= 9) {
-                                // id, driverUsername, departure, destination, date, totalSeats, availableSeats, basePrice, status
+                                // id, driverUsername, departure, destination, date, totalSeats, availableSeats, basePrice, status, [passengerUsernames...]
                                 Ride ride = new Ride(parts[1], parts[2], parts[3], parts[4], Integer.parseInt(parts[5]), Double.parseDouble(parts[7]));
                                 // Override generated ID and state
                                 ride.setId(parts[0]);
@@ -55,6 +55,14 @@ public class FsRideDAO implements RideDAO {
                                     ride.setState(new AvailableState());
                                 } else {
                                     ride.setState(new FullState());
+                                }
+                                // Parse optional passengers
+                                if (parts.length > 9) {
+                                    for (int i = 9; i < parts.length; i++) {
+                                        if (!parts[i].trim().isEmpty()) {
+                                            ride.addPassengerUsername(parts[i]);
+                                        }
+                                    }
                                 }
                                 cache.put(parts[0], ride);
                             }
@@ -74,8 +82,17 @@ public class FsRideDAO implements RideDAO {
                 for (Map.Entry<String, Ride> entry : cache.entrySet()) {
                     String id = entry.getKey();
                     Ride r = entry.getValue();
-                    pw.println(id + "," + r.getDriverUsername() + "," + r.getDeparture() + "," + r.getDestination() + "," +
-                            r.getDate() + "," + r.getTotalSeats() + "," + r.getAvailableSeats() + "," + r.getBasePrice() + "," + r.getStatus());
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(id).append(",").append(r.getDriverUsername()).append(",")
+                      .append(r.getDeparture()).append(",").append(r.getDestination()).append(",")
+                      .append(r.getDate()).append(",").append(r.getTotalSeats()).append(",")
+                      .append(r.getAvailableSeats()).append(",").append(r.getBasePrice()).append(",")
+                      .append(r.getStatus());
+
+                    for (String pass : r.getPassengerUsernames()) {
+                        sb.append(",").append(pass);
+                    }
+                    pw.println(sb.toString());
                 }
                 lastModified = new File(FILE_PATH).lastModified();
             } catch (IOException e) {
@@ -126,5 +143,29 @@ public class FsRideDAO implements RideDAO {
             cache.put(ride.getId(), ride);
             rewriteFileFromCache();
         }
+    }
+
+    @Override
+    public List<Ride> getRidesByDriver(String username) {
+        refreshCache();
+        List<Ride> result = new ArrayList<>();
+        for (Ride ride : cache.values()) {
+            if (ride.getDriverUsername().equals(username)) {
+                result.add(ride);
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public List<Ride> getRidesByPassenger(String username) {
+        refreshCache();
+        List<Ride> result = new ArrayList<>();
+        for (Ride ride : cache.values()) {
+            if (ride.getPassengerUsernames().contains(username)) {
+                result.add(ride);
+            }
+        }
+        return result;
     }
 }

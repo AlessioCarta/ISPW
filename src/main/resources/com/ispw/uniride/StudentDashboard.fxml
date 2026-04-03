@@ -20,6 +20,7 @@
             <HBox spacing="40" alignment="CENTER">
                 <Button text="Offri Passaggio" styleClass="action-button" onAction="#handleOfferRide" />
                 <Button text="Cerca Passaggio" styleClass="action-button" onAction="#handleSearchRide" />
+                <Button text="Le Mie Corse" styleClass="action-button" onAction="#handleMyRides" />
             </HBox>
         </VBox>
     </center>

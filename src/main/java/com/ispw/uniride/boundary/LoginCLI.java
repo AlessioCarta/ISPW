@@ -19,22 +19,45 @@ public class LoginCLI {
      */
     public void start() {
         Scanner scanner = new Scanner(System.in);
-        System.out.println("=== Login UniRide ===");
-        System.out.print("Username: ");
-        String username = scanner.nextLine();
-        System.out.print("Password: ");
-        String password = scanner.nextLine();
+        while (true) {
+            System.out.println("\n=== UniRide CLI ===");
+            System.out.println("1. Login");
+            System.out.println("2. Registrati");
+            System.out.println("3. Esci");
+            System.out.print("Scelta: ");
+            String choice = scanner.nextLine();
 
-        // Incapsula logicamente gli input prima del passaggio per isolare il Dominio.
-        UserBean bean = new UserBean(username, password);
+            if (choice.equals("1")) {
+                System.out.print("Username: ");
+                String username = scanner.nextLine();
+                System.out.print("Password: ");
+                String password = scanner.nextLine();
 
-        // Richiama l'applicativo vero e proprio che elabora e interroga lo strato sottostante.
-        if (loginController.login(bean)) {
-            System.out.println("Login effettuato con successo!");
-            // Transizione della Boundary (equivalente a "cambia scena FXML" ma testuale)
-            new StudentCLI().start();
-        } else {
-            System.out.println("Credenziali non valide. Accesso Negato.");
+                UserBean bean = new UserBean(username, password);
+
+                if (loginController.login(bean)) {
+                    System.out.println("Login effettuato con successo!");
+                    new StudentCLI().start();
+                } else {
+                    System.out.println("Credenziali non valide. Accesso Negato.");
+                }
+            } else if (choice.equals("2")) {
+                System.out.print("Nome Completo: ");
+                String fullName = scanner.nextLine();
+                System.out.print("Nuovo Username: ");
+                String username = scanner.nextLine();
+                System.out.print("Password: ");
+                String password = scanner.nextLine();
+
+                try {
+                    loginController.registerUser(username, password, fullName);
+                    System.out.println("Registrazione completata! Ora puoi fare il login.");
+                } catch (Exception e) {
+                    System.out.println("Errore: " + e.getMessage());
+                }
+            } else if (choice.equals("3")) {
+                break;
+            }
         }
     }
 }

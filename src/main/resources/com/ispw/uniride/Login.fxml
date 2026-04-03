@@ -15,6 +15,7 @@
         <TextField fx:id="usernameField" promptText="Username" />
         <PasswordField fx:id="passwordField" promptText="Password" />
         <Button text="Login" onAction="#handleLogin" maxWidth="Infinity" styleClass="action-button" />
+        <Button text="Registrati" onAction="#handleRegister" maxWidth="Infinity" style="-fx-background-color: #6c757d; -fx-text-fill: white;" />
         <Label fx:id="messageLabel" textFill="RED" />
     </VBox>
 </VBox>

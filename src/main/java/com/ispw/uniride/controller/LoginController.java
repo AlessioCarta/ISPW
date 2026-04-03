@@ -25,13 +25,32 @@ public class LoginController {
         Student student = studentDAO.getStudentByUsername(userBean.getUsername());
 
         // Validazione della password rispetto all'oggetto reale estratto in fase DAO (Entity)
-        if (student != null && student.getPassword().equals(userBean.getPassword())) {
+        // Utilizziamo l'hash fittizio per simulare la verifica in chiaro rispetto al db cifrato.
+        String fakeHashToCheck = "[HASHED]" + userBean.getPassword();
+        if (student != null && student.getPassword().equals(fakeHashToCheck)) {
             // Promuove il dominio a 'utente loggato nel sistema' grazie al Singleton globale "Session".
             Session.getInstance().setLoggedUser(student);
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * Registra un nuovo utente nel sistema simulando il salvataggio sicuro (Hash fittizio per prototipo).
+     * @throws com.ispw.uniride.exceptions.UserNotAuthorizedException se l'username è duplicato.
+     */
+    public void registerUser(String username, String rawPassword, String fullName) throws com.ispw.uniride.exceptions.UserNotAuthorizedException {
+        StudentDAO studentDAO = DAOFactory.getInstance().getStudentDAO();
+        if (studentDAO.getStudentByUsername(username) != null) {
+            throw new com.ispw.uniride.exceptions.UserNotAuthorizedException("Username già in uso!");
+        }
+
+        // Mock Hashing per requisiti di sicurezza simulati
+        String hashedPassword = "[HASHED]" + rawPassword;
+
+        Student newStudent = new Student(username, hashedPassword, fullName);
+        studentDAO.saveStudent(newStudent);
     }
 
     /**

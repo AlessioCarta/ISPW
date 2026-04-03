@@ -11,7 +11,8 @@ public class StudentCLI {
             System.out.println("\n=== Dashboard Studente ===");
             System.out.println("1. Offri un Passaggio");
             System.out.println("2. Cerca un Passaggio");
-            System.out.println("3. Logout");
+            System.out.println("3. Le Mie Corse");
+            System.out.println("4. Logout");
             System.out.print("Scegli un'opzione: ");
 
             int choice = scanner.nextInt();
@@ -25,6 +26,9 @@ public class StudentCLI {
                     new SearchRideCLI().start();
                     break;
                 case 3:
+                    new ManageRidesCLI().start();
+                    break;
+                case 4:
                     new LoginController().logout();
                     System.out.println("Logout effettuato.");
                     return;
