@@ -184,6 +184,43 @@
     -fx-effect: dropshadow(gaussian, rgba(99,102,241,0.28), 8, 0, 0, 0);
 }
 
+/* Menu a tendina, selettore di data e contatore numerico: stessa cornice dei text-field */
+.combo-box, .date-picker, .spinner {
+    -fx-background-color: #f8f9fc;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #dde0ea;
+    -fx-border-width: 1.4;
+    -fx-font-size: 13px;
+}
+
+.combo-box:focused, .date-picker:focused, .spinner:focused,
+.combo-box:contains-focus, .date-picker:contains-focus, .spinner:contains-focus {
+    -fx-border-color: #6366f1;
+    -fx-background-color: white;
+    -fx-effect: dropshadow(gaussian, rgba(99,102,241,0.28), 8, 0, 0, 0);
+}
+
+.combo-box .list-cell, .date-picker .text-field, .spinner .text-field {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 6 8;
+    -fx-text-fill: #363b4d;
+}
+
+.combo-box .arrow-button, .date-picker .arrow-button, .spinner .increment-arrow-button, .spinner .decrement-arrow-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0 10 10 0;
+}
+
+.combo-box-popup .list-view, .date-picker-popup {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: #e6e8f1;
+    -fx-effect: dropshadow(gaussian, rgba(31,35,51,0.18), 18, 0, 0, 6);
+}
+
 /* ==================== Liste ==================== */
 
 .list-view {

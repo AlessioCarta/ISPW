@@ -16,9 +16,9 @@
             <padding><Insets top="24" right="30" bottom="30" left="30"/></padding>
             <HBox spacing="12" alignment="CENTER_LEFT" styleClass="search-bar">
                 <Label text="Partenza" styleClass="form-label"/>
-                <TextField fx:id="departureField" promptText="Città di partenza" HBox.hgrow="ALWAYS" />
+                <ComboBox fx:id="departureField" editable="true" promptText="Città di partenza" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
                 <Label text="Destinazione" styleClass="form-label"/>
-                <TextField fx:id="destinationField" promptText="Città di arrivo" HBox.hgrow="ALWAYS" />
+                <ComboBox fx:id="destinationField" editable="true" promptText="Città di arrivo" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
                 <Button text="🔎  Cerca" onAction="#handleSearch" styleClass="action-button" />
             </HBox>
 

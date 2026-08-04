@@ -1,6 +1,7 @@
 package com.ispw.uniride.boundary;
 
 import com.ispw.uniride.bean.RideBean;
+import com.ispw.uniride.config.CityCatalog;
 import com.ispw.uniride.controller.SearchRideController;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -9,10 +10,10 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -20,8 +21,8 @@ import java.util.List;
 
 public class SearchRideBoundary {
 
-    @FXML private TextField departureField;
-    @FXML private TextField destinationField;
+    @FXML private ComboBox<String> departureField;
+    @FXML private ComboBox<String> destinationField;
     @FXML private ListView<RideBean> resultsList;
     @FXML private Label messageLabel;
 
@@ -29,6 +30,10 @@ public class SearchRideBoundary {
 
     @FXML
     public void initialize() {
+        // Popola le due ComboBox con le città note, restando comunque editabili per input libero
+        departureField.setItems(FXCollections.observableArrayList(CityCatalog.getCities()));
+        destinationField.setItems(FXCollections.observableArrayList(CityCatalog.getCities()));
+
         resultsList.setCellFactory(param -> new ListCell<RideBean>() {
             @Override
             protected void updateItem(RideBean item, boolean empty) {
@@ -46,8 +51,8 @@ public class SearchRideBoundary {
 
     @FXML
     public void handleSearch(ActionEvent event) {
-        String departure = departureField.getText();
-        String destination = destinationField.getText();
+        String departure = readCity(departureField);
+        String destination = readCity(destinationField);
 
         List<RideBean> rides = searchRideController.searchRides(departure, destination);
 
@@ -61,6 +66,15 @@ public class SearchRideBoundary {
             messageLabel.setText("Risultati aggiornati.");
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
         }
+    }
+
+    /**
+     * Estrae il testo scelto/digitato in una ComboBox editabile, includendo l'input dell'utente
+     * anche quando non ha ancora premuto Invio o spostato il focus.
+     */
+    private String readCity(ComboBox<String> comboBox) {
+        String editorText = comboBox.getEditor().getText();
+        return editorText != null ? editorText.trim() : "";
     }
 
     @FXML

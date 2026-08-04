@@ -16,17 +16,22 @@
             <padding><Insets top="36" right="20" bottom="36" left="20"/></padding>
             <VBox alignment="CENTER" spacing="20.0" styleClass="card" maxWidth="340">
                 <GridPane hgap="14" vgap="16">
+                    <columnConstraints>
+                        <ColumnConstraints />
+                        <ColumnConstraints minWidth="190" />
+                    </columnConstraints>
+
                     <Label text="Partenza" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="form-label"/>
-                    <TextField fx:id="departureField" promptText="Città di partenza" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                    <ComboBox fx:id="departureField" editable="true" promptText="Seleziona o scrivi una città" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
                     <Label text="Destinazione" GridPane.columnIndex="0" GridPane.rowIndex="1" styleClass="form-label"/>
-                    <TextField fx:id="destinationField" promptText="Città di arrivo" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                    <ComboBox fx:id="destinationField" editable="true" promptText="Seleziona o scrivi una città" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
                     <Label text="Data" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="form-label"/>
-                    <TextField fx:id="dateField" promptText="gg/mm/aaaa" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                    <DatePicker fx:id="dateField" promptText="Seleziona una data" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
                     <Label text="Posti Totali" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="form-label"/>
-                    <TextField fx:id="seatsField" promptText="Es. 3" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                    <Spinner fx:id="seatsField" editable="true" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="3" />
 
                     <Label text="Costo Base (€)" GridPane.columnIndex="0" GridPane.rowIndex="4" styleClass="form-label"/>
                     <TextField fx:id="priceField" promptText="Es. 10.00" GridPane.columnIndex="1" GridPane.rowIndex="4" />
