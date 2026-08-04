@@ -67,7 +67,7 @@ public class LoginBoundary {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/ispw/uniride/Register.fxml"));
             Parent root = loader.load();
             Stage stage = (Stage) usernameField.getScene().getWindow();
-            stage.setScene(new Scene(root, 400, 350));
+            stage.setScene(new Scene(root, 440, 560));
             stage.setTitle("UniRide - Registrazione");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Register", e);
@@ -79,7 +79,7 @@ public class LoginBoundary {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/ispw/uniride/StudentDashboard.fxml"));
             Parent root = loader.load();
             Stage stage = (Stage) usernameField.getScene().getWindow(); // Recupera l'appiglio del display corrente
-            stage.setScene(new Scene(root, 600, 400));
+            stage.setScene(new Scene(root, 760, 520));
             stage.setTitle("UniRide - Dashboard");
         } catch (IOException e) {
             // Sfrutta il Logger custom per nascondere il noioso stack trace standard

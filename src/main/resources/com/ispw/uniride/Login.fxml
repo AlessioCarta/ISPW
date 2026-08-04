@@ -4,18 +4,24 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
-<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ispw.uniride.boundary.LoginBoundary" stylesheets="@style.css">
-    <padding>
-        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
-    </padding>
+<StackPane xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ispw.uniride.boundary.LoginBoundary" stylesheets="@style.css" styleClass="app-background">
 
-    <Label text="Login UniRide" styleClass="title-label" />
+    <VBox alignment="CENTER" spacing="24.0" styleClass="card" maxWidth="340" maxHeight="-Infinity">
+        <padding>
+            <Insets bottom="0.0" left="0.0" right="0.0" top="0.0"/>
+        </padding>
 
-    <VBox spacing="10.0" maxWidth="200">
-        <TextField fx:id="usernameField" promptText="Username" />
-        <PasswordField fx:id="passwordField" promptText="Password" />
-        <Button text="Login" onAction="#handleLogin" maxWidth="Infinity" styleClass="action-button" />
-        <Button text="Registrati" onAction="#handleRegister" maxWidth="Infinity" style="-fx-background-color: #6c757d; -fx-text-fill: white;" />
-        <Label fx:id="messageLabel" textFill="RED" />
+        <VBox alignment="CENTER" spacing="6.0">
+            <Label text="🚗 UniRide" styleClass="app-title" />
+            <Label text="Accedi con le tue credenziali universitarie" styleClass="app-subtitle" wrapText="true" textAlignment="CENTER" />
+        </VBox>
+
+        <VBox spacing="12.0">
+            <TextField fx:id="usernameField" promptText="Username" />
+            <PasswordField fx:id="passwordField" promptText="Password" />
+            <Button text="Accedi" onAction="#handleLogin" maxWidth="Infinity" styleClass="action-button" />
+            <Button text="Crea un account" onAction="#handleRegister" maxWidth="Infinity" styleClass="secondary-button" />
+            <Label fx:id="messageLabel" styleClass="message-label" textFill="RED" wrapText="true" alignment="CENTER" maxWidth="Infinity" />
+        </VBox>
     </VBox>
-</VBox>
+</StackPane>

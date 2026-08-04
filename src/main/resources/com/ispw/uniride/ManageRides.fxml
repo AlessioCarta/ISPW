@@ -4,36 +4,38 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
-<BorderPane xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ispw.uniride.boundary.ManageRidesBoundary" stylesheets="@style.css">
+<BorderPane xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ispw.uniride.boundary.ManageRidesBoundary" stylesheets="@style.css" styleClass="app-background">
     <top>
-        <HBox spacing="20" styleClass="dashboard-header">
-            <Button text="Indietro" onAction="#handleBack" />
+        <HBox spacing="20" alignment="CENTER_LEFT" styleClass="dashboard-header">
+            <Button text="⭠  Indietro" onAction="#handleBack" styleClass="back-button" />
             <Label text="Le Mie Corse" styleClass="dashboard-title" />
         </HBox>
     </top>
     <center>
-        <VBox alignment="TOP_CENTER" spacing="15.0">
-            <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+        <VBox alignment="TOP_CENTER" spacing="18.0">
+            <padding><Insets top="24" right="30" bottom="30" left="30"/></padding>
             <TabPane VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE">
                 <tabs>
-                    <Tab text="Corse Offerte (Come Guidatore)">
+                    <Tab text="🚙  Corse Offerte (Guidatore)">
                         <content>
                             <VBox spacing="10">
+                                <padding><Insets top="14" right="10" bottom="10" left="10"/></padding>
                                 <ListView fx:id="offeredList" VBox.vgrow="ALWAYS" />
                             </VBox>
                         </content>
                     </Tab>
-                    <Tab text="Prenotazioni (Come Passeggero)">
+                    <Tab text="🎟  Prenotazioni (Passeggero)">
                         <content>
-                            <VBox spacing="10">
+                            <VBox spacing="14">
+                                <padding><Insets top="14" right="10" bottom="10" left="10"/></padding>
                                 <ListView fx:id="bookedList" VBox.vgrow="ALWAYS" />
-                                <Button text="Annulla Prenotazione" onAction="#handleCancelBooking" styleClass="action-button" />
+                                <Button text="Annulla Prenotazione" onAction="#handleCancelBooking" styleClass="danger-button" />
                             </VBox>
                         </content>
                     </Tab>
                 </tabs>
             </TabPane>
-            <Label fx:id="messageLabel" />
+            <Label fx:id="messageLabel" styleClass="message-label" wrapText="true" alignment="CENTER" maxWidth="Infinity" />
         </VBox>
     </center>
 </BorderPane>

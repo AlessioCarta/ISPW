@@ -31,7 +31,7 @@ public class StudentDashboardBoundary {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/ispw/uniride/OfferRide.fxml"));
             Parent root = loader.load();
             Stage stage = (Stage) welcomeLabel.getScene().getWindow();
-            stage.setScene(new Scene(root, 500, 400));
+            stage.setScene(new Scene(root, 560, 640));
             stage.setTitle("UniRide - Offri Passaggio");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Offri Passaggio", e);
@@ -45,7 +45,7 @@ public class StudentDashboardBoundary {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/ispw/uniride/SearchRide.fxml"));
             Parent root = loader.load();
             Stage stage = (Stage) welcomeLabel.getScene().getWindow();
-            stage.setScene(new Scene(root, 600, 500));
+            stage.setScene(new Scene(root, 820, 600));
             stage.setTitle("UniRide - Cerca Passaggio");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Cerca Passaggio", e);
@@ -59,7 +59,7 @@ public class StudentDashboardBoundary {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/ispw/uniride/ManageRides.fxml"));
             Parent root = loader.load();
             Stage stage = (Stage) welcomeLabel.getScene().getWindow();
-            stage.setScene(new Scene(root, 600, 500));
+            stage.setScene(new Scene(root, 780, 600));
             stage.setTitle("UniRide - Le Mie Corse");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Manage Rides", e);
@@ -74,7 +74,7 @@ public class StudentDashboardBoundary {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/ispw/uniride/Login.fxml"));
             Parent root = loader.load();
             Stage stage = (Stage) welcomeLabel.getScene().getWindow();
-            stage.setScene(new Scene(root, 400, 300));
+            stage.setScene(new Scene(root, 420, 480));
             stage.setTitle("UniRide - Login");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Login", e);
