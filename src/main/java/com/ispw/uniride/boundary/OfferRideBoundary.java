@@ -61,7 +61,7 @@ public class OfferRideBoundary {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/ispw/uniride/StudentDashboard.fxml"));
             Parent root = loader.load();
             Stage stage = (Stage) messageLabel.getScene().getWindow();
-            stage.setScene(new Scene(root, 600, 400));
+            stage.setScene(new Scene(root, 760, 520));
             stage.setTitle("UniRide - Dashboard");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore ritorno alla Dashboard", e);

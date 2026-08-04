@@ -26,8 +26,8 @@ public class MainGUI extends Application {
         // Imposta il titolo della finestra principale dell'applicazione
         primaryStage.setTitle("UniRide - Piattaforma di Carpooling Universitario");
 
-        // Crea una nuova Scena con dimensioni predefinite 400x300 pixel contenente il layout caricato
-        primaryStage.setScene(new Scene(root, 400, 300));
+        // Crea una nuova Scena con dimensioni predefinite 420x480 pixel contenente il layout caricato
+        primaryStage.setScene(new Scene(root, 420, 480));
 
         // Mostra la finestra a schermo
         primaryStage.show();

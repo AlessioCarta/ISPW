@@ -4,27 +4,27 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
-<BorderPane xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ispw.uniride.boundary.SearchRideBoundary" stylesheets="@style.css">
+<BorderPane xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ispw.uniride.boundary.SearchRideBoundary" stylesheets="@style.css" styleClass="app-background">
     <top>
-        <HBox spacing="20" styleClass="dashboard-header">
-            <Button text="Indietro" onAction="#handleBack" />
+        <HBox spacing="20" alignment="CENTER_LEFT" styleClass="dashboard-header">
+            <Button text="⭠  Indietro" onAction="#handleBack" styleClass="back-button" />
             <Label text="Cerca un Passaggio" styleClass="dashboard-title" />
         </HBox>
     </top>
     <center>
-        <VBox alignment="TOP_CENTER" spacing="15.0">
-            <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-            <HBox spacing="10" alignment="CENTER">
-                <Label text="Partenza:" styleClass="form-label"/>
-                <TextField fx:id="departureField" />
-                <Label text="Destinazione:" styleClass="form-label"/>
-                <TextField fx:id="destinationField" />
-                <Button text="Cerca" onAction="#handleSearch" styleClass="action-button" />
+        <VBox alignment="TOP_CENTER" spacing="18.0">
+            <padding><Insets top="24" right="30" bottom="30" left="30"/></padding>
+            <HBox spacing="12" alignment="CENTER_LEFT" styleClass="search-bar">
+                <Label text="Partenza" styleClass="form-label"/>
+                <TextField fx:id="departureField" promptText="Città di partenza" HBox.hgrow="ALWAYS" />
+                <Label text="Destinazione" styleClass="form-label"/>
+                <TextField fx:id="destinationField" promptText="Città di arrivo" HBox.hgrow="ALWAYS" />
+                <Button text="🔎  Cerca" onAction="#handleSearch" styleClass="action-button" />
             </HBox>
 
             <ListView fx:id="resultsList" VBox.vgrow="ALWAYS" />
-            <Button text="Prenota Selezionato" onAction="#handleBook" styleClass="action-button" />
-            <Label fx:id="messageLabel" />
+            <Button text="Prenota Selezionato" onAction="#handleBook" styleClass="action-button" maxWidth="Infinity" />
+            <Label fx:id="messageLabel" styleClass="message-label" wrapText="true" alignment="CENTER" maxWidth="Infinity" />
         </VBox>
     </center>
 </BorderPane>

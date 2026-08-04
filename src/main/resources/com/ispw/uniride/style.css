@@ -1,11 +1,79 @@
+/*
+ * UniRide - Foglio di stile globale
+ * Palette moderna (indaco/violetto), card con ombreggiature soffuse,
+ * angoli arrotondati e stati hover/focus coerenti su tutta l'app.
+ */
+
+.root {
+    -fx-font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -fx-background-color: #f3f4f9;
+    -fx-font-size: 13px;
+}
+
+/* ==================== Sfondi di pagina ==================== */
+
+.app-background {
+    -fx-background-color: linear-gradient(to bottom right, #eef1fc, #f6f7fb);
+}
+
+.card {
+    -fx-background-color: white;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-border-color: #e8eaf3;
+    -fx-border-width: 1;
+    -fx-padding: 40 44;
+    -fx-effect: dropshadow(gaussian, rgba(79,70,229,0.14), 28, 0, 0, 10);
+}
+
+/* ==================== Testi ==================== */
+
+.app-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #1f2333;
+}
+
+.app-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #7c8092;
+}
+
 .title-label {
     -fx-font-size: 24px;
     -fx-font-weight: bold;
+    -fx-text-fill: #1f2333;
 }
 
+.welcome-label {
+    -fx-font-size: 19px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #363b4d;
+}
+
+.form-label {
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #4b5065;
+}
+
+.section-hint {
+    -fx-font-size: 12px;
+    -fx-text-fill: #9096a8;
+}
+
+.message-label {
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 600;
+    -fx-wrap-text: true;
+}
+
+/* ==================== Header di navigazione ==================== */
+
 .dashboard-header {
-    -fx-background-color: #336699;
-    -fx-padding: 15px;
+    -fx-background-color: linear-gradient(to right, #4f46e5, #6d28d9);
+    -fx-padding: 18 28;
+    -fx-effect: dropshadow(gaussian, rgba(79,70,229,0.35), 14, 0, 0, 4);
 }
 
 .dashboard-title {
@@ -14,22 +82,187 @@
     -fx-text-fill: white;
 }
 
-.welcome-label {
-    -fx-font-size: 18px;
+/* ==================== Pulsanti ==================== */
+
+.button {
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+    -fx-font-size: 13px;
 }
 
 .action-button {
-    -fx-font-size: 16px;
-    -fx-padding: 10px 20px;
-    -fx-background-color: #4CAF50;
+    -fx-font-size: 14.5px;
+    -fx-font-weight: 700;
+    -fx-padding: 12 26;
+    -fx-background-color: linear-gradient(to right, #4f46e5, #6366f1);
     -fx-text-fill: white;
+    -fx-background-radius: 10;
+    -fx-effect: dropshadow(gaussian, rgba(79,70,229,0.38), 12, 0, 0, 4);
 }
 
 .action-button:hover {
-    -fx-background-color: #45a049;
+    -fx-background-color: linear-gradient(to right, #4338ca, #4f46e5);
 }
 
-.form-label {
-    -fx-font-size: 14px;
-    -fx-font-weight: bold;
+.action-button:pressed {
+    -fx-background-color: #4338ca;
+    -fx-effect: none;
+}
+
+.action-button:disabled {
+    -fx-opacity: 0.55;
+    -fx-effect: none;
+}
+
+.secondary-button {
+    -fx-font-size: 13.5px;
+    -fx-font-weight: 600;
+    -fx-padding: 10 22;
+    -fx-background-color: white;
+    -fx-text-fill: #4b5065;
+    -fx-border-color: #d9dce6;
+    -fx-border-width: 1.4;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+}
+
+.secondary-button:hover {
+    -fx-background-color: #f3f4f9;
+    -fx-border-color: #b7bccb;
+}
+
+.secondary-button:pressed {
+    -fx-background-color: #e9ebf4;
+}
+
+.back-button, .logout-button {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-padding: 8 18;
+    -fx-background-color: rgba(255,255,255,0.16);
+    -fx-text-fill: white;
+    -fx-background-radius: 8;
+}
+
+.back-button:hover, .logout-button:hover {
+    -fx-background-color: rgba(255,255,255,0.30);
+}
+
+.danger-button {
+    -fx-font-size: 13.5px;
+    -fx-font-weight: 700;
+    -fx-padding: 10 22;
+    -fx-background-color: #fef2f2;
+    -fx-text-fill: #dc2626;
+    -fx-border-color: #fecaca;
+    -fx-border-width: 1.4;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+}
+
+.danger-button:hover {
+    -fx-background-color: #fee2e2;
+    -fx-border-color: #fca5a5;
+}
+
+/* ==================== Campi di input ==================== */
+
+.text-field, .password-field {
+    -fx-background-color: #f8f9fc;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #dde0ea;
+    -fx-border-width: 1.4;
+    -fx-padding: 10 14;
+    -fx-font-size: 13px;
+    -fx-prompt-text-fill: #9aa0b4;
+}
+
+.text-field:focused, .password-field:focused {
+    -fx-border-color: #6366f1;
+    -fx-background-color: white;
+    -fx-effect: dropshadow(gaussian, rgba(99,102,241,0.28), 8, 0, 0, 0);
+}
+
+/* ==================== Liste ==================== */
+
+.list-view {
+    -fx-background-color: white;
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-border-color: #e6e8f1;
+    -fx-border-width: 1;
+    -fx-padding: 6;
+}
+
+.list-cell {
+    -fx-padding: 12 14;
+    -fx-background-color: transparent;
+    -fx-background-radius: 8;
+    -fx-font-size: 12.5px;
+    -fx-text-fill: #363b4d;
+}
+
+.list-cell:filled:hover {
+    -fx-background-color: #eef0fd;
+}
+
+.list-cell:filled:selected {
+    -fx-background-color: #4f46e5;
+    -fx-background-radius: 8;
+    -fx-text-fill: white;
+}
+
+.list-cell:empty {
+    -fx-background-color: transparent;
+}
+
+/* ==================== TabPane ==================== */
+
+.tab-pane .tab-header-area {
+    -fx-padding: 0;
+}
+
+.tab-pane .tab-header-background {
+    -fx-background-color: transparent;
+}
+
+.tab-pane .tab {
+    -fx-background-color: #eceefb;
+    -fx-background-radius: 10 10 0 0;
+    -fx-padding: 10 20;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: white;
+}
+
+.tab-pane .tab-label {
+    -fx-text-fill: #5a5f75;
+    -fx-font-weight: 700;
+    -fx-font-size: 12.5px;
+}
+
+.tab-pane .tab:selected .tab-label {
+    -fx-text-fill: #4338ca;
+}
+
+.tab-pane .tab-content-area {
+    -fx-background-color: white;
+    -fx-background-radius: 0 12 12 12;
+    -fx-border-color: #e6e8f1;
+    -fx-border-width: 1;
+    -fx-border-radius: 0 12 12 12;
+}
+
+/* ==================== Barra di ricerca ==================== */
+
+.search-bar {
+    -fx-background-color: white;
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-border-color: #e6e8f1;
+    -fx-border-width: 1;
+    -fx-padding: 16 18;
+    -fx-effect: dropshadow(gaussian, rgba(31,35,51,0.06), 12, 0, 0, 4);
 }

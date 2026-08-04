@@ -4,34 +4,36 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
-<BorderPane xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ispw.uniride.boundary.OfferRideBoundary" stylesheets="@style.css">
+<BorderPane xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ispw.uniride.boundary.OfferRideBoundary" stylesheets="@style.css" styleClass="app-background">
     <top>
-        <HBox spacing="20" styleClass="dashboard-header">
-            <Button text="Indietro" onAction="#handleBack" />
+        <HBox spacing="20" alignment="CENTER_LEFT" styleClass="dashboard-header">
+            <Button text="⭠  Indietro" onAction="#handleBack" styleClass="back-button" />
             <Label text="Offri un Passaggio" styleClass="dashboard-title" />
         </HBox>
     </top>
     <center>
-        <VBox alignment="CENTER" spacing="15.0" maxWidth="300">
-            <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-            <GridPane hgap="10" vgap="15">
-                <Label text="Partenza:" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="form-label"/>
-                <TextField fx:id="departureField" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+        <VBox alignment="CENTER" spacing="20.0">
+            <padding><Insets top="36" right="20" bottom="36" left="20"/></padding>
+            <VBox alignment="CENTER" spacing="20.0" styleClass="card" maxWidth="340">
+                <GridPane hgap="14" vgap="16">
+                    <Label text="Partenza" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="form-label"/>
+                    <TextField fx:id="departureField" promptText="Città di partenza" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
-                <Label text="Destinazione:" GridPane.columnIndex="0" GridPane.rowIndex="1" styleClass="form-label"/>
-                <TextField fx:id="destinationField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                    <Label text="Destinazione" GridPane.columnIndex="0" GridPane.rowIndex="1" styleClass="form-label"/>
+                    <TextField fx:id="destinationField" promptText="Città di arrivo" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-                <Label text="Data:" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="form-label"/>
-                <TextField fx:id="dateField" promptText="gg/mm/aaaa" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                    <Label text="Data" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="form-label"/>
+                    <TextField fx:id="dateField" promptText="gg/mm/aaaa" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
-                <Label text="Posti Totali:" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="form-label"/>
-                <TextField fx:id="seatsField" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                    <Label text="Posti Totali" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="form-label"/>
+                    <TextField fx:id="seatsField" promptText="Es. 3" GridPane.columnIndex="1" GridPane.rowIndex="3" />
 
-                <Label text="Costo Base (€):" GridPane.columnIndex="0" GridPane.rowIndex="4" styleClass="form-label"/>
-                <TextField fx:id="priceField" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-            </GridPane>
-            <Button text="Conferma" styleClass="action-button" onAction="#handleSubmit" />
-            <Label fx:id="messageLabel" textFill="GREEN" />
+                    <Label text="Costo Base (€)" GridPane.columnIndex="0" GridPane.rowIndex="4" styleClass="form-label"/>
+                    <TextField fx:id="priceField" promptText="Es. 10.00" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                </GridPane>
+                <Button text="Conferma" styleClass="action-button" onAction="#handleSubmit" maxWidth="Infinity" />
+                <Label fx:id="messageLabel" styleClass="message-label" textFill="GREEN" wrapText="true" alignment="CENTER" maxWidth="Infinity" />
+            </VBox>
         </VBox>
     </center>
 </BorderPane>

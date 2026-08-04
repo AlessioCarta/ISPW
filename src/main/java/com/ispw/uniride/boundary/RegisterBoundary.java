@@ -49,7 +49,7 @@ public class RegisterBoundary {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/ispw/uniride/Login.fxml"));
             Parent root = loader.load();
             Stage stage = (Stage) messageLabel.getScene().getWindow();
-            stage.setScene(new Scene(root, 400, 300));
+            stage.setScene(new Scene(root, 420, 480));
             stage.setTitle("UniRide - Login");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore schermata Login", e);
