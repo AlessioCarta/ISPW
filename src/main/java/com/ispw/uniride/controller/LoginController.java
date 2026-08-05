@@ -38,9 +38,20 @@ public class LoginController {
 
     /**
      * Registra un nuovo utente nel sistema simulando il salvataggio sicuro (Hash fittizio per prototipo).
+     * Overload mantenuto per compatibilità (es. CLI) quando la posizione non è richiesta.
      * @throws com.ispw.uniride.exceptions.UserNotAuthorizedException se l'username è duplicato.
      */
     public void registerUser(String username, String rawPassword, String fullName) throws com.ispw.uniride.exceptions.UserNotAuthorizedException {
+        registerUser(username, rawPassword, fullName, null);
+    }
+
+    /**
+     * Registra un nuovo utente nel sistema simulando il salvataggio sicuro (Hash fittizio per prototipo),
+     * memorizzando anche il comune/paese di residenza dichiarato per i suggerimenti di vicinanza.
+     * @param homeLocation il comune dichiarato dallo studente, o {@code null}/vuoto se non fornito.
+     * @throws com.ispw.uniride.exceptions.UserNotAuthorizedException se l'username è duplicato.
+     */
+    public void registerUser(String username, String rawPassword, String fullName, String homeLocation) throws com.ispw.uniride.exceptions.UserNotAuthorizedException {
         StudentDAO studentDAO = DAOFactory.getInstance().getStudentDAO();
         if (studentDAO.getStudentByUsername(username) != null) {
             throw new com.ispw.uniride.exceptions.UserNotAuthorizedException("Username già in uso!");
@@ -49,7 +60,8 @@ public class LoginController {
         // Mock Hashing per requisiti di sicurezza simulati
         String hashedPassword = "[HASHED]" + rawPassword;
 
-        Student newStudent = new Student(username, hashedPassword, fullName);
+        String normalizedLocation = (homeLocation == null || homeLocation.trim().isEmpty()) ? null : homeLocation.trim();
+        Student newStudent = new Student(username, hashedPassword, fullName, normalizedLocation);
         studentDAO.saveStudent(newStudent);
     }
 

@@ -17,6 +17,8 @@
             <TextField fx:id="fullNameField" promptText="Nome e Cognome" />
             <TextField fx:id="usernameField" promptText="Username" />
             <PasswordField fx:id="passwordField" promptText="Password" />
+            <ComboBox fx:id="homeLocationField" editable="true" promptText="Il tuo comune/paese (facoltativo)" maxWidth="Infinity" />
+            <Label text="Ci serve per suggerirti le tratte e l'università più vicine a te." styleClass="section-hint" wrapText="true" />
             <Button text="Conferma Registrazione" onAction="#handleRegisterSubmit" maxWidth="Infinity" styleClass="action-button" />
             <Button text="Indietro" onAction="#handleBack" maxWidth="Infinity" styleClass="secondary-button" />
             <Label fx:id="messageLabel" styleClass="message-label" textFill="RED" wrapText="true" alignment="CENTER" maxWidth="Infinity" />

@@ -168,4 +168,13 @@ public class FsRideDAO implements RideDAO {
         }
         return result;
     }
+
+    @Override
+    public void deleteRide(String id) {
+        refreshCache();
+        synchronized (LOCK) {
+            cache.remove(id);
+            rewriteFileFromCache();
+        }
+    }
 }

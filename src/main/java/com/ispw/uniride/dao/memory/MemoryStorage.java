@@ -20,9 +20,10 @@ public class MemoryStorage {
     private MemoryStorage() {
         studentsMap = new HashMap<>();
         ridesMap = new HashMap<>();
-        // Preload some mock data
-        studentsMap.put("mario.rossi", new Student("mario.rossi", "[HASHED]password", "Mario Rossi"));
-        studentsMap.put("luigi.verdi", new Student("luigi.verdi", "[HASHED]password", "Luigi Verdi"));
+        // Preload some mock data (con posizione dichiarata di esempio, per mostrare da subito
+        // i suggerimenti di vicinanza in Offri/Cerca Passaggio senza dover registrare un nuovo utente)
+        studentsMap.put("mario.rossi", new Student("mario.rossi", "[HASHED]password", "Mario Rossi", "Palestrina"));
+        studentsMap.put("luigi.verdi", new Student("luigi.verdi", "[HASHED]password", "Luigi Verdi", "Milano"));
     }
 
     public static synchronized MemoryStorage getInstance() {

@@ -1,8 +1,11 @@
 package com.ispw.uniride.boundary;
 
 import com.ispw.uniride.bean.RideBean;
-import com.ispw.uniride.config.CityCatalog;
+import com.ispw.uniride.config.LocationCatalog;
+import com.ispw.uniride.config.LocationInfo;
 import com.ispw.uniride.controller.SearchRideController;
+import com.ispw.uniride.controller.Session;
+import com.ispw.uniride.model.Student;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -30,9 +33,26 @@ public class SearchRideBoundary {
 
     @FXML
     public void initialize() {
-        // Popola le due ComboBox con le città note, restando comunque editabili per input libero
-        departureField.setItems(FXCollections.observableArrayList(CityCatalog.getCities()));
-        destinationField.setItems(FXCollections.observableArrayList(CityCatalog.getCities()));
+        // Se lo studente ha dichiarato una posizione riconosciuta, mostra prima le località più
+        // vicine a lui e preseleziona partenza/destinazione plausibili (paese di residenza e
+        // ateneo più vicino), lasciando comunque piena libertà di cercare qualunque altra tratta.
+        Student loggedUser = Session.getInstance().getLoggedUser();
+        LocationInfo home = loggedUser != null ? LocationCatalog.findByName(loggedUser.getHomeLocation()) : null;
+
+        List<String> locationNames = home != null
+                ? LocationCatalog.getNamesSortedByDistanceFrom(home)
+                : LocationCatalog.getAllNames();
+
+        departureField.setItems(FXCollections.observableArrayList(locationNames));
+        destinationField.setItems(FXCollections.observableArrayList(locationNames));
+
+        if (home != null) {
+            departureField.setValue(home.getName());
+            String nearestUniversity = LocationCatalog.getNearestUniversityCity(home);
+            if (nearestUniversity != null) {
+                destinationField.setValue(nearestUniversity);
+            }
+        }
 
         resultsList.setCellFactory(param -> new ListCell<RideBean>() {
             @Override

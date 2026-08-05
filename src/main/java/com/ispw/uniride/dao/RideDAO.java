@@ -51,4 +51,11 @@ public interface RideDAO {
      * @param username lo username dell'utente.
      */
     List<Ride> getRidesByPassenger(String username);
+
+    /**
+     * Elimina definitivamente un passaggio dal livello di persistenza (usato quando il conducente
+     * annulla una corsa offerta senza passeggeri prenotati).
+     * @param id identificativo univoco del passaggio da rimuovere.
+     */
+    void deleteRide(String id);
 }

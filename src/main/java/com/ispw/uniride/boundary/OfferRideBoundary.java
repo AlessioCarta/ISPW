@@ -1,8 +1,11 @@
 package com.ispw.uniride.boundary;
 
 import com.ispw.uniride.bean.RideBean;
-import com.ispw.uniride.config.CityCatalog;
+import com.ispw.uniride.config.LocationCatalog;
+import com.ispw.uniride.config.LocationInfo;
 import com.ispw.uniride.controller.OfferRideController;
+import com.ispw.uniride.controller.Session;
+import com.ispw.uniride.model.Student;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -19,6 +22,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 public class OfferRideBoundary {
 
@@ -35,13 +39,32 @@ public class OfferRideBoundary {
     private OfferRideController offerRideController = new OfferRideController();
 
     /**
-     * Popola i menu a tendina delle città e il contatore dei posti al caricamento della vista,
-     * così l'utente può selezionare rapidamente i valori invece di digitarli a mano.
+     * Popola i menu a tendina delle località e il contatore dei posti al caricamento della vista.
+     * Se lo studente loggato ha dichiarato una posizione riconosciuta dal catalogo, le località
+     * vengono ordinate dalla più vicina alla più lontana e la partenza/destinazione predefinite
+     * vengono preimpostate (partenza = paese dello studente, destinazione = ateneo più vicino),
+     * restando comunque liberamente modificabili per cercare qualunque altra tratta.
      */
     @FXML
     public void initialize() {
-        departureField.setItems(FXCollections.observableArrayList(CityCatalog.getCities()));
-        destinationField.setItems(FXCollections.observableArrayList(CityCatalog.getCities()));
+        Student loggedUser = Session.getInstance().getLoggedUser();
+        LocationInfo home = loggedUser != null ? LocationCatalog.findByName(loggedUser.getHomeLocation()) : null;
+
+        List<String> locationNames = home != null
+                ? LocationCatalog.getNamesSortedByDistanceFrom(home)
+                : LocationCatalog.getAllNames();
+
+        departureField.setItems(FXCollections.observableArrayList(locationNames));
+        destinationField.setItems(FXCollections.observableArrayList(locationNames));
+
+        if (home != null) {
+            departureField.setValue(home.getName());
+            String nearestUniversity = LocationCatalog.getNearestUniversityCity(home);
+            if (nearestUniversity != null) {
+                destinationField.setValue(nearestUniversity);
+            }
+        }
+
         seatsField.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 8, 3));
     }
 

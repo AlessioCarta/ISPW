@@ -47,7 +47,10 @@ public class FsStudentDAO implements StudentDAO {
                         while ((line = br.readLine()) != null) {
                             String[] parts = line.split(",");
                             if (parts.length >= 3) {
-                                cache.put(parts[0], new Student(parts[0], parts[1], parts[2]));
+                                // Il 4° campo (posizione dichiarata) è opzionale: righe CSV storiche
+                                // scritte prima di questa funzionalità restano leggibili senza errori.
+                                String homeLocation = parts.length >= 4 && !parts[3].trim().isEmpty() ? parts[3] : null;
+                                cache.put(parts[0], new Student(parts[0], parts[1], parts[2], homeLocation));
                             }
                         }
                         lastModified = file.lastModified();
@@ -63,7 +66,8 @@ public class FsStudentDAO implements StudentDAO {
     public void saveStudent(Student student) {
         synchronized (LOCK) {
             try (PrintWriter pw = new PrintWriter(new FileWriter(FILE_PATH, true))) {
-                pw.println(student.getUsername() + "," + student.getPassword() + "," + student.getFullName());
+                String homeLocation = student.getHomeLocation() != null ? student.getHomeLocation() : "";
+                pw.println(student.getUsername() + "," + student.getPassword() + "," + student.getFullName() + "," + homeLocation);
                 if (cache != null) {
                     cache.put(student.getUsername(), student);
                 }

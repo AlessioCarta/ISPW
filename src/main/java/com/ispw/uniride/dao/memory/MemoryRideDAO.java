@@ -67,4 +67,9 @@ public class MemoryRideDAO implements RideDAO {
         }
         return result;
     }
+
+    @Override
+    public void deleteRide(String id) {
+        storage.getRidesMap().remove(id);
+    }
 }

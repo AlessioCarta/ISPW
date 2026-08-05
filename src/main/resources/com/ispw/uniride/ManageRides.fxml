@@ -18,9 +18,11 @@
                 <tabs>
                     <Tab text="🚙  Corse Offerte (Guidatore)">
                         <content>
-                            <VBox spacing="10">
+                            <VBox spacing="14">
                                 <padding><Insets top="14" right="10" bottom="10" left="10"/></padding>
                                 <ListView fx:id="offeredList" VBox.vgrow="ALWAYS" />
+                                <Button text="Annulla Corsa Offerta" onAction="#handleCancelOfferedRide" styleClass="danger-button" />
+                                <Label text="Puoi annullare solo le corse senza passeggeri già prenotati." styleClass="section-hint" wrapText="true" />
                             </VBox>
                         </content>
                     </Tab>

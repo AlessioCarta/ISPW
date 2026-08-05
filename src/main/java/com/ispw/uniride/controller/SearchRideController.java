@@ -97,6 +97,11 @@ public class SearchRideController {
             throw new RideNotFoundException("Passaggio non trovato! Forse è già stato eliminato.");
         }
 
+        // Regola di dominio: il conducente non può prenotare un posto sul passaggio che lui stesso offre.
+        if (ride.getDriverUsername().equals(loggedUser.getUsername())) {
+            throw new RideActionException("Non puoi prenotare un posto sul passaggio che hai offerto tu stesso.");
+        }
+
         if (ride.getPassengerUsernames().contains(loggedUser.getUsername())) {
             throw new RideActionException("Sei già prenotato per questa corsa.");
         }

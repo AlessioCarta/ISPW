@@ -82,6 +82,26 @@ public class ManageRidesBoundary {
     }
 
     @FXML
+    public void handleCancelOfferedRide(ActionEvent event) {
+        RideBean selected = offeredList.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            messageLabel.setText("Seleziona una corsa offerta dalla lista!");
+            messageLabel.setTextFill(javafx.scene.paint.Color.RED);
+            return;
+        }
+
+        try {
+            controller.cancelOfferedRide(selected.getId());
+            messageLabel.setText("Corsa annullata con successo.");
+            messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
+            refreshData(); // ricarica le liste
+        } catch (Exception e) {
+            messageLabel.setText("Errore: " + e.getMessage());
+            messageLabel.setTextFill(javafx.scene.paint.Color.RED);
+        }
+    }
+
+    @FXML
     public void handleBack(ActionEvent event) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/ispw/uniride/StudentDashboard.fxml"));
