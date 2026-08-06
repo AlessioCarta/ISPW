@@ -25,7 +25,24 @@ public interface RideState {
 
     /**
      * Metodo testuale utile alle interfacce utente per renderizzare univocamente lo stato corrente.
-     * @return una sigla (es. "AVAILABLE" o "FULL")
+     * @return una sigla (es. "AVAILABLE", "FULL", "COMPLETED" o "CANCELLED")
      */
     String getStatus();
+
+    /**
+     * Il guidatore segna il passaggio come concluso (viaggio avvenuto). Consentito solo dagli
+     * stati attivi ({@code AVAILABLE}/{@code FULL}), mai da uno stato già terminale.
+     * @param ride il riferimento all'oggetto di contesto.
+     * @return true se la transizione verso {@code CompletedState} è avvenuta.
+     */
+    boolean complete(Ride ride);
+
+    /**
+     * Il guidatore annulla il passaggio. Consentito anche se ci sono già passeggeri prenotati
+     * (a differenza della cancellazione/eliminazione fisica del record), mai da uno stato
+     * già terminale. I passeggeri già a bordo vengono notificati tramite il Pattern Observer.
+     * @param ride il riferimento all'oggetto di contesto.
+     * @return true se la transizione verso {@code CancelledState} è avvenuta.
+     */
+    boolean cancel(Ride ride);
 }

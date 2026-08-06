@@ -1,5 +1,6 @@
 package com.ispw.uniride.dao.memory;
 
+import com.ispw.uniride.model.Booking;
 import com.ispw.uniride.model.Ride;
 import com.ispw.uniride.model.Student;
 
@@ -16,10 +17,12 @@ public class MemoryStorage {
 
     private Map<String, Student> studentsMap;
     private Map<String, Ride> ridesMap;
+    private Map<String, Booking> bookingsMap;
 
     private MemoryStorage() {
         studentsMap = new HashMap<>();
         ridesMap = new HashMap<>();
+        bookingsMap = new HashMap<>();
         // Preload some mock data (con posizione dichiarata di esempio, per mostrare da subito
         // i suggerimenti di vicinanza in Offri/Cerca Passaggio senza dover registrare un nuovo utente)
         studentsMap.put("mario.rossi", new Student("mario.rossi", "[HASHED]password", "Mario Rossi", "Palestrina"));
@@ -36,4 +39,6 @@ public class MemoryStorage {
     public Map<String, Student> getStudentsMap() { return studentsMap; }
     public Map<String, Ride> getRidesMap() { return ridesMap; }
     public List<Ride> getRidesList() { return new ArrayList<>(ridesMap.values()); }
+    public Map<String, Booking> getBookingsMap() { return bookingsMap; }
+    public List<Booking> getBookingsList() { return new ArrayList<>(bookingsMap.values()); }
 }

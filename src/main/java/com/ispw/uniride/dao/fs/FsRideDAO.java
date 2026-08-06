@@ -3,6 +3,8 @@ package com.ispw.uniride.dao.fs;
 import com.ispw.uniride.dao.RideDAO;
 import com.ispw.uniride.model.Ride;
 import com.ispw.uniride.model.state.AvailableState;
+import com.ispw.uniride.model.state.CancelledState;
+import com.ispw.uniride.model.state.CompletedState;
 import com.ispw.uniride.model.state.FullState;
 import com.ispw.uniride.utils.LoggerCustom;
 
@@ -51,10 +53,18 @@ public class FsRideDAO implements RideDAO {
                                 // Override generated ID and state
                                 ride.setId(parts[0]);
                                 ride.setAvailableSeats(Integer.parseInt(parts[6]));
-                                if ("AVAILABLE".equals(parts[8])) {
-                                    ride.setState(new AvailableState());
-                                } else {
-                                    ride.setState(new FullState());
+                                switch (parts[8]) {
+                                    case "AVAILABLE":
+                                        ride.setState(new AvailableState());
+                                        break;
+                                    case "COMPLETED":
+                                        ride.setState(new CompletedState());
+                                        break;
+                                    case "CANCELLED":
+                                        ride.setState(new CancelledState());
+                                        break;
+                                    default:
+                                        ride.setState(new FullState());
                                 }
                                 // Parse optional passengers
                                 if (parts.length > 9) {

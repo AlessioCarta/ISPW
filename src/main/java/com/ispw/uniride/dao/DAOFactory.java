@@ -43,4 +43,9 @@ public abstract class DAOFactory {
      * @return Il componente DAO di famiglia Studenti.
      */
     public abstract StudentDAO getStudentDAO();
+
+    /**
+     * @return Il componente DAO di famiglia Prenotazioni (stato di approvazione delle richieste).
+     */
+    public abstract BookingDAO getBookingDAO();
 }

@@ -1,5 +1,6 @@
 package com.ispw.uniride.boundary;
 
+import com.ispw.uniride.bean.BookingBean;
 import com.ispw.uniride.bean.RideBean;
 import com.ispw.uniride.controller.ManageRidesController;
 
@@ -24,13 +25,13 @@ public class ManageRidesCLI {
             }
 
             System.out.println("\n[PRENOTAZIONI - Come Passeggero]");
-            List<RideBean> booked = controller.getMyBookedRides();
+            List<BookingBean> booked = controller.getMyBookedRides();
             if (booked.isEmpty()) System.out.println("Nessuna prenotazione attiva.");
             else {
                 for (int i = 0; i < booked.size(); i++) {
-                    RideBean r = booked.get(i);
+                    BookingBean b = booked.get(i);
                     System.out.printf("%d. [%s] Guidatore: %s | %s -> %s (%s) [%s]\n",
-                            i+1, r.getId(), r.getDriver(), r.getDeparture(), r.getDestination(), r.getDate(), r.getStatus());
+                            i+1, b.getRideId(), b.getCounterpartName(), b.getDeparture(), b.getDestination(), b.getDate(), b.getState());
                 }
             }
 
@@ -40,8 +41,8 @@ public class ManageRidesCLI {
                 scanner.nextLine();
 
                 if (choice > 0 && choice <= booked.size()) {
-                    RideBean selected = booked.get(choice - 1);
-                    controller.cancelBooking(selected.getId());
+                    BookingBean selected = booked.get(choice - 1);
+                    controller.cancelBooking(selected.getRideId());
                     System.out.println("Prenotazione annullata con successo!");
                 }
             } else {

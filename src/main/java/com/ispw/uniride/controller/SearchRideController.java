@@ -2,11 +2,13 @@ package com.ispw.uniride.controller;
 
 import com.ispw.uniride.bean.RideBean;
 import com.ispw.uniride.config.Config;
+import com.ispw.uniride.dao.BookingDAO;
 import com.ispw.uniride.dao.DAOFactory;
 import com.ispw.uniride.dao.RideDAO;
 import com.ispw.uniride.exceptions.RideActionException;
 import com.ispw.uniride.exceptions.RideNotFoundException;
 import com.ispw.uniride.exceptions.UserNotAuthorizedException;
+import com.ispw.uniride.model.Booking;
 import com.ispw.uniride.model.Ride;
 import com.ispw.uniride.model.Student;
 import com.ispw.uniride.model.strategy.CostStrategy;
@@ -73,13 +75,16 @@ public class SearchRideController {
     }
 
     /**
-     * Operazione transazionale successiva alla "Search". Modella la richiesta concreta di aggiungersi a un viaggio.
+     * Operazione transazionale successiva alla "Search". Modella la richiesta concreta di aggiungersi a un viaggio:
+     * il posto viene riservato subito (per evitare overbooking durante l'attesa), ma la richiesta resta in stato
+     * {@code REQUESTED} finché il guidatore non la conferma o la rifiuta esplicitamente dalla propria dashboard
+     * (vedi {@code ManageRidesController.confirmBooking}/{@code rejectBooking}).
      * Applica internamente sia il Design Pattern State che il Design Pattern Observer invocando metodi della Entity `Ride`.
      * @param rideId ID hash ricavato dal bean visualizzato e su cui l'utente ha manifestato intenzione.
-     * @return true se il booking (la scalata del posto a sedere in State Pattern) è valida, false in caso concorrente d'esaurimento slot.
+     * @return true se la richiesta (la scalata del posto a sedere in State Pattern) è valida, false in caso concorrente d'esaurimento slot.
      * @throws UserNotAuthorizedException se cade l'autenticazione utente.
      * @throws RideNotFoundException se l'ID in query non mappa alcuna entità.
-     * @throws RideActionException se non è possibile ultimare logicamente lo stato o l'utente è già bordo.
+     * @throws RideActionException se non è possibile ultimare logicamente lo stato o l'utente è già a bordo.
      */
     public boolean bookRide(String rideId) throws UserNotAuthorizedException, RideNotFoundException, RideActionException {
 
@@ -103,7 +108,7 @@ public class SearchRideController {
         }
 
         if (ride.getPassengerUsernames().contains(loggedUser.getUsername())) {
-            throw new RideActionException("Sei già prenotato per questa corsa.");
+            throw new RideActionException("Hai già una richiesta attiva per questa corsa.");
         }
 
         // Esegue fisicamente la scalata. Notare il passaggio della funzione anonima Lambda
@@ -116,6 +121,12 @@ public class SearchRideController {
         // Solo in caso di risposta logica positiva da parte dell'Entità e del suo Pattern State, viene concretizzato l'Update sul database Storage.
         if (success) {
             rideDAO.updateRide(ride);
+
+            // Il posto è riservato, ma la richiesta resta "in sospeso" fino alla decisione del guidatore.
+            Booking booking = new Booking(ride.getId(), loggedUser.getUsername());
+            BookingDAO bookingDAO = DAOFactory.getInstance().getBookingDAO();
+            bookingDAO.saveBooking(booking);
+
             return true;
         }
 

@@ -109,7 +109,7 @@ public class SearchRideBoundary {
         try {
             boolean success = searchRideController.bookRide(selected.getId());
             if (success) {
-                messageLabel.setText("Prenotazione confermata!");
+                messageLabel.setText("Richiesta inviata! In attesa di conferma del guidatore.");
                 messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
                 // Refresh list
                 handleSearch(null);

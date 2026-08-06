@@ -14,6 +14,13 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javafx.version>21.0.5</javafx.version>
         <junit.version>5.9.2</junit.version>
+
+        <!-- Coordinate del progetto su sonarcloud.io: sostituisci con i valori reali dopo aver
+             collegato il repository (Settings -> Import Project) sul tuo account SonarCloud. -->
+        <sonar.projectKey>AlessioCarta_ISPW</sonar.projectKey>
+        <sonar.organization>alessiocarta</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
     <dependencies>
@@ -74,6 +81,33 @@
                 <configuration>
                     <mainClass>com.ispw.uniride.Launcher</mainClass>
                 </configuration>
+            </plugin>
+            <!-- JaCoCo: genera il report di code coverage letto da SonarCloud (soglia minima 60%) -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.15</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Sonar Maven Plugin: esegue l'analisi statica e la invia a SonarCloud (mvn sonar:sonar) -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>3.11.0.3922</version>
             </plugin>
         </plugins>
     </build>

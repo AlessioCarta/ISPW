@@ -132,6 +132,28 @@ public class Ride implements Subject {
     }
 
     /**
+     * Il guidatore segna il passaggio come concluso (viaggio avvenuto). Delega la validità
+     * della transizione allo State corrente: non è ammesso da uno stato già terminale.
+     * @return true se la transizione è avvenuta.
+     */
+    public boolean complete() {
+        return state.complete(this);
+    }
+
+    /**
+     * Il guidatore annulla il passaggio, anche se ci sono già passeggeri prenotati.
+     * Se l'annullamento va a buon fine, notifica tutti i passeggeri iscritti tramite l'Observer.
+     * @return true se la transizione è avvenuta.
+     */
+    public boolean cancel() {
+        boolean success = state.cancel(this);
+        if (success && !passengerUsernames.isEmpty()) {
+            notifyObservers("Il guidatore ha annullato il passaggio da " + departure + " a " + destination);
+        }
+        return success;
+    }
+
+    /**
      * Pattern Observer: Aggiunge un abbonato/sottoscrittore.
      * @param observer l'entità che ha un metodo update da chiamare.
      */

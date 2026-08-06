@@ -1,5 +1,6 @@
 package com.ispw.uniride.dao.fs;
 
+import com.ispw.uniride.dao.BookingDAO;
 import com.ispw.uniride.dao.DAOFactory;
 import com.ispw.uniride.dao.RideDAO;
 import com.ispw.uniride.dao.StudentDAO;
@@ -16,5 +17,10 @@ public class FsDAOFactory extends DAOFactory {
     @Override
     public StudentDAO getStudentDAO() {
         return new FsStudentDAO();
+    }
+
+    @Override
+    public BookingDAO getBookingDAO() {
+        return new FsBookingDAO();
     }
 }

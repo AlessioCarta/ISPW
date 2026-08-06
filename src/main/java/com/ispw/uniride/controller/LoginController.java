@@ -57,6 +57,10 @@ public class LoginController {
             throw new com.ispw.uniride.exceptions.UserNotAuthorizedException("Username già in uso!");
         }
 
+        if (rawPassword == null || rawPassword.length() < 6) {
+            throw new com.ispw.uniride.exceptions.UserNotAuthorizedException("La password deve essere di almeno 6 caratteri.");
+        }
+
         // Mock Hashing per requisiti di sicurezza simulati
         String hashedPassword = "[HASHED]" + rawPassword;
 

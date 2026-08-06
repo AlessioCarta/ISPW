@@ -41,4 +41,23 @@ public class FullState implements RideState {
     public String getStatus() {
         return "FULL";
     }
+
+    /**
+     * Anche a pieno carico si può segnare il viaggio come concluso.
+     */
+    @Override
+    public boolean complete(Ride ride) {
+        ride.setState(new CompletedState());
+        return true;
+    }
+
+    /**
+     * Anche a pieno carico si può annullare il viaggio: i passeggeri già a bordo vengono
+     * notificati a cura del chiamante (Ride.cancel()) tramite il Pattern Observer.
+     */
+    @Override
+    public boolean cancel(Ride ride) {
+        ride.setState(new CancelledState());
+        return true;
+    }
 }

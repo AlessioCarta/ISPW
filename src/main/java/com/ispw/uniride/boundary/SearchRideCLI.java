@@ -39,7 +39,7 @@ public class SearchRideCLI {
             try {
                 boolean booked = searchRideController.bookRide(selected.getId());
                 if (booked) {
-                    System.out.println("Prenotazione confermata!");
+                    System.out.println("Richiesta inviata! In attesa di conferma del guidatore.");
                 } else {
                     System.out.println("Impossibile prenotare (posti esauriti).");
                 }

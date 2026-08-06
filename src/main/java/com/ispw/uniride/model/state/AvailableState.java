@@ -46,4 +46,22 @@ public class AvailableState implements RideState {
     public String getStatus() {
         return "AVAILABLE";
     }
+
+    /**
+     * Da disponibile si può sempre segnare il viaggio come concluso.
+     */
+    @Override
+    public boolean complete(Ride ride) {
+        ride.setState(new CompletedState());
+        return true;
+    }
+
+    /**
+     * Da disponibile si può sempre annullare il viaggio (anche con passeggeri già a bordo).
+     */
+    @Override
+    public boolean cancel(Ride ride) {
+        ride.setState(new CancelledState());
+        return true;
+    }
 }
