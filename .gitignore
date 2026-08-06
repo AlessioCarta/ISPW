@@ -10,6 +10,10 @@ students.csv
 rides.csv
 bookings.csv
 
+# File generati dal database H2 embedded (Config.DBType.SQL) o dai relativi test
+uniride_db.mv.db
+uniride_db.trace.db
+
 # Materiale di studio personale per l'esame (relazioni di altri studenti, appunti, ecc.):
 # non fa parte del progetto e non va ridistribuito in un repository pubblico.
 docs/Consigli_per_Esame.pdf

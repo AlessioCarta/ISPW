@@ -14,6 +14,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javafx.version>21.0.5</javafx.version>
         <junit.version>5.9.2</junit.version>
+        <h2.version>2.4.240</h2.version>
 
         <!-- Coordinate del progetto su sonarcloud.io (repository collegato). -->
         <sonar.projectKey>AlessioCarta_ISPW</sonar.projectKey>
@@ -43,6 +44,14 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx.version}</version>
+        </dependency>
+
+        <!-- H2: database relazionale embedded (nessun server esterno da installare/configurare),
+             usato dalla famiglia DAO SqlDAOFactory via JDBC standard. -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
         </dependency>
 
         <!-- JUnit 5 Dependencies -->

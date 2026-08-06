@@ -1,31 +1,33 @@
 package com.ispw.uniride;
 
+import com.ispw.uniride.dao.sql.JdbcBookingDAO;
+import com.ispw.uniride.dao.sql.JdbcRideDAO;
+import com.ispw.uniride.dao.sql.JdbcStudentDAO;
 import com.ispw.uniride.dao.sql.SqlDAOFactory;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 /**
- * Suite di Unit Testing (JUnit 5) per {@code SqlDAOFactory}: essendo solo uno scheletro non
- * ancora collegato a un database reale, verifica che ogni metodo dichiari esplicitamente
- * l'assenza del collegamento invece di fallire silenziosamente o restituire {@code null}.
+ * Suite di Unit Testing (JUnit 5) per {@code SqlDAOFactory}: verifica che la famiglia di DAO
+ * restituita sia effettivamente quella collegata al database relazionale (H2 via JDBC).
  */
 class SqlDAOFactoryTest {
 
     private final SqlDAOFactory factory = new SqlDAOFactory();
 
     @Test
-    void testGetRideDAOThrowsUnsupported() {
-        assertThrows(UnsupportedOperationException.class, factory::getRideDAO);
+    void testGetRideDAOReturnsJdbcImplementation() {
+        assertInstanceOf(JdbcRideDAO.class, factory.getRideDAO());
     }
 
     @Test
-    void testGetStudentDAOThrowsUnsupported() {
-        assertThrows(UnsupportedOperationException.class, factory::getStudentDAO);
+    void testGetStudentDAOReturnsJdbcImplementation() {
+        assertInstanceOf(JdbcStudentDAO.class, factory.getStudentDAO());
     }
 
     @Test
-    void testGetBookingDAOThrowsUnsupported() {
-        assertThrows(UnsupportedOperationException.class, factory::getBookingDAO);
+    void testGetBookingDAOReturnsJdbcImplementation() {
+        assertInstanceOf(JdbcBookingDAO.class, factory.getBookingDAO());
     }
 }

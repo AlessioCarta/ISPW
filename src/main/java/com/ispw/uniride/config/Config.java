@@ -23,7 +23,14 @@ public class Config {
          * Modalità concepita con la sincronizzazione thread-safe tramite Lock e Caching per evitare
          * continui accessi bloccanti su disco.
          */
-        FILESYSTEM
+        FILESYSTEM,
+
+        /**
+         * Database relazionale vero e proprio (H2 embedded, via JDBC standard). Nessun server
+         * esterno da installare: i dati vivono in un file locale (uniride_db.mv.db) con uno
+         * schema di tabelle reale (inclusa una relazione molti-a-molti per i passeggeri).
+         */
+        SQL
     }
 
     /**

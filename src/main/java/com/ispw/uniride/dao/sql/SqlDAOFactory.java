@@ -6,22 +6,23 @@ import com.ispw.uniride.dao.RideDAO;
 import com.ispw.uniride.dao.StudentDAO;
 
 /**
- * Concrete Factory che verrebbe configurata se il sistema scalasse per impiegare MySQL/PostgreSQL.
- * Attualmente definita a scopo prototipale per rispettare l'Abstract Factory Pattern.
+ * Concrete Factory della famiglia di persistenza su database relazionale: usa H2 in modalità
+ * embedded (file locale, nessun server esterno da installare/configurare) tramite JDBC standard.
+ * Selezionabile impostando {@code Config.PERSISTENCE_TYPE = DBType.SQL}.
  */
 public class SqlDAOFactory extends DAOFactory {
     @Override
     public RideDAO getRideDAO() {
-        throw new UnsupportedOperationException("JDBC MySQL Database not linked yet.");
+        return new JdbcRideDAO();
     }
 
     @Override
     public StudentDAO getStudentDAO() {
-        throw new UnsupportedOperationException("JDBC MySQL Database not linked yet.");
+        return new JdbcStudentDAO();
     }
 
     @Override
     public BookingDAO getBookingDAO() {
-        throw new UnsupportedOperationException("JDBC MySQL Database not linked yet.");
+        return new JdbcBookingDAO();
     }
 }

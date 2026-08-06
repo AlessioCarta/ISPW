@@ -49,16 +49,20 @@ Altri package di supporto:
 
 ## 3. Persistenza dei Dati
 
-L'applicazione supporta una persistenza **"duale"**, selezionabile cambiando la costante `PERSISTENCE_TYPE` in `com.ispw.uniride.config.Config`:
+L'applicazione supporta una persistenza **"tripla"**, selezionabile cambiando la costante `PERSISTENCE_TYPE` in `com.ispw.uniride.config.Config`:
 
 1. **In-Memory Storage (`DBType.MEMORY`, default):**
    * Sfrutta strutture dati RAM locali (`HashMap`) ottime per sviluppo rapido e dimostrazioni.
    * Precarica due utenti demo (`mario.rossi` / `luigi.verdi`, password `password`) con una posizione di esempio già impostata, per mostrare da subito i suggerimenti di vicinanza.
 2. **File System Storage (`DBType.FILESYSTEM`):**
-   * Salva i dati su disco all'interno della root del progetto (`students.csv`, `rides.csv`).
+   * Salva i dati su disco all'interno della root del progetto (`students.csv`, `rides.csv`, `bookings.csv`).
    * Utilizza **lock espliciti** per thread-safety in concorrenza e un **sistema di caching in memoria** sincronizzato con i timestamp dei file.
+3. **Database Relazionale (`DBType.SQL`):**
+   * Usa **H2** in modalità embedded (file locale `uniride_db.mv.db`, nessun server esterno da installare/configurare) tramite **JDBC standard**.
+   * Schema relazionale reale, incluso una tabella di collegamento `ride_passengers` per la relazione molti-a-molti Ride↔passeggero (a differenza della variante CSV, che appiattisce la lista in colonna).
+   * Le query di upsert usano `MERGE INTO ... KEY (...)`, sintassi H2 per l'insert-or-update.
 
-Un terzo ramo (`SqlDAOFactory`) è predisposto come scheletro per un'eventuale integrazione JDBC futura, ma non è ancora collegato (lancia `UnsupportedOperationException`).
+In tutti e tre i casi la stessa interfaccia (`RideDAO`, `StudentDAO`, `BookingDAO`) è implementata in modo intercambiabile: cambiare persistenza dell'intera applicazione richiede di modificare **una sola costante**, senza toccare Controller o Model (Abstract Factory Pattern, vedi sopra).
 
 ## 4. Interfaccia Grafica (JavaFX)
 
