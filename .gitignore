@@ -4,3 +4,8 @@ target/
 *.iml
 .DS_Store
 **/.DS_Store
+
+# File generati dai DAO su file system (Config.DBType.FILESYSTEM) o dai relativi test
+students.csv
+rides.csv
+bookings.csv
