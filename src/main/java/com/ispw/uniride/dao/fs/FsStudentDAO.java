@@ -12,8 +12,8 @@ public class FsStudentDAO implements StudentDAO {
     private static final String FILE_PATH = "students.csv";
     private static final Object LOCK = new Object();
 
-    // Numero minimo di campi attesi su una riga CSV valida (username, password, fullName);
-    // il 4° campo (homeLocation) è facoltativo per retro-compatibilità.
+    // Numero minimo di campi attesi su una riga CSV valida: username - password - fullName.
+    // Il quarto campo (homeLocation) è facoltativo, per retro-compatibilità.
     private static final int MIN_CSV_FIELDS = 3;
 
     // Static Cache
@@ -60,7 +60,7 @@ public class FsStudentDAO implements StudentDAO {
      * Estratta da {@code refreshCache} per mantenere la complessità cognitiva del metodo
      * chiamante entro la soglia consentita.
      */
-    private void loadCacheFromFile(File file) {
+    private static void loadCacheFromFile(File file) {
         Map<String, Student> loaded = new HashMap<>();
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
@@ -82,7 +82,7 @@ public class FsStudentDAO implements StudentDAO {
      * Converte una riga CSV (username, password, fullName, [homeLocation]) in uno {@link Student}.
      * @return lo Student ricostruito, oppure {@code null} se la riga è malformata.
      */
-    private Student parseStudentFromCsvLine(String line) {
+    private static Student parseStudentFromCsvLine(String line) {
         String[] parts = line.split(",");
         if (parts.length < MIN_CSV_FIELDS) {
             return null;

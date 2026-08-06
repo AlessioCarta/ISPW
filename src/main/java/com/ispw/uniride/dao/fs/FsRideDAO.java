@@ -61,7 +61,7 @@ public class FsRideDAO implements RideDAO {
      * Estratta da {@code refreshCache} per mantenere la complessità cognitiva di ciascun
      * metodo entro la soglia consentita.
      */
-    private void loadCacheFromFile(File file) {
+    private static void loadCacheFromFile(File file) {
         Map<String, Ride> loaded = new HashMap<>();
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
@@ -84,7 +84,7 @@ public class FsRideDAO implements RideDAO {
      * availableSeats, basePrice, status, [passengerUsernames...]) in un'istanza di {@link Ride}.
      * @return il Ride ricostruito, oppure {@code null} se la riga è malformata.
      */
-    private Ride parseRideFromCsvLine(String line) {
+    private static Ride parseRideFromCsvLine(String line) {
         String[] parts = line.split(",");
         if (parts.length < MIN_CSV_FIELDS) {
             return null;
@@ -106,7 +106,7 @@ public class FsRideDAO implements RideDAO {
     /**
      * Ricostruisce l'istanza di {@link RideState} concreta a partire dalla sigla testuale persistita.
      */
-    private RideState parseState(String status) {
+    private static RideState parseState(String status) {
         switch (status) {
             case "AVAILABLE":
                 return new AvailableState();

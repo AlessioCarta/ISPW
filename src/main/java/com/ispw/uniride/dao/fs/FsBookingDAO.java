@@ -53,7 +53,7 @@ public class FsBookingDAO implements BookingDAO {
     /**
      * Legge integralmente bookings.csv e ricostruisce la cache in memoria, riga per riga.
      */
-    private void loadCacheFromFile(File file) {
+    private static void loadCacheFromFile(File file) {
         Map<String, Booking> loaded = new HashMap<>();
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
@@ -75,7 +75,7 @@ public class FsBookingDAO implements BookingDAO {
      * Converte una riga CSV (id, rideId, passengerUsername, state) in un'istanza di {@link Booking}.
      * @return il Booking ricostruito, oppure {@code null} se la riga è malformata.
      */
-    private Booking parseBookingFromCsvLine(String line) {
+    private static Booking parseBookingFromCsvLine(String line) {
         String[] parts = line.split(",");
         if (parts.length < MIN_CSV_FIELDS) {
             return null;
@@ -90,7 +90,7 @@ public class FsBookingDAO implements BookingDAO {
      * Riporta un Booking appena ricostruito da riga CSV allo stato persistito, rigiocando
      * la transizione corrispondente (il costruttore parte sempre da REQUESTED).
      */
-    private void applyState(Booking booking, String state) {
+    private static void applyState(Booking booking, String state) {
         if (Booking.CONFIRMED.equals(state)) {
             booking.confirm();
         } else if (Booking.REJECTED.equals(state)) {
