@@ -9,3 +9,9 @@ target/
 students.csv
 rides.csv
 bookings.csv
+
+# Materiale di studio personale per l'esame (relazioni di altri studenti, appunti, ecc.):
+# non fa parte del progetto e non va ridistribuito in un repository pubblico.
+docs/Consigli_per_Esame.pdf
+docs/Esempi Relazioni da 30/
+docs/LEZIONI/

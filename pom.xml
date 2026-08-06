@@ -15,12 +15,21 @@
         <javafx.version>21.0.5</javafx.version>
         <junit.version>5.9.2</junit.version>
 
-        <!-- Coordinate del progetto su sonarcloud.io: sostituisci con i valori reali dopo aver
-             collegato il repository (Settings -> Import Project) sul tuo account SonarCloud. -->
+        <!-- Coordinate del progetto su sonarcloud.io (repository collegato). -->
         <sonar.projectKey>AlessioCarta_ISPW</sonar.projectKey>
         <sonar.organization>alessiocarta</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+
+        <!-- La regola S106 (System.out/System.err al posto di un logger) è tollerata solo al
+             confine CLI: è lì che l'applicazione deve necessariamente stampare a console per
+             interagire con l'utente in assenza di una GUI. Ovunque altrove il logging passa
+             dal LoggerCustom centralizzato (vedi sezione 5/7 della documentazione tecnica). -->
+        <sonar.issue.ignore.multicriteria>cli1,cli2</sonar.issue.ignore.multicriteria>
+        <sonar.issue.ignore.multicriteria.cli1.ruleKey>java:S106</sonar.issue.ignore.multicriteria.cli1.ruleKey>
+        <sonar.issue.ignore.multicriteria.cli1.resourceKey>**/boundary/*CLI.java</sonar.issue.ignore.multicriteria.cli1.resourceKey>
+        <sonar.issue.ignore.multicriteria.cli2.ruleKey>java:S106</sonar.issue.ignore.multicriteria.cli2.ruleKey>
+        <sonar.issue.ignore.multicriteria.cli2.resourceKey>**/CliMain.java</sonar.issue.ignore.multicriteria.cli2.resourceKey>
     </properties>
 
     <dependencies>

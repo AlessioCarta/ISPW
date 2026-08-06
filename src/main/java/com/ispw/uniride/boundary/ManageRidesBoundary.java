@@ -20,6 +20,8 @@ import java.util.List;
 
 public class ManageRidesBoundary {
 
+    private static final String ERROR_PREFIX = "Errore: ";
+
     @FXML private ListView<RideBean> offeredList;
     @FXML private ListView<BookingBean> pendingRequestsList;
     @FXML private ListView<BookingBean> bookedList;
@@ -136,7 +138,7 @@ public class ManageRidesBoundary {
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
             refreshData();
         } catch (Exception e) {
-            messageLabel.setText("Errore: " + e.getMessage());
+            messageLabel.setText(ERROR_PREFIX + e.getMessage());
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }
@@ -155,7 +157,7 @@ public class ManageRidesBoundary {
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
             refreshData();
         } catch (Exception e) {
-            messageLabel.setText("Errore: " + e.getMessage());
+            messageLabel.setText(ERROR_PREFIX + e.getMessage());
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }
@@ -174,7 +176,7 @@ public class ManageRidesBoundary {
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
             refreshData();
         } catch (Exception e) {
-            messageLabel.setText("Errore: " + e.getMessage());
+            messageLabel.setText(ERROR_PREFIX + e.getMessage());
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }
@@ -194,7 +196,7 @@ public class ManageRidesBoundary {
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
             refreshData(); // ricarica le liste
         } catch (Exception e) {
-            messageLabel.setText("Errore: " + e.getMessage());
+            messageLabel.setText(ERROR_PREFIX + e.getMessage());
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }
@@ -214,7 +216,7 @@ public class ManageRidesBoundary {
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
             refreshData(); // ricarica le liste
         } catch (Exception e) {
-            messageLabel.setText("Errore: " + e.getMessage());
+            messageLabel.setText(ERROR_PREFIX + e.getMessage());
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }

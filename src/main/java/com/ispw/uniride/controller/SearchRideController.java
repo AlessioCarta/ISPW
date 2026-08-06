@@ -113,10 +113,10 @@ public class SearchRideController {
 
         // Esegue fisicamente la scalata. Notare il passaggio della funzione anonima Lambda
         // che fa le veci dell'interfaccia "Observer" ai fini prototipali (reazione ad eventi inviati in Push dal Subject "Ride").
-        boolean success = ride.bookSeat(message -> {
-            // Simulazione ricezione notifica Observer tramite Callback (Push mechanism di eventi testuali)
-            com.ispw.uniride.utils.LoggerCustom.info("Notifica Observer ricevuta da " + loggedUser.getUsername() + ": " + message);
-        }, loggedUser.getUsername());
+        // Simulazione ricezione notifica Observer tramite Callback (Push mechanism di eventi testuali)
+        boolean success = ride.bookSeat(message ->
+                com.ispw.uniride.utils.LoggerCustom.info("Notifica Observer ricevuta da " + loggedUser.getUsername() + ": " + message),
+                loggedUser.getUsername());
 
         // Solo in caso di risposta logica positiva da parte dell'Entità e del suo Pattern State, viene concretizzato l'Update sul database Storage.
         if (success) {

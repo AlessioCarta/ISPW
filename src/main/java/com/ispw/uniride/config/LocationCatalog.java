@@ -182,7 +182,7 @@ public final class LocationCatalog {
     public static List<String> getAllNames() {
         List<String> names = new ArrayList<>();
         for (LocationInfo loc : LOCATIONS) {
-            names.add(loc.getName());
+            names.add(loc.name());
         }
         return names;
     }
@@ -196,7 +196,7 @@ public final class LocationCatalog {
             return null;
         }
         for (LocationInfo loc : LOCATIONS) {
-            if (loc.getName().equalsIgnoreCase(name.trim())) {
+            if (loc.name().equalsIgnoreCase(name.trim())) {
                 return loc;
             }
         }
@@ -215,7 +215,7 @@ public final class LocationCatalog {
         sorted.sort(Comparator.comparingDouble(loc -> distanceKm(origin, loc)));
         List<String> names = new ArrayList<>();
         for (LocationInfo loc : sorted) {
-            names.add(loc.getName());
+            names.add(loc.name());
         }
         return names;
     }
@@ -230,7 +230,7 @@ public final class LocationCatalog {
         LocationInfo nearest = null;
         double nearestDistance = Double.MAX_VALUE;
         for (LocationInfo loc : LOCATIONS) {
-            if (!loc.isUniversityCity()) {
+            if (!loc.universityCity()) {
                 continue;
             }
             double d = distanceKm(origin, loc);
@@ -239,17 +239,17 @@ public final class LocationCatalog {
                 nearest = loc;
             }
         }
-        return nearest != null ? nearest.getName() : null;
+        return nearest != null ? nearest.name() : null;
     }
 
     /**
      * Formula di Haversine: stima la distanza in linea d'aria (km) tra due coordinate geografiche.
      */
     private static double distanceKm(LocationInfo a, LocationInfo b) {
-        double lat1 = Math.toRadians(a.getLatitude());
-        double lat2 = Math.toRadians(b.getLatitude());
-        double deltaLat = Math.toRadians(b.getLatitude() - a.getLatitude());
-        double deltaLon = Math.toRadians(b.getLongitude() - a.getLongitude());
+        double lat1 = Math.toRadians(a.latitude());
+        double lat2 = Math.toRadians(b.latitude());
+        double deltaLat = Math.toRadians(b.latitude() - a.latitude());
+        double deltaLon = Math.toRadians(b.longitude() - a.longitude());
 
         double sinLat = Math.sin(deltaLat / 2);
         double sinLon = Math.sin(deltaLon / 2);

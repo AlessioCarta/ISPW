@@ -25,7 +25,7 @@ class LocationCatalogTest {
     void testFindByNameIsCaseInsensitive() {
         LocationInfo found = LocationCatalog.findByName("  roma  ");
         assertNotNull(found);
-        assertEquals("Roma", found.getName());
+        assertEquals("Roma", found.name());
     }
 
     @Test

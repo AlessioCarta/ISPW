@@ -58,7 +58,7 @@ public class OfferRideBoundary {
         destinationField.setItems(FXCollections.observableArrayList(locationNames));
 
         if (home != null) {
-            departureField.setValue(home.getName());
+            departureField.setValue(home.name());
             String nearestUniversity = LocationCatalog.getNearestUniversityCity(home);
             if (nearestUniversity != null) {
                 destinationField.setValue(nearestUniversity);
@@ -92,7 +92,7 @@ public class OfferRideBoundary {
             seatsField.getValueFactory().setValue(3);
             priceField.clear();
 
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException _) {
             messageLabel.setText("Errore: I campi numerici non sono validi.");
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         } catch (Exception e) {

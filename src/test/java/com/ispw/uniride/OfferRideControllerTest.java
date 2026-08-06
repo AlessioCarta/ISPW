@@ -36,7 +36,7 @@ class OfferRideControllerTest {
      * Un'offerta con dati validi deve avere successo per un utente autenticato.
      */
     @Test
-    void testOfferRideSuccess() throws UserNotAuthorizedException, RideActionException {
+    void testOfferRideSuccess() {
         loginAs(uniqueUsername("driver"));
 
         RideBean bean = new RideBean("Roma", "Milano", "10/12/2026", 3, 20.0);

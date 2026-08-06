@@ -20,7 +20,7 @@ public class ManageRidesCLI {
             if (offered.isEmpty()) System.out.println("Nessuna corsa offerta.");
             else {
                 for (RideBean r : offered) {
-                    System.out.printf("ID: %s | %s -> %s (%s) [%s]\n", r.getId(), r.getDeparture(), r.getDestination(), r.getDate(), r.getStatus());
+                    System.out.printf("ID: %s | %s -> %s (%s) [%s]%n", r.getId(), r.getDeparture(), r.getDestination(), r.getDate(), r.getStatus());
                 }
             }
 
@@ -30,7 +30,7 @@ public class ManageRidesCLI {
             else {
                 for (int i = 0; i < booked.size(); i++) {
                     BookingBean b = booked.get(i);
-                    System.out.printf("%d. [%s] Guidatore: %s | %s -> %s (%s) [%s]\n",
+                    System.out.printf("%d. [%s] Guidatore: %s | %s -> %s (%s) [%s]%n",
                             i+1, b.getRideId(), b.getCounterpartName(), b.getDeparture(), b.getDestination(), b.getDate(), b.getState());
                 }
             }

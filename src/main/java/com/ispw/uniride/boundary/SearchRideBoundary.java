@@ -47,7 +47,7 @@ public class SearchRideBoundary {
         destinationField.setItems(FXCollections.observableArrayList(locationNames));
 
         if (home != null) {
-            departureField.setValue(home.getName());
+            departureField.setValue(home.name());
             String nearestUniversity = LocationCatalog.getNearestUniversityCity(home);
             if (nearestUniversity != null) {
                 destinationField.setValue(nearestUniversity);

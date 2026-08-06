@@ -12,8 +12,10 @@ public class CliMain {
 
     /**
      * Avvia l'applicazione in modalità testuale.
-     * @param args argomenti passati da riga di comando all'avvio del programma
+     * @param args argomenti passati da riga di comando all'avvio del programma (non utilizzati:
+     * la firma {@code String[] args} è comunque richiesta dalla JVM per riconoscere l'entry point).
      */
+    @SuppressWarnings("java:S1172")
     public static void main(String[] args) {
         // Usa il logger custom per evitare colli di bottiglia da standard I/O in sistemi di produzione
         LoggerCustom.info("Starting UniRide CLI Mode...");

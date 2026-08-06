@@ -52,6 +52,10 @@ public class RideBean {
      * @param basePrice spesa base totale che sarà successivamente elaborata dallo Strategy pattern.
      * @param status stringa testuale equivalente allo stato della macchina (AVAILABLE o FULL).
      */
+    // I 9 parametri sono tutti campi primitivi/String indipendenti di sola visualizzazione (una
+    // riga della ListView): introdurre un oggetto Builder o un value-object annidato avrebbe
+    // aggiunto complessità senza reali benefici per un semplice DTO come questo.
+    @SuppressWarnings("java:S107")
     public RideBean(String id, String driver, String departure, String destination, String date, int totalSeats, int availableSeats, double basePrice, String status) {
         this.id = id;
         this.driver = driver;

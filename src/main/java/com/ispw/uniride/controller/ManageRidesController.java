@@ -44,13 +44,13 @@ public class ManageRidesController {
 
         List<BookingBean> beans = new ArrayList<>();
         for (Booking booking : bookingDAO.getBookingsByPassenger(user.getUsername())) {
-            if (!Booking.REQUESTED.equals(booking.getState()) && !Booking.CONFIRMED.equals(booking.getState())) {
-                continue; // Rifiutate/annullate: il passeggero non ha più un posto attivo.
+            // Rifiutate/annullate: il passeggero non ha più un posto attivo, quindi non compaiono.
+            boolean isActive = Booking.REQUESTED.equals(booking.getState()) || Booking.CONFIRMED.equals(booking.getState());
+            Ride ride = isActive ? rideDAO.getRideById(booking.getRideId()) : null;
+            if (ride != null) {
+                beans.add(new BookingBean(booking.getId(), ride.getId(), ride.getDeparture(), ride.getDestination(),
+                        ride.getDate(), ride.getDriverUsername(), booking.getState()));
             }
-            Ride ride = rideDAO.getRideById(booking.getRideId());
-            if (ride == null) continue;
-            beans.add(new BookingBean(booking.getId(), ride.getId(), ride.getDeparture(), ride.getDestination(),
-                    ride.getDate(), ride.getDriverUsername(), booking.getState()));
         }
         return beans;
     }

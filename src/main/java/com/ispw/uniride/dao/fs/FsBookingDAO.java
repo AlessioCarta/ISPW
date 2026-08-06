@@ -14,6 +14,9 @@ public class FsBookingDAO implements BookingDAO {
     private static final String FILE_PATH = "bookings.csv";
     private static final Object LOCK = new Object();
 
+    // Numero minimo di campi attesi su una riga CSV valida (id, rideId, passengerUsername, state).
+    private static final int MIN_CSV_FIELDS = 4;
+
     // Static Cache
     private static Map<String, Booking> cache = null;
     private static long lastModified = 0;
@@ -26,7 +29,10 @@ public class FsBookingDAO implements BookingDAO {
         File file = new File(FILE_PATH);
         if (!file.exists()) {
             try {
-                file.createNewFile();
+                boolean created = file.createNewFile();
+                if (!created) {
+                    LoggerCustom.warning("bookings.csv risultava assente ma non è stato possibile crearlo (probabile race condition concorrente).");
+                }
             } catch (IOException e) {
                 LoggerCustom.error("Failed to create bookings.csv", e);
             }
@@ -38,26 +44,46 @@ public class FsBookingDAO implements BookingDAO {
         if (cache == null || file.lastModified() > lastModified) {
             synchronized (LOCK) {
                 if (cache == null || file.lastModified() > lastModified) {
-                    cache = new HashMap<>();
-                    try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-                        String line;
-                        while ((line = br.readLine()) != null) {
-                            String[] parts = line.split(",");
-                            // id, rideId, passengerUsername, state
-                            if (parts.length >= 4) {
-                                Booking booking = new Booking(parts[1], parts[2]);
-                                booking.setId(parts[0]);
-                                applyState(booking, parts[3]);
-                                cache.put(parts[0], booking);
-                            }
-                        }
-                        lastModified = file.lastModified();
-                    } catch (IOException e) {
-                        LoggerCustom.error("Error reading bookings.csv", e);
-                    }
+                    loadCacheFromFile(file);
                 }
             }
         }
+    }
+
+    /**
+     * Legge integralmente bookings.csv e ricostruisce la cache in memoria, riga per riga.
+     */
+    private void loadCacheFromFile(File file) {
+        Map<String, Booking> loaded = new HashMap<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                Booking booking = parseBookingFromCsvLine(line);
+                if (booking != null) {
+                    loaded.put(booking.getId(), booking);
+                }
+            }
+            cache = loaded;
+            lastModified = file.lastModified();
+        } catch (IOException e) {
+            LoggerCustom.error("Error reading bookings.csv", e);
+            cache = loaded;
+        }
+    }
+
+    /**
+     * Converte una riga CSV (id, rideId, passengerUsername, state) in un'istanza di {@link Booking}.
+     * @return il Booking ricostruito, oppure {@code null} se la riga è malformata.
+     */
+    private Booking parseBookingFromCsvLine(String line) {
+        String[] parts = line.split(",");
+        if (parts.length < MIN_CSV_FIELDS) {
+            return null;
+        }
+        Booking booking = new Booking(parts[1], parts[2]);
+        booking.setId(parts[0]);
+        applyState(booking, parts[3]);
+        return booking;
     }
 
     /**
@@ -78,8 +104,7 @@ public class FsBookingDAO implements BookingDAO {
     private void rewriteFileFromCache() {
         synchronized (LOCK) {
             try (PrintWriter pw = new PrintWriter(new FileWriter(FILE_PATH, false))) {
-                for (Map.Entry<String, Booking> entry : cache.entrySet()) {
-                    Booking b = entry.getValue();
+                for (Booking b : cache.values()) {
                     pw.println(b.getId() + "," + b.getRideId() + "," + b.getPassengerUsername() + "," + b.getState());
                 }
                 lastModified = new File(FILE_PATH).lastModified();
@@ -130,10 +155,8 @@ public class FsBookingDAO implements BookingDAO {
 
     @Override
     public void updateBooking(Booking booking) {
-        refreshCache();
-        synchronized (LOCK) {
-            cache.put(booking.getId(), booking);
-            rewriteFileFromCache();
-        }
+        // Un aggiornamento è, sul nostro storage CSV, indistinguibile da un nuovo salvataggio:
+        // in entrambi i casi la riga esistente (stesso id) viene sovrascritta per intero.
+        saveBooking(booking);
     }
 }
