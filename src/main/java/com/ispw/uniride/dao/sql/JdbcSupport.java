@@ -19,7 +19,10 @@ final class JdbcSupport {
     // restano tra un'esecuzione e l'altra, coerentemente con le altre due modalità di persistenza.
     private static final String URL = "jdbc:h2:./uniride_db;AUTO_SERVER=TRUE";
     private static final String USER = "sa";
-    private static final String PASSWORD = "";
+    // Password non vuota: anche trattandosi di un DB embedded locale (mai esposto in rete se non
+    // sulla loopback via AUTO_SERVER), una credenziale vuota è comunque segnalata da SonarCloud
+    // come cattiva pratica (S2115) e va evitata a prescindere dal contesto di deployment.
+    private static final String PASSWORD = "uniride-local-dev-only";
 
     private static boolean schemaReady = false;
 
