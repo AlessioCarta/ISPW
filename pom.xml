@@ -22,6 +22,16 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 
+        <!-- Come indicato esplicitamente dal materiale del corso ("Nell'analisi effettuata tramite
+             Sonar è necessario escludere le componenti grafiche. L'aspetto visivo dell'applicazione
+             non è oggetto di valutazione... L'attenzione del prof. De Angelis è rivolta
+             esclusivamente al codice applicativo"), lo strato Boundary (View/controller grafico
+             JavaFX e relativa CLI) è escluso dal calcolo della coverage: per BCE non contiene logica
+             applicativa, e le classi JavaFX in particolare richiederebbero un framework di UI
+             testing dedicato (es. TestFX) per essere unit-testate in modo significativo. Il codice
+             applicativo vero (Controller, Model, DAO) resta interamente incluso nel calcolo. -->
+        <sonar.coverage.exclusions>**/boundary/**</sonar.coverage.exclusions>
+
         <!-- La regola S106 (System.out/System.err al posto di un logger) è tollerata solo al
              confine CLI: è lì che l'applicazione deve necessariamente stampare a console per
              interagire con l'utente in assenza di una GUI. Ovunque altrove il logging passa
