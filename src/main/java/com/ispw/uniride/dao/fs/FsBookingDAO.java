@@ -10,6 +10,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Implementazione concreta di {@link BookingDAO} per la famiglia File System.
+ * Persiste su {@code bookings.csv}, con la stessa strategia di cache-invalidation-su-timestamp
+ * delle altre due Fs*DAO. Peculiarità: siccome {@link Booking} non ha un costruttore che accetti
+ * direttamente uno stato arbitrario (nasce sempre in {@code REQUESTED} per costruzione), la
+ * lettura da CSV deve "rigiocare" la transizione giusta invece di assegnare lo stato a mano.
+ */
 public class FsBookingDAO implements BookingDAO {
     private static final String FILE_PATH = "bookings.csv";
     private static final Object LOCK = new Object();
@@ -17,7 +24,7 @@ public class FsBookingDAO implements BookingDAO {
     // Numero minimo di campi attesi su una riga CSV valida (id, rideId, passengerUsername, state).
     private static final int MIN_CSV_FIELDS = 4;
 
-    // Static Cache
+    // Static Cache: condivisa fra tutte le istanze di FsBookingDAO.
     private static Map<String, Booking> cache = null;
     private static long lastModified = 0;
 
@@ -41,6 +48,7 @@ public class FsBookingDAO implements BookingDAO {
 
     private void refreshCache() {
         File file = new File(FILE_PATH);
+        // Stesso pattern check-lock-check delle altre Fs*DAO: evita ricariche non necessarie.
         if (cache == null || file.lastModified() > lastModified) {
             synchronized (LOCK) {
                 if (cache == null || file.lastModified() > lastModified) {
@@ -80,6 +88,8 @@ public class FsBookingDAO implements BookingDAO {
         if (parts.length < MIN_CSV_FIELDS) {
             return null;
         }
+        // Il costruttore imposta sempre stato REQUESTED e genera un id nuovo: li sovrascriviamo
+        // subito dopo con i valori realmente persistiti (setId, poi lo stato via applyState).
         Booking booking = new Booking(parts[1], parts[2]);
         booking.setId(parts[0]);
         applyState(booking, parts[3]);
@@ -91,6 +101,9 @@ public class FsBookingDAO implements BookingDAO {
      * la transizione corrispondente (il costruttore parte sempre da REQUESTED).
      */
     private static void applyState(Booking booking, String state) {
+        // Si richiama lo stesso metodo pubblico che userebbe il flusso applicativo reale
+        // (confirm/reject/cancel), così le regole di transizione restano uniche e centralizzate
+        // in Booking, senza duplicarle qui con un'assegnazione diretta del campo stato.
         if (Booking.CONFIRMED.equals(state)) {
             booking.confirm();
         } else if (Booking.REJECTED.equals(state)) {
@@ -103,6 +116,8 @@ public class FsBookingDAO implements BookingDAO {
 
     private void rewriteFileFromCache() {
         synchronized (LOCK) {
+            // Riscrittura completa (non append), come in FsRideDAO: la cache in RAM è la fonte
+            // di verità dopo una modifica, il file viene sempre allineato per intero.
             try (PrintWriter pw = new PrintWriter(new FileWriter(FILE_PATH, false))) {
                 for (Booking b : cache.values()) {
                     pw.println(b.getId() + "," + b.getRideId() + "," + b.getPassengerUsername() + "," + b.getState());

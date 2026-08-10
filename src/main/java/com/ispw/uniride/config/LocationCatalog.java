@@ -228,8 +228,11 @@ public final class LocationCatalog {
      */
     public static String getNearestUniversityCity(LocationInfo origin) {
         LocationInfo nearest = null;
+        // Inizializzato al massimo possibile: qualunque prima distanza calcolata sarà per
+        // forza minore, garantendo che "nearest" venga assegnato all'iterazione giusta.
         double nearestDistance = Double.MAX_VALUE;
         for (LocationInfo loc : LOCATIONS) {
+            // Salta le località che non sono sedi universitarie: non sono candidate valide.
             if (!loc.universityCity()) {
                 continue;
             }
@@ -246,14 +249,20 @@ public final class LocationCatalog {
      * Formula di Haversine: stima la distanza in linea d'aria (km) tra due coordinate geografiche.
      */
     private static double distanceKm(LocationInfo a, LocationInfo b) {
+        // Le funzioni trigonometriche di Math lavorano in radianti, le coordinate sono salvate
+        // in gradi decimali: conversione necessaria prima di ogni calcolo.
         double lat1 = Math.toRadians(a.latitude());
         double lat2 = Math.toRadians(b.latitude());
         double deltaLat = Math.toRadians(b.latitude() - a.latitude());
         double deltaLon = Math.toRadians(b.longitude() - a.longitude());
 
+        // Formula di Haversine vera e propria: h è il quadrato di metà della "corda" angolare
+        // fra i due punti sulla sfera terrestre.
         double sinLat = Math.sin(deltaLat / 2);
         double sinLon = Math.sin(deltaLon / 2);
         double h = sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLon * sinLon;
+        // atan2 converte h nell'angolo centrale c (in radianti) fra i due punti; moltiplicato
+        // per il raggio terrestre medio si ottiene la distanza in linea d'aria in km.
         double c = 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
         return EARTH_RADIUS_KM * c;
     }

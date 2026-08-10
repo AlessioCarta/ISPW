@@ -53,17 +53,22 @@ public class LoginController {
      */
     public void registerUser(String username, String rawPassword, String fullName, String homeLocation) throws com.ispw.uniride.exceptions.UserNotAuthorizedException {
         StudentDAO studentDAO = DAOFactory.getInstance().getStudentDAO();
+        // Un username duplicato è un errore di dominio, non un dettaglio di persistenza:
+        // la verifica avviene qui nel Controller Applicativo, non dentro il DAO.
         if (studentDAO.getStudentByUsername(username) != null) {
             throw new com.ispw.uniride.exceptions.UserNotAuthorizedException("Username già in uso!");
         }
 
+        // Vincolo minimo di robustezza della password, applicato prima di procedere all'hashing.
         if (rawPassword == null || rawPassword.length() < 6) {
             throw new com.ispw.uniride.exceptions.UserNotAuthorizedException("La password deve essere di almeno 6 caratteri.");
         }
 
-        // Mock Hashing per requisiti di sicurezza simulati
+        // Mock Hashing per requisiti di sicurezza simulati.
         String hashedPassword = "[HASHED]" + rawPassword;
 
+        // Una stringa vuota o solo spazi viene trattata come "nessuna posizione dichiarata"
+        // (null), coerentemente con come home_location viene salvata/letta nei DAO.
         String normalizedLocation = (homeLocation == null || homeLocation.trim().isEmpty()) ? null : homeLocation.trim();
         Student newStudent = new Student(username, hashedPassword, fullName, normalizedLocation);
         studentDAO.saveStudent(newStudent);

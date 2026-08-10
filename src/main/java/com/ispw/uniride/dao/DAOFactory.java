@@ -14,8 +14,11 @@ import com.ispw.uniride.dao.sql.SqlDAOFactory;
  */
 public abstract class DAOFactory {
 
+    // Campo statico che tiene l'unica istanza (Pattern Singleton) della factory concreta scelta.
     private static DAOFactory instance = null;
 
+    // Costruttore protected (non private): impedisce new DAOFactory() dall'esterno del package,
+    // ma resta invocabile dalle sottoclassi concrete tramite super() implicito.
     protected DAOFactory() {}
 
     /**
@@ -25,8 +28,11 @@ public abstract class DAOFactory {
      * @return Una factory in grado di stanziare i DAO richiesti.
      */
     public static synchronized DAOFactory getInstance() {
+        // Creata una sola volta (lazy init): le chiamate successive a getInstance() ritornano
+        // sempre la stessa istanza già decisa, senza rivalutare la configurazione ogni volta.
         if (instance == null) {
-            // Logica discriminante dell'Abstract Factory:
+            // Logica discriminante dell'Abstract Factory: è l'UNICO punto dell'applicazione che
+            // sa quale famiglia concreta di DAO esiste — nessun'altra classe fa questo confronto.
             switch (Config.PERSISTENCE_TYPE) {
                 case MEMORY:
                     instance = new MemoryDAOFactory();
@@ -35,6 +41,8 @@ public abstract class DAOFactory {
                     instance = new SqlDAOFactory();
                     break;
                 default:
+                    // FILESYSTEM è il default esplicito: qualunque valore diverso da MEMORY/SQL
+                    // ricade qui, coerente col fatto che è il terzo (e unico rimanente) DBType.
                     instance = new FsDAOFactory();
             }
         }

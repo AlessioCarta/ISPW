@@ -27,6 +27,8 @@ public class Student {
      * @param fullName il nominativo da presentare nell'interfaccia agli altri compagni.
      */
     public Student(String username, String password, String fullName) {
+        // Delega al costruttore completo con homeLocation assente (null): niente duplicazione
+        // della logica di inizializzazione fra le due varianti overloaded.
         this(username, password, fullName, null);
     }
 
@@ -38,6 +40,9 @@ public class Student {
      * @param homeLocation il comune/paese di residenza dichiarato, o {@code null} se non fornito.
      */
     public Student(String username, String password, String fullName, String homeLocation) {
+        // Assegnazione diretta dei campi: nessuna validazione qui, perché non è compito
+        // dell'Entity ma del Controller Grafico/Applicativo (regola BCE: niente controlli
+        // sintattici fuori dal proprio strato).
         this.username = username;
         this.password = password;
         this.fullName = fullName;

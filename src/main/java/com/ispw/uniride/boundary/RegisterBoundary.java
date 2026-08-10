@@ -16,13 +16,22 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 
+/**
+ * Boundary grafica (JavaFX Controller) mappata sull'XML {@code Register.fxml}.
+ * Raccoglie i dati del modulo di registrazione, valida solo la loro presenza (non le regole di
+ * business, che restano nel Controller Applicativo) e li inoltra a {@link LoginController}.
+ */
 public class RegisterBoundary {
+    // Nodi dell'albero FXML iniettati automaticamente da JavaFX in base a fx:id.
     @FXML private TextField fullNameField;
     @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
     @FXML private ComboBox<String> homeLocationField;
     @FXML private Label messageLabel;
 
+    // Dependency injection manuale del Controller Applicativo: essendo questa classe istanziata
+    // dall'FXMLLoader (non da un costruttore che controlliamo noi), l'inizializzazione diretta
+    // del campo è il modo più semplice per garantirne la disponibilità.
     private LoginController loginController = new LoginController();
 
     /**
@@ -31,6 +40,9 @@ public class RegisterBoundary {
      */
     @FXML
     public void initialize() {
+        // Controllo di sicurezza: initialize() viene chiamato automaticamente da JavaFX dopo
+        // l'iniezione dei campi @FXML, ma un null-check protegge da un eventuale caricamento
+        // FXML incompleto o da un riutilizzo del controller fuori dal contesto atteso.
         if (homeLocationField != null) {
             homeLocationField.setItems(FXCollections.observableArrayList(LocationCatalog.getAllNames()));
         }
@@ -41,8 +53,14 @@ public class RegisterBoundary {
         String fullName = fullNameField.getText();
         String username = usernameField.getText();
         String password = passwordField.getText();
+        // getEditor().getText() invece di getValue(): la ComboBox è editabile (l'utente può
+        // digitare una località non presente nel catalogo), quindi si legge sempre il testo
+        // effettivamente scritto nel campo, non solo un valore selezionato dalla lista.
         String homeLocation = homeLocationField.getEditor().getText();
 
+        // Validazione di solo formato (campi non vuoti): compito del Controller Grafico secondo
+        // BCE, non delle regole di business più profonde (username duplicato, password troppo
+        // corta), che restano nel Controller Applicativo.
         if (fullName.isEmpty() || username.isEmpty() || password.isEmpty()) {
             messageLabel.setText("Compila tutti i campi!");
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
@@ -56,6 +74,9 @@ public class RegisterBoundary {
             messageLabel.setText("Registrazione Completata!");
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
         } catch (Exception e) {
+            // L'eccezione risalita dal Controller Applicativo (username duplicato, password
+            // troppo corta) viene qui intercettata e tradotta in un messaggio per l'utente:
+            // esattamente il compito del Controller Grafico nel flusso delle eccezioni BCE.
             messageLabel.setText(e.getMessage());
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }

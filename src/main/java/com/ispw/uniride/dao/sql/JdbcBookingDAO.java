@@ -13,6 +13,8 @@ import java.util.List;
 
 /**
  * Implementazione DAO su database relazionale (H2, via JDBC standard) per l'entità {@link Booking}.
+ * Come {@code JdbcRideDAO}, usa la sintassi di upsert MERGE INTO di H2 e ricostruisce lo stato
+ * del Booking "rigiocando" le transizioni invece di assegnare il campo direttamente.
  */
 public class JdbcBookingDAO implements BookingDAO {
 
@@ -24,11 +26,14 @@ public class JdbcBookingDAO implements BookingDAO {
     @Override
     public Booking getBookingById(String id) {
         List<Booking> results = query("SELECT * FROM bookings WHERE id = ?", stmt -> stmt.setString(1, id));
+        // id è chiave primaria: al più un risultato, null se non trovato.
         return results.isEmpty() ? null : results.get(0);
     }
 
     @Override
     public List<Booking> getBookingsByRide(String rideId) {
+        // Tutte le richieste relative a un dato passaggio, usate dal guidatore per vedere ed
+        // evadere le richieste pendenti sulla propria corsa offerta.
         return query("SELECT * FROM bookings WHERE ride_id = ?", stmt -> stmt.setString(1, rideId));
     }
 
@@ -44,6 +49,9 @@ public class JdbcBookingDAO implements BookingDAO {
     }
 
     private void upsert(Booking booking) {
+        // MERGE INTO ... KEY (id): stessa sintassi usata da JdbcRideDAO/JdbcStudentDAO per
+        // evitare di dover distinguere manualmente fra INSERT (nuova richiesta) e UPDATE
+        // (conferma/rifiuto/annullamento di una richiesta esistente).
         String sql = "MERGE INTO bookings (id, ride_id, passenger_username, state) KEY (id) VALUES (?, ?, ?, ?)";
         try (Connection connection = JdbcSupport.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -57,6 +65,10 @@ public class JdbcBookingDAO implements BookingDAO {
         }
     }
 
+    /**
+     * Interfaccia funzionale minima per parametrizzare una PreparedStatement senza duplicare
+     * l'apertura/chiusura di connessione e ResultSet in ogni metodo di interrogazione.
+     */
     @FunctionalInterface
     private interface StatementBinder {
         void bind(PreparedStatement stmt) throws SQLException;
@@ -79,6 +91,8 @@ public class JdbcBookingDAO implements BookingDAO {
     }
 
     private Booking mapRow(ResultSet rs) throws SQLException {
+        // Come nella variante CSV: il costruttore genera un id nuovo e parte da REQUESTED,
+        // quindi si sovrascrivono subito id e stato con i valori realmente persistiti.
         Booking booking = new Booking(rs.getString("ride_id"), rs.getString("passenger_username"));
         booking.setId(rs.getString("id"));
         applyState(booking, rs.getString("state"));
@@ -90,6 +104,9 @@ public class JdbcBookingDAO implements BookingDAO {
      * la transizione corrispondente (il costruttore parte sempre da REQUESTED).
      */
     private void applyState(Booking booking, String state) {
+        // Si passa sempre dai metodi pubblici confirm()/reject()/cancel(), mai da
+        // un'assegnazione diretta del campo: le regole di transizione restano uniche e vivono
+        // solo in Booking, non duplicate qui.
         if (Booking.CONFIRMED.equals(state)) {
             booking.confirm();
         } else if (Booking.REJECTED.equals(state)) {

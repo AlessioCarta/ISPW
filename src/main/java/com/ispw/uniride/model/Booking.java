@@ -32,14 +32,19 @@ public class Booking {
      * @param passengerUsername lo username del passeggero richiedente.
      */
     public Booking(String rideId, String passengerUsername) {
+        // Id generato internamente, mai passato dall'esterno: garantisce unicità senza
+        // affidarsi a un contatore condiviso o alla persistenza.
         this.id = UUID.randomUUID().toString();
         this.rideId = rideId;
         this.passengerUsername = passengerUsername;
+        // Ogni nuova richiesta nasce sempre in attesa di decisione: non esiste un percorso
+        // di creazione che salti direttamente a CONFIRMED/REJECTED.
         this.state = REQUESTED;
     }
 
-    // Getter e setter di base
+    // Getter e setter di base.
     public String getId() { return id; }
+    // Usato dai DAO in fase di ricostruzione dell'oggetto da storage.
     public void setId(String id) { this.id = id; }
     public String getRideId() { return rideId; }
     public String getPassengerUsername() { return passengerUsername; }
@@ -50,6 +55,8 @@ public class Booking {
      * @return {@code true} se la transizione è avvenuta, {@code false} se la richiesta non era più in {@code REQUESTED}.
      */
     public boolean confirm() {
+        // Transizione ammessa solo da REQUESTED: non si può confermare una richiesta già
+        // gestita (rifiutata, annullata) né una già confermata in precedenza.
         if (!REQUESTED.equals(state)) {
             return false;
         }
@@ -63,6 +70,7 @@ public class Booking {
      * @return {@code true} se la transizione è avvenuta, {@code false} se la richiesta non era più in {@code REQUESTED}.
      */
     public boolean reject() {
+        // Stessa regola di confirm(): si rifiuta solo una richiesta ancora pendente.
         if (!REQUESTED.equals(state)) {
             return false;
         }
@@ -76,6 +84,9 @@ public class Booking {
      * @return {@code true} se la transizione è avvenuta, {@code false} se la prenotazione era già chiusa (rifiutata o annullata).
      */
     public boolean cancel() {
+        // A differenza di confirm()/reject(), cancel() è ammesso da REQUESTED o CONFIRMED
+        // (il passeggero può ripensarci anche dopo l'ok del guidatore): resta vietato solo
+        // da uno stato già chiuso (REJECTED/CANCELLED), per non ri-eseguire una transizione finale.
         if (REJECTED.equals(state) || CANCELLED.equals(state)) {
             return false;
         }

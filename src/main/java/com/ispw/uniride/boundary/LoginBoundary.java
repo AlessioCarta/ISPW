@@ -64,8 +64,11 @@ public class LoginBoundary {
     @FXML
     public void handleRegister(ActionEvent event) {
         try {
+            // Carica il file FXML della schermata di registrazione e ne costruisce l'albero di nodi.
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/ispw/uniride/Register.fxml"));
             Parent root = loader.load();
+            // Risale dallo Stage attuale (la finestra) tramite un nodo già presente in scena
+            // (usernameField), per poterne sostituire la Scene con quella appena caricata.
             Stage stage = (Stage) usernameField.getScene().getWindow();
             stage.setScene(new Scene(root, 440, 560));
             stage.setTitle("UniRide - Registrazione");

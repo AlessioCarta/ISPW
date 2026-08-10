@@ -25,11 +25,18 @@ public class JdbcRideDAO implements RideDAO {
 
     @Override
     public void saveRide(Ride ride) {
+        // MERGE INTO ... KEY (id): sintassi di upsert propria di H2. Se una riga con quell'id
+        // esiste già viene aggiornata, altrimenti viene inserita — un'unica istruzione al posto
+        // di un SELECT preventivo per decidere fra INSERT e UPDATE.
         String upsertRide = "MERGE INTO rides (id, driver_username, departure, destination, ride_date, "
                 + "total_seats, available_seats, base_price, status) KEY (id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection connection = JdbcSupport.getConnection()) {
+            // Disattiviamo l'autocommit: il salvataggio del Ride e la ricostruzione della lista
+            // passeggeri devono avvenire come un'unica transazione atomica (vedi replacePassengers).
             connection.setAutoCommit(false);
             try (PreparedStatement stmt = connection.prepareStatement(upsertRide)) {
+                // I "?" sono parametri legati per posizione: PreparedStatement previene ogni
+                // SQL injection, i valori non vengono mai concatenati come stringa nella query.
                 stmt.setString(1, ride.getId());
                 stmt.setString(2, ride.getDriverUsername());
                 stmt.setString(3, ride.getDeparture());
@@ -42,6 +49,8 @@ public class JdbcRideDAO implements RideDAO {
                 stmt.executeUpdate();
             }
             replacePassengers(connection, ride);
+            // Solo se ENTRAMBE le operazioni sono andate a buon fine si conferma la transazione:
+            // in caso di eccezione, nessun commit avviene e il database resta nello stato precedente.
             connection.commit();
         } catch (SQLException e) {
             LoggerCustom.error("Errore nel salvataggio del passaggio su database", e);
@@ -53,15 +62,21 @@ public class JdbcRideDAO implements RideDAO {
      * calcolare un diff, dato il volume di dati previsto da un prototipo come questo.
      */
     private void replacePassengers(Connection connection, Ride ride) throws SQLException {
+        // Prima si cancella tutto il collegamento esistente per questo Ride...
         try (PreparedStatement delete = connection.prepareStatement("DELETE FROM ride_passengers WHERE ride_id = ?")) {
             delete.setString(1, ride.getId());
             delete.executeUpdate();
         }
+        // ...poi si reinseriscono, in un'unica batch, tutti i passeggeri attualmente presenti
+        // nell'oggetto Ride in memoria: il risultato finale è sempre coerente con lo stato Java,
+        // senza dover calcolare quali righe aggiungere/rimuovere rispetto a prima.
         String insert = "INSERT INTO ride_passengers (ride_id, username) VALUES (?, ?)";
         try (PreparedStatement stmt = connection.prepareStatement(insert)) {
             for (String username : ride.getPassengerUsernames()) {
                 stmt.setString(1, ride.getId());
                 stmt.setString(2, username);
+                // addBatch() accoda l'istruzione invece di eseguirla subito: eseguendole tutte
+                // insieme con executeBatch() si riduce il numero di round-trip verso il database.
                 stmt.addBatch();
             }
             stmt.executeBatch();
@@ -70,11 +85,14 @@ public class JdbcRideDAO implements RideDAO {
 
     @Override
     public List<Ride> getAllRides() {
+        // Nessun parametro da legare: il binder è un lambda "vuoto" che non fa nulla.
         return queryRides("SELECT * FROM rides", stmt -> { });
     }
 
     @Override
     public List<Ride> getAvailableRides(String departure, String destination) {
+        // UPPER(...) = UPPER(?) replica il confronto case-insensitive che nelle altre famiglie
+        // di DAO si ottiene con equalsIgnoreCase() lato Java: qui il confronto avviene lato database.
         String sql = "SELECT * FROM rides WHERE status = 'AVAILABLE' AND UPPER(departure) = UPPER(?) AND UPPER(destination) = UPPER(?)";
         return queryRides(sql, stmt -> {
             stmt.setString(1, departure);
@@ -85,6 +103,8 @@ public class JdbcRideDAO implements RideDAO {
     @Override
     public Ride getRideById(String id) {
         List<Ride> results = queryRides("SELECT * FROM rides WHERE id = ?", stmt -> stmt.setString(1, id));
+        // L'id è chiave primaria: la query può ritornare al più una riga. Se la lista è vuota,
+        // nessun Ride ha quell'id, e ritorniamo null coerentemente col contratto di RideDAO.
         return results.isEmpty() ? null : results.get(0);
     }
 
@@ -101,6 +121,8 @@ public class JdbcRideDAO implements RideDAO {
 
     @Override
     public List<Ride> getRidesByPassenger(String username) {
+        // JOIN con la tabella di collegamento: trova tutti i Ride per cui esiste una riga in
+        // ride_passengers con quello username, sfruttando davvero la relazione molti-a-molti.
         String sql = "SELECT r.* FROM rides r JOIN ride_passengers p ON r.id = p.ride_id WHERE p.username = ?";
         return queryRides(sql, stmt -> stmt.setString(1, username));
     }
@@ -109,6 +131,9 @@ public class JdbcRideDAO implements RideDAO {
     public void deleteRide(String id) {
         try (Connection connection = JdbcSupport.getConnection()) {
             connection.setAutoCommit(false);
+            // Si cancellano prima le righe collegate in ride_passengers (che referenziano
+            // rides.id via foreign key) e solo dopo la riga in rides stessa: l'ordine inverso
+            // fallirebbe per violazione del vincolo di integrità referenziale.
             try (PreparedStatement deletePassengers = connection.prepareStatement("DELETE FROM ride_passengers WHERE ride_id = ?")) {
                 deletePassengers.setString(1, id);
                 deletePassengers.executeUpdate();
@@ -134,8 +159,12 @@ public class JdbcRideDAO implements RideDAO {
 
     private List<Ride> queryRides(String sql, StatementBinder binder) {
         List<Ride> rides = new ArrayList<>();
+        // try-with-resources su connessione, statement e (più sotto) result set: tutte le
+        // risorse JDBC vengono chiuse automaticamente anche in caso di eccezione.
         try (Connection connection = JdbcSupport.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
+            // Il binder inietta i parametri specifici di ogni query (o non fa nulla, se la
+            // query non ne ha): questo metodo resta identico per tutte le query di lettura.
             binder.bind(stmt);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -149,6 +178,9 @@ public class JdbcRideDAO implements RideDAO {
     }
 
     private Ride mapRow(Connection connection, ResultSet rs) throws SQLException {
+        // Come per la lettura da CSV: il costruttore pubblico genera un id nuovo e imposta
+        // availableSeats=totalSeats, quindi sovrascriviamo subito dopo con i valori reali letti
+        // dalla riga del database (setId, setAvailableSeats, setState).
         Ride ride = new Ride(
                 rs.getString("driver_username"),
                 rs.getString("departure"),
@@ -161,6 +193,8 @@ public class JdbcRideDAO implements RideDAO {
         ride.setAvailableSeats(rs.getInt("available_seats"));
         ride.setState(parseState(rs.getString("status")));
 
+        // Per ogni Ride letto, una query aggiuntiva recupera i suoi passeggeri dalla tabella di
+        // collegamento: costa una query in più per riga, accettabile per i volumi di un prototipo.
         try (PreparedStatement stmt = connection.prepareStatement("SELECT username FROM ride_passengers WHERE ride_id = ?")) {
             stmt.setString(1, ride.getId());
             try (ResultSet passengers = stmt.executeQuery()) {
@@ -173,6 +207,8 @@ public class JdbcRideDAO implements RideDAO {
     }
 
     private RideState parseState(String status) {
+        // Stessa logica di traduzione stringa -> oggetto State usata da FsRideDAO: il database,
+        // come il CSV, può persistere solo la sigla testuale, mai un'istanza Java direttamente.
         switch (status) {
             case "AVAILABLE":
                 return new AvailableState();

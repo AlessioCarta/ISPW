@@ -18,12 +18,16 @@ public class JdbcStudentDAO implements StudentDAO {
 
     @Override
     public void saveStudent(Student student) {
+        // MERGE INTO ... KEY (username): upsert atomico, username come chiave di unicità (uno
+        // studente non può registrarsi due volte con lo stesso username).
         String sql = "MERGE INTO students (username, password, full_name, home_location) KEY (username) VALUES (?, ?, ?, ?)";
         try (Connection connection = JdbcSupport.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, student.getUsername());
             stmt.setString(2, student.getPassword());
             stmt.setString(3, student.getFullName());
+            // home_location può essere null (studente che non ha dichiarato la posizione):
+            // setString(null) su H2 scrive correttamente un NULL SQL, non lancia eccezione.
             stmt.setString(4, student.getHomeLocation());
             stmt.executeUpdate();
         } catch (SQLException e) {
@@ -38,6 +42,8 @@ public class JdbcStudentDAO implements StudentDAO {
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, username);
             try (ResultSet rs = stmt.executeQuery()) {
+                // username è chiave primaria: al più una riga di risultato. rs.next() sposta il
+                // cursore sulla prima riga e ritorna true solo se esiste.
                 if (rs.next()) {
                     return mapRow(rs);
                 }
@@ -45,6 +51,8 @@ public class JdbcStudentDAO implements StudentDAO {
         } catch (SQLException e) {
             LoggerCustom.error("Errore nella lettura dello studente dal database", e);
         }
+        // Nessuna riga trovata (o errore SQL): ritorna null, come da contratto di StudentDAO,
+        // interpretato da LoginController come "utente non trovato".
         return null;
     }
 

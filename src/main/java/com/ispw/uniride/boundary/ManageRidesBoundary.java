@@ -18,6 +18,14 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Boundary grafica (JavaFX Controller) mappata sull'XML {@code ManageRides.fxml}.
+ * La schermata più corposa dell'applicazione: mostra insieme le corse offerte dall'utente
+ * (come guidatore), le richieste pendenti su quelle corse, e le prenotazioni effettuate
+ * dall'utente stesso (come passeggero). Ogni {@code handleXxx} segue lo stesso schema:
+ * legge la selezione corrente da una ListView, valida che non sia vuota, invoca il metodo
+ * corrispondente su {@link ManageRidesController} e infine ricarica i dati con {@code refreshData()}.
+ */
 public class ManageRidesBoundary {
 
     private static final String ERROR_PREFIX = "Errore: ";
@@ -31,6 +39,8 @@ public class ManageRidesBoundary {
 
     @FXML
     public void initialize() {
+        // Ognuna delle 3 ListView ha una propria ListCell custom: definiscono come ogni bean
+        // viene renderizzato come testo leggibile invece di usare il toString() di default.
         offeredList.setCellFactory(param -> new ListCell<RideBean>() {
             @Override
             protected void updateItem(RideBean item, boolean empty) {
@@ -72,6 +82,11 @@ public class ManageRidesBoundary {
         refreshData();
     }
 
+    /**
+     * Traduce la sigla testuale interna dello stato di un Ride (quella prodotta da
+     * {@code RideState.getStatus()}) nell'etichetta in italiano da mostrare in interfaccia,
+     * mantenendo il dominio applicativo indipendente dalla lingua di presentazione.
+     */
     private String translateRideStatus(String status) {
         if (status == null) return "";
         switch (status) {
@@ -83,6 +98,7 @@ public class ManageRidesBoundary {
         }
     }
 
+    /** Come {@link #translateRideStatus}, ma per le sigle di stato di {@code Booking}. */
     private String translateBookingStatus(String state) {
         if (state == null) return "";
         switch (state) {
@@ -94,6 +110,11 @@ public class ManageRidesBoundary {
         }
     }
 
+    /**
+     * Ricarica dal Controller tutte e tre le liste mostrate in schermata: chiamato dopo ogni
+     * azione che modifica lo stato di una corsa o di una prenotazione, così l'interfaccia
+     * riflette sempre lo stato più recente del dominio.
+     */
     private void refreshData() {
         try {
             List<RideBean> offered = controller.getMyOfferedRides();
@@ -109,6 +130,10 @@ public class ManageRidesBoundary {
         }
     }
 
+    /**
+     * Ricarica le richieste pendenti relative alla corsa offerta attualmente selezionata
+     * nella lista {@code offeredList} (nessuna selezione = lista pendenti vuota).
+     */
     private void refreshPendingRequests() {
         RideBean selectedRide = offeredList.getSelectionModel().getSelectedItem();
         if (selectedRide == null) {
@@ -126,6 +151,8 @@ public class ManageRidesBoundary {
 
     @FXML
     public void handleConfirmRequest(ActionEvent event) {
+        // Pattern comune a tutti gli handler di questa classe: niente selezionato -> messaggio
+        // di guida per l'utente e uscita immediata, senza nemmeno interpellare il Controller.
         BookingBean selected = pendingRequestsList.getSelectionModel().getSelectedItem();
         if (selected == null) {
             messageLabel.setText("Seleziona una richiesta dalla lista!");
@@ -136,6 +163,8 @@ public class ManageRidesBoundary {
             controller.confirmBooking(selected.getBookingId());
             messageLabel.setText("Richiesta confermata.");
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
+            // Il posto era già riservato: nulla cambia sui posti disponibili, ma lo stato
+            // della richiesta sì, quindi le liste vanno comunque ricaricate.
             refreshData();
         } catch (Exception e) {
             messageLabel.setText(ERROR_PREFIX + e.getMessage());
@@ -152,6 +181,8 @@ public class ManageRidesBoundary {
             return;
         }
         try {
+            // A differenza della conferma, il rifiuto libera anche il posto riservato su Ride
+            // (gestito internamente da ManageRidesController.rejectBooking).
             controller.rejectBooking(selected.getBookingId());
             messageLabel.setText("Richiesta rifiutata: il posto è tornato disponibile.");
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
@@ -171,6 +202,8 @@ public class ManageRidesBoundary {
             return;
         }
         try {
+            // Transizione di stato (Pattern State) verso COMPLETED: fallisce se la corsa è già
+            // in uno stato terminale (già completata o annullata).
             controller.completeRide(selected.getId());
             messageLabel.setText("Corsa segnata come completata.");
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
@@ -191,6 +224,8 @@ public class ManageRidesBoundary {
         }
 
         try {
+            // Il passeggero rinuncia di propria iniziativa: libera il posto sulla Ride
+            // associata, indipendentemente dal fatto che la richiesta fosse già confermata.
             controller.cancelBooking(selected.getRideId());
             messageLabel.setText("Prenotazione annullata con successo.");
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
@@ -211,6 +246,8 @@ public class ManageRidesBoundary {
         }
 
         try {
+            // Consentito anche con passeggeri già a bordo: la corsa passa a CANCELLED (Pattern
+            // State) e i passeggeri prenotati vengono avvisati tramite il Pattern Observer.
             controller.cancelOfferedRide(selected.getId());
             messageLabel.setText("Corsa annullata con successo.");
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);

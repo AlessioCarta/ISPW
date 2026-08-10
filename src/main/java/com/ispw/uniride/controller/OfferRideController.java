@@ -57,16 +57,20 @@ public class OfferRideController {
      * @throws RideActionException se una delle regole di business non è rispettata.
      */
     private void validateRide(RideBean rideBean) throws RideActionException {
+        // Entrambi i campi obbligatori: null o stringa vuota/di soli spazi non sono ammessi.
         if (rideBean.getDeparture() == null || rideBean.getDeparture().trim().isEmpty()
                 || rideBean.getDestination() == null || rideBean.getDestination().trim().isEmpty()) {
             throw new RideActionException("Partenza e destinazione sono obbligatorie.");
         }
+        // Un passaggio con partenza e destinazione identiche non ha senso nel dominio.
         if (rideBean.getDeparture().trim().equalsIgnoreCase(rideBean.getDestination().trim())) {
             throw new RideActionException("Partenza e destinazione non possono coincidere.");
         }
+        // Zero o meno posti renderebbero il passaggio inutilizzabile fin da subito.
         if (rideBean.getTotalSeats() <= 0) {
             throw new RideActionException("Il numero di posti deve essere maggiore di zero.");
         }
+        // Un costo negativo non ha significato economico nel dominio del carpooling.
         if (rideBean.getBasePrice() < 0) {
             throw new RideActionException("Il costo base non può essere negativo.");
         }

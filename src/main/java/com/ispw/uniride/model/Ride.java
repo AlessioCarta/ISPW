@@ -13,35 +13,37 @@ import java.util.UUID;
 /**
  * Entità concettuale che definisce un "Passaggio" offerto all'interno del sistema di Carpooling.
  * Implementa l'interfaccia Subject per il GoF Pattern Observer (pubblica eventi verso i passeggeri prenotati).
- * Mantiene il proprio stato ciclico tramite il GoF Pattern State (AvailableState, FullState).
+ * Mantiene il proprio stato ciclico tramite il GoF Pattern State (AvailableState, FullState,
+ * CompletedState, CancelledState): nessuna logica if/else sullo stato vive in questa classe, è
+ * sempre delegata all'implementazione concreta corrente di {@link RideState}.
  */
 public class Ride implements Subject {
 
-    // Identificativo automatico casuale
+    // Identificativo automatico casuale (chiave primaria logica del passaggio, generato dal costruttore).
     private String id;
 
-    // Username del guidatore (ForeignKey virtuale alla classe Student)
+    // Username del guidatore (ForeignKey virtuale alla classe Student).
     private String driverUsername;
 
-    // Attributi descrittivi del percorso e tempi
+    // Attributi descrittivi del percorso e tempi.
     private String departure;
     private String destination;
     private String date; // Data mantenuta testualmente per comodità prototipale
 
-    // Statistiche posti a sedere autovettura
+    // Statistiche posti a sedere autovettura.
     private int totalSeats;
     private int availableSeats;
 
-    // Costo stimato base della spesa del viaggio intero (benzina + autostrada)
+    // Costo stimato base della spesa del viaggio intero (benzina + autostrada).
     private double basePrice;
 
-    // Riferimento di tipo State-Pattern per cambiare il comportamento in base allo stato
+    // Riferimento di tipo State-Pattern per cambiare il comportamento in base allo stato.
     private RideState state;
 
-    // Lista degli username degli studenti che hanno prenotato (per la logica di dominio e DAO)
+    // Lista degli username degli studenti che hanno prenotato (per la logica di dominio e DAO).
     private List<String> passengerUsernames = new ArrayList<>();
 
-    // Lista di listener in ascolto di modifiche sul passaggio per l'Observer Pattern
+    // Lista di listener in ascolto di modifiche sul passaggio per l'Observer Pattern.
     private List<Observer> observers = new ArrayList<>();
 
     /**
@@ -50,20 +52,23 @@ public class Ride implements Subject {
      * Inizializza automaticamente lo State iniziale in Available o Full.
      */
     public Ride(String driverUsername, String departure, String destination, String date, int totalSeats, double basePrice) {
+        // Ogni Ride ha un id univoco generato internamente: chi crea l'oggetto non deve fornirlo.
         this.id = UUID.randomUUID().toString();
         this.driverUsername = driverUsername;
         this.departure = departure;
         this.destination = destination;
         this.date = date;
         this.totalSeats = totalSeats;
+        // Alla nascita nessun posto è ancora stato prenotato: i posti liberi coincidono col totale.
         this.availableSeats = totalSeats;
         this.basePrice = basePrice;
 
-        // Assegnazione logica dello stato tramite il Design Pattern State
+        // Assegnazione logica dello stato iniziale tramite il Design Pattern State: se non ci sono
+        // posti fin da subito (caso limite, es. totalSeats=0) si parte direttamente da FullState.
         this.state = (totalSeats > 0) ? new AvailableState() : new FullState();
     }
 
-    // Boilerplate getter ed event-setter per la logica di dominio e serializzazione DAO
+    // Boilerplate getter ed event-setter per la logica di dominio e serializzazione DAO.
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
     public String getDriverUsername() { return driverUsername; }
@@ -73,17 +78,21 @@ public class Ride implements Subject {
     public int getTotalSeats() { return totalSeats; }
     public double getBasePrice() { return basePrice; }
     public int getAvailableSeats() { return availableSeats; }
+    // Usato dai DAO in fase di ricostruzione dell'oggetto da storage (il costruttore pubblico
+    // parte sempre da availableSeats = totalSeats, qui invece si ripristina il valore reale salvato).
     public void setAvailableSeats(int availableSeats) { this.availableSeats = availableSeats; }
 
     public List<String> getPassengerUsernames() { return passengerUsernames; }
+    // Usato dai DAO per ripopolare la lista passeggeri letta da storage senza passare da bookSeat().
     public void setPassengerUsernames(List<String> usernames) { this.passengerUsernames = usernames; }
     public void addPassengerUsername(String username) {
+        // Evita duplicati: uno stesso username non deve comparire due volte nella lista passeggeri.
         if (!this.passengerUsernames.contains(username)) {
             this.passengerUsernames.add(username);
         }
     }
 
-    // Metodi ponte per far evolvere lo stato dinamico del viaggio
+    // Metodi ponte per far evolvere lo stato dinamico del viaggio (usati anche dai DAO in lettura).
     public void setState(RideState state) { this.state = state; }
     public RideState getState() { return state; }
 
@@ -101,11 +110,15 @@ public class Ride implements Subject {
      * @return true se c'era un posto vuoto e lo status lo ha permesso.
      */
     public boolean bookSeat(Observer passenger, String username) {
+        // La decisione se un posto sia disponibile spetta interamente allo stato corrente:
+        // Ride non sa (e non deve sapere) quale sia la logica di AvailableState/FullState.
         boolean success = state.bookSeat(this);
         if (success) {
+            // Solo se la prenotazione è realmente andata a buon fine registriamo l'observer e
+            // il passeggero: niente iscrizioni "fantasma" su prenotazioni fallite.
             attach(passenger);
             addPassengerUsername(username);
-            // Invia evento ai Listener/Observer
+            // Invia evento ai Listener/Observer (Pattern Observer).
             notifyObservers("Un nuovo passeggero si è unito al passaggio da " + departure + " a " + destination);
         }
         return success;
@@ -118,14 +131,18 @@ public class Ride implements Subject {
      * @return true se il posto è stato liberato con successo.
      */
     public boolean cancelSeat(String username) {
+        // Guardia preventiva: non ha senso liberare un posto per qualcuno che non l'aveva prenotato,
+        // né delegare inutilmente allo State un'operazione destinata a fallire comunque.
         if (!passengerUsernames.contains(username)) {
             return false;
         }
 
+        // La logica di "si può tornare indietro da questo stato?" resta nello State (es. da uno
+        // stato terminale come CANCELLED/COMPLETED non è più permesso liberare posti).
         boolean success = state.cancelSeat(this);
         if (success) {
             passengerUsernames.remove(username);
-            // In una implementazione reale cercheremmo anche di fare detach(observer) se possibile
+            // In una implementazione reale cercheremmo anche di fare detach(observer) se possibile.
             notifyObservers("L'utente " + username + " ha annullato la sua prenotazione per il viaggio verso " + destination);
         }
         return success;
@@ -137,6 +154,8 @@ public class Ride implements Subject {
      * @return true se la transizione è avvenuta.
      */
     public boolean complete() {
+        // Nessuna notifica agli observer qui: il completamento non richiede un'azione da parte
+        // dei passeggeri, a differenza dell'annullamento (vedi cancel() sotto).
         return state.complete(this);
     }
 
@@ -147,6 +166,8 @@ public class Ride implements Subject {
      */
     public boolean cancel() {
         boolean success = state.cancel(this);
+        // Notifica solo se c'era effettivamente qualcuno da avvisare: evita un broadcast inutile
+        // su una lista vuota di passeggeri.
         if (success && !passengerUsernames.isEmpty()) {
             notifyObservers("Il guidatore ha annullato il passaggio da " + departure + " a " + destination);
         }
@@ -159,6 +180,7 @@ public class Ride implements Subject {
      */
     @Override
     public void attach(Observer observer) {
+        // Evita di registrare due volte lo stesso observer (doppia notifica per lo stesso evento).
         if (!observers.contains(observer)) {
             observers.add(observer);
         }
@@ -179,6 +201,8 @@ public class Ride implements Subject {
      */
     @Override
     public void notifyObservers(String message) {
+        // Il Subject (Ride) non conosce il tipo concreto degli Observer: chiama solo il contratto
+        // dell'interfaccia, esattamente il punto del Pattern Observer.
         for (Observer obs : observers) {
             obs.update(message);
         }

@@ -5,6 +5,11 @@ import com.ispw.uniride.controller.OfferRideController;
 
 import java.util.Scanner;
 
+/**
+ * Boundary testuale del caso d'uso "Offri Passaggio" (equivalente CLI di
+ * {@link OfferRideBoundary}): raccoglie gli stessi dati del form grafico da riga di comando e
+ * li inoltra, tramite lo stesso {@link RideBean}, allo stesso {@link OfferRideController}.
+ */
 public class OfferRideCLI {
     private OfferRideController offerRideController = new OfferRideController();
 
@@ -22,12 +27,16 @@ public class OfferRideCLI {
         System.out.print("Costo Base Stimato (Carburante+Pedaggio): ");
         double basePrice = scanner.nextDouble();
 
+        // Stesso Bean, stesso Controller Applicativo usato dalla Boundary grafica: nessuna
+        // regola di business viene ripetuta o reinterpretata qui.
         RideBean bean = new RideBean(departure, destination, date, totalSeats, basePrice);
 
         try {
             offerRideController.offerRide(bean);
             System.out.println("Passaggio offerto con successo!");
         } catch (Exception e) {
+            // Le eccezioni di validazione (campi obbligatori, posti/costo non validi) risalite
+            // dal Controller Applicativo vengono stampate su stderr invece che su stdout.
             System.err.println("Errore: " + e.getMessage());
         }
     }

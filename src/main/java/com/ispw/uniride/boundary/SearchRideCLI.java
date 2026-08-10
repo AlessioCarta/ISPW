@@ -6,6 +6,11 @@ import com.ispw.uniride.controller.SearchRideController;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * Boundary testuale del caso d'uso "Cerca Passaggio" (equivalente CLI di
+ * {@link SearchRideBoundary}): stessa ricerca e stessa richiesta di prenotazione, ma con
+ * l'elenco risultati numerato e la selezione fatta digitando un numero invece di un click.
+ */
 public class SearchRideCLI {
     private SearchRideController searchRideController = new SearchRideController();
 
@@ -24,6 +29,8 @@ public class SearchRideCLI {
             return;
         }
 
+        // Stampa numerata (1-based, non 0-based) perché più naturale da digitare per l'utente
+        // rispetto a un indice che parte da zero.
         System.out.println("\nPassaggi disponibili:");
         for (int i = 0; i < rides.size(); i++) {
             RideBean r = rides.get(i);
@@ -34,7 +41,10 @@ public class SearchRideCLI {
 
         System.out.print("\nInserisci il numero del passaggio per prenotare (0 per annullare): ");
         int choice = scanner.nextInt();
+        // 0 (o qualunque valore fuori range) annulla silenziosamente: nessuna richiesta viene
+        // inviata, e il metodo termina senza ulteriori messaggi.
         if (choice > 0 && choice <= rides.size()) {
+            // choice è 1-based (vedi stampa sopra), la lista è 0-based: -1 per convertire.
             RideBean selected = rides.get(choice - 1);
             try {
                 boolean booked = searchRideController.bookRide(selected.getId());

@@ -8,6 +8,13 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Implementazione concreta di {@link StudentDAO} per la famiglia File System.
+ * Persiste su {@code students.csv}, con la stessa strategia di cache-invalidation-su-timestamp
+ * usata da {@link FsRideDAO}. A differenza di quest'ultima, qui non esiste un percorso di
+ * "update" (uno Student, una volta registrato, non cambia più via DAO): le scritture sono
+ * quindi semplici append in coda al file, mai riscritture complete.
+ */
 public class FsStudentDAO implements StudentDAO {
     private static final String FILE_PATH = "students.csv";
     private static final Object LOCK = new Object();
@@ -16,7 +23,7 @@ public class FsStudentDAO implements StudentDAO {
     // Il quarto campo (homeLocation) è facoltativo, per retro-compatibilità.
     private static final int MIN_CSV_FIELDS = 3;
 
-    // Static Cache
+    // Static Cache: condivisa fra tutte le istanze di FsStudentDAO.
     private static Map<String, Student> cache = null;
     private static long lastModified = 0;
 
@@ -30,10 +37,13 @@ public class FsStudentDAO implements StudentDAO {
             try {
                 boolean created = file.createNewFile();
                 if (!created) {
+                    // Race condition innocua (creato nel frattempo da un altro processo/thread):
+                    // usciamo senza popolare i dati mock, che in tal caso esistono già.
                     LoggerCustom.warning("students.csv risultava assente ma non è stato possibile crearlo (probabile race condition concorrente).");
                     return;
                 }
-                // Mock hashed initial data
+                // Mock hashed initial data: stesso seed di MemoryStorage, così la demo si
+                // comporta allo stesso modo indipendentemente dalla modalità di persistenza scelta.
                 try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
                     pw.println("mario.rossi,[HASHED]password,Mario Rossi");
                     pw.println("luigi.verdi,[HASHED]password,Luigi Verdi");
@@ -46,6 +56,8 @@ public class FsStudentDAO implements StudentDAO {
 
     private void refreshCache() {
         File file = new File(FILE_PATH);
+        // Pattern check-lock-check, identico a FsRideDAO: evita di acquisire il lock quando
+        // la cache è già aggiornata, e previene ricariche duplicate sotto concorrenza.
         if (cache == null || file.lastModified() > lastModified) {
             synchronized (LOCK) {
                 if (cache == null || file.lastModified() > lastModified) {
@@ -96,12 +108,20 @@ public class FsStudentDAO implements StudentDAO {
     @Override
     public void saveStudent(Student student) {
         synchronized (LOCK) {
+            // true = modalità append: a differenza di FsRideDAO (che riscrive sempre l'intero
+            // file), qui è sufficiente accodare la nuova riga, perché non esiste un caso d'uso
+            // che modifichi uno Student già registrato — solo creazioni nuove in fase di registrazione.
             try (PrintWriter pw = new PrintWriter(new FileWriter(FILE_PATH, true))) {
                 String homeLocation = student.getHomeLocation() != null ? student.getHomeLocation() : "";
                 pw.println(student.getUsername() + "," + student.getPassword() + "," + student.getFullName() + "," + homeLocation);
+                // Aggiorniamo la cache in RAM solo se già popolata: se nessuno l'ha ancora letta
+                // (cache == null), la prossima refreshCache() la costruirà da zero includendo
+                // anche questa nuova riga appena scritta.
                 if (cache != null) {
                     cache.put(student.getUsername(), student);
                 }
+                // Come in FsRideDAO: allinea lastModified al valore post-scrittura, per evitare
+                // che la nostra stessa scrittura venga scambiata per una modifica esterna.
                 lastModified = new File(FILE_PATH).lastModified();
             } catch (IOException e) {
                 LoggerCustom.error("Error saving student to CSV", e);

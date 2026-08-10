@@ -106,6 +106,9 @@ public class ManageRidesController {
             throw new RideActionException("Richiesta già gestita in precedenza.");
         }
 
+        // Il rifiuto libera il posto che era stato riservato fisicamente su Ride al momento
+        // della richiesta (Pattern State): senza questa chiamata il posto resterebbe "bloccato"
+        // pur non avendo più un passeggero confermato.
         RideDAO rideDAO = DAOFactory.getInstance().getRideDAO();
         Ride ride = rideDAO.getRideById(booking.getRideId());
         if (ride != null) {
@@ -149,6 +152,9 @@ public class ManageRidesController {
         Ride ride = rideDAO.getRideById(rideId);
         if (ride == null) throw new RideNotFoundException("Corsa inesistente.");
 
+        // Cerca, fra tutte le richieste sulla corsa, quella attiva (in attesa o confermata)
+        // dell'utente loggato: una sola può esistere per definizione (SearchRideController
+        // impedisce richieste duplicate), quindi ci si ferma alla prima trovata.
         BookingDAO bookingDAO = DAOFactory.getInstance().getBookingDAO();
         Booking activeBooking = null;
         for (Booking booking : bookingDAO.getBookingsByRide(rideId)) {
@@ -218,6 +224,10 @@ public class ManageRidesController {
         return ride;
     }
 
+    /**
+     * Confine BCE esplicito: un Controller Applicativo non lascia mai uscire un oggetto Model
+     * (Ride) verso la Boundary, lo converte sempre in Bean prima.
+     */
     private List<RideBean> convertToBeans(List<Ride> rides) {
         List<RideBean> beans = new ArrayList<>();
         for (Ride r : rides) {

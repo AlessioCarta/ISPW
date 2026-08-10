@@ -107,6 +107,7 @@ public class SearchRideController {
             throw new RideActionException("Non puoi prenotare un posto sul passaggio che hai offerto tu stesso.");
         }
 
+        // Impedisce richieste duplicate sullo stesso passaggio da parte dello stesso utente.
         if (ride.getPassengerUsernames().contains(loggedUser.getUsername())) {
             throw new RideActionException("Hai già una richiesta attiva per questa corsa.");
         }

@@ -22,6 +22,11 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Boundary grafica (JavaFX Controller) mappata sull'XML {@code SearchRide.fxml}.
+ * Gestisce sia la ricerca (invocando {@link SearchRideController#searchRides}) sia la
+ * richiesta di prenotazione sul risultato selezionato ({@link SearchRideController#bookRide}).
+ */
 public class SearchRideBoundary {
 
     @FXML private ComboBox<String> departureField;
@@ -54,10 +59,14 @@ public class SearchRideBoundary {
             }
         }
 
+        // ListCell custom: definisce COME ogni RideBean della lista viene renderizzato come
+        // testo leggibile, invece di affidarsi al toString() di default dell'oggetto.
         resultsList.setCellFactory(param -> new ListCell<RideBean>() {
             @Override
             protected void updateItem(RideBean item, boolean empty) {
                 super.updateItem(item, empty);
+                // Le celle vuote (oltre l'ultimo elemento, per riempire lo spazio della
+                // ListView) non devono mostrare alcun testo residuo di un item precedente.
                 if (empty || item == null) {
                     setText(null);
                 } else {
@@ -76,6 +85,8 @@ public class SearchRideBoundary {
 
         List<RideBean> rides = searchRideController.searchRides(departure, destination);
 
+        // ObservableList: a differenza di una List normale, la ListView si aggiorna
+        // automaticamente quando il suo contenuto osservato cambia.
         ObservableList<RideBean> observableList = FXCollections.observableArrayList(rides);
         resultsList.setItems(observableList);
 
@@ -111,7 +122,8 @@ public class SearchRideBoundary {
             if (success) {
                 messageLabel.setText("Richiesta inviata! In attesa di conferma del guidatore.");
                 messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
-                // Refresh list
+                // Refresh list: rilancia la stessa ricerca per aggiornare i posti disponibili
+                // mostrati (uno in meno rispetto a prima della richiesta appena inviata).
                 handleSearch(null);
             } else {
                 messageLabel.setText("Posti esauriti!");

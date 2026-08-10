@@ -38,12 +38,17 @@ final class JdbcSupport {
         return UUID.nameUUIDFromBytes((USER + "@uniride-embedded-h2").getBytes(StandardCharsets.UTF_8)).toString();
     }
 
+    // Flag statico: true dopo la prima creazione riuscita dello schema, per non rieseguire i
+    // CREATE TABLE IF NOT EXISTS (comunque innocui, ma inutili) ad ogni singola connessione.
     private static boolean schemaReady = false;
 
     /**
      * Apre una nuova connessione JDBC verso il database, creando lo schema al primo utilizzo.
      */
     static synchronized Connection getConnection() throws SQLException {
+        // Ogni chiamata apre una connessione NUOVA (JDBC standard: il chiamante la chiude con
+        // try-with-resources); il metodo è synchronized solo per proteggere l'inizializzazione
+        // one-shot dello schema, non per serializzare tutte le query.
         Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
         if (!schemaReady) {
             ensureSchema(connection);
@@ -99,6 +104,8 @@ final class JdbcSupport {
         }
     }
 
+    // Costruttore privato: JdbcSupport è una classe di sole utility statiche (Pure Fabrication
+    // GRASP), non deve mai essere istanziata.
     private JdbcSupport() {
     }
 }
