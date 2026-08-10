@@ -67,7 +67,7 @@ public class LoginCLI {
                     System.out.println("Errore: " + e.getMessage());
                 }
             } else if (choice.equals("3")) {
-                // Esce dal ciclo while(true): termina il programma CLI.
+                // Esce dal ciclo di menu principale, terminando il programma CLI.
                 break;
             }
         }
