@@ -55,14 +55,15 @@ class LocationCatalogTest {
     }
 
     /**
-     * Da Palestrina l'ateneo più vicino deve essere Roma, non un'altra città universitaria più lontana.
+     * Da Palestrina l'ateneo più vicino deve essere Tor Vergata (sobborghi sud-est di Roma),
+     * più vicino della Sapienza (centro città) o di qualunque altro ateneo più lontano.
      */
     @Test
-    void testNearestUniversityCityFromPalestrinaIsRoma() {
+    void testNearestUniversityCityFromPalestrinaIsTorVergata() {
         LocationInfo palestrina = LocationCatalog.findByName("Palestrina");
 
         String nearestUniversity = LocationCatalog.getNearestUniversityCity(palestrina);
 
-        assertEquals("Roma", nearestUniversity);
+        assertEquals("Roma – Tor Vergata", nearestUniversity);
     }
 }

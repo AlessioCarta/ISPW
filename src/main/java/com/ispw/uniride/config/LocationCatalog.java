@@ -8,19 +8,34 @@ import java.util.List;
 
 /**
  * Catalogo statico delle località selezionabili nelle ComboBox di "Offri Passaggio" e
- * "Cerca Passaggio": non solo i grandi capoluoghi, ma anche i comuni/paesi limitrofi delle
- * principali aree universitarie italiane (Lazio, Lombardia, Campania, Piemonte, Veneto,
- * Emilia-Romagna, Toscana, Sicilia), così uno studente residente in un paese come Palestrina
- * può trovare la propria località senza dover digitare a mano un nome esatto.
+ * "Cerca Passaggio": non solo i comuni/paesi limitrofi (il lato "casa" del tragitto
+ * pendolare) delle principali aree universitarie italiane (Lazio, Lombardia, Campania,
+ * Piemonte, Veneto, Emilia-Romagna, Toscana, Sicilia), ma anche — trattandosi di
+ * un'applicazione di carpooling pensata per studenti — gli atenei stessi indicati per nome
+ * reale (es. "Roma – Sapienza", "Roma – Tor Vergata"), non genericamente la città che li
+ * ospita: un pendolare universitario non va "a Roma", va a un campus preciso, spesso in una
+ * zona della città ben diversa da un'altra università nella stessa città.
  * <p>
- * Le coordinate sono approssimate (centro abitato) e servono unicamente a calcolare distanze
- * relative per ordinare i suggerimenti: non hanno pretesa di precisione cartografica.
+ * Ogni città universitaria compare quindi due volte: una voce "civile" (es. "Roma", non
+ * marcata come sede universitaria) utile come partenza/destinazione generica, e una o più
+ * voci con il nome dell'ateneo (marcate {@code universityCity = true}), le uniche candidate
+ * per il suggerimento automatico dell'ateneo più vicino in {@link #getNearestUniversityCity}.
+ * <p>
+ * Le coordinate sono approssimate (centro città o campus, a seconda dei casi) e servono
+ * unicamente a calcolare distanze relative per ordinare i suggerimenti: non hanno pretesa di
+ * precisione cartografica.
  */
 public final class LocationCatalog {
 
     private static final List<LocationInfo> LOCATIONS = Collections.unmodifiableList(Arrays.asList(
             // ---- Lazio (area Roma, incluso il Prenestino/Castelli Romani) ----
-            new LocationInfo("Roma", 41.902, 12.496, true),
+            // "Roma" resta come voce civile generica (partenza/destinazione qualunque);
+            // gli atenei veri e propri sono voci a parte, con le coordinate del campus reale:
+            // Sapienza è centrale (San Lorenzo), Tor Vergata è nei sobborghi sud-est, una zona
+            // della città completamente diversa — motivo per cui vanno tenuti distinti.
+            new LocationInfo("Roma", 41.902, 12.496, false),
+            new LocationInfo("Roma – Sapienza", 41.9028, 12.5150, true),
+            new LocationInfo("Roma – Tor Vergata", 41.8541, 12.6169, true),
             new LocationInfo("Palestrina", 41.837, 12.906, false),
             new LocationInfo("Zagarolo", 41.837, 12.836, false),
             new LocationInfo("Cave", 41.809, 12.916, false),
@@ -53,13 +68,18 @@ public final class LocationCatalog {
             new LocationInfo("Rieti", 42.404, 12.860, false),
 
             // ---- Lombardia (area Milano) ----
-            new LocationInfo("Milano", 45.464, 9.190, true),
+            // Anche qui due campus distinti: la Statale è centrale (vicino al Duomo), il
+            // Politecnico ha il campus principale a Città Studi, un quartiere diverso.
+            new LocationInfo("Milano", 45.464, 9.190, false),
+            new LocationInfo("Milano – Statale", 45.4642, 9.1900, true),
+            new LocationInfo("Milano – Politecnico", 45.4780, 9.2270, true),
             new LocationInfo("Monza", 45.583, 9.274, false),
             new LocationInfo("Bergamo", 45.695, 9.670, false),
             new LocationInfo("Brescia", 45.541, 10.211, false),
             new LocationInfo("Como", 45.808, 9.085, false),
             new LocationInfo("Varese", 45.821, 8.826, false),
-            new LocationInfo("Pavia", 45.185, 9.156, true),
+            new LocationInfo("Pavia", 45.185, 9.156, false),
+            new LocationInfo("Pavia – Università di Pavia", 45.185, 9.156, true),
             new LocationInfo("Lodi", 45.314, 9.504, false),
             new LocationInfo("Cremona", 45.133, 10.022, false),
             new LocationInfo("Mantova", 45.157, 10.797, false),
@@ -75,9 +95,13 @@ public final class LocationCatalog {
             new LocationInfo("Seregno", 45.652, 9.202, false),
 
             // ---- Campania (area Napoli) ----
-            new LocationInfo("Napoli", 40.852, 14.268, true),
+            // Salerno ha un ateneo con campus proprio fuori città (Fisciano), zona diversa dal
+            // centro di Salerno: coordinate distinte per non falsare le distanze relative.
+            new LocationInfo("Napoli", 40.852, 14.268, false),
+            new LocationInfo("Napoli – Federico II", 40.852, 14.268, true),
             new LocationInfo("Caserta", 41.073, 14.332, false),
-            new LocationInfo("Salerno", 40.678, 14.759, true),
+            new LocationInfo("Salerno", 40.678, 14.759, false),
+            new LocationInfo("Fisciano – Università di Salerno", 40.771, 14.788, true),
             new LocationInfo("Portici", 40.818, 14.339, false),
             new LocationInfo("Pozzuoli", 40.824, 14.121, false),
             new LocationInfo("Casoria", 40.905, 14.293, false),
@@ -92,7 +116,10 @@ public final class LocationCatalog {
             new LocationInfo("Avellino", 40.914, 14.792, false),
 
             // ---- Piemonte (area Torino) ----
-            new LocationInfo("Torino", 45.070, 7.687, true),
+            // Il campus principale del Politecnico è a Corso Duca degli Abruzzi, a qualche km
+            // dal centro storico: coordinate distinte dalla voce civile "Torino".
+            new LocationInfo("Torino", 45.070, 7.687, false),
+            new LocationInfo("Torino – Politecnico", 45.0628, 7.6624, true),
             new LocationInfo("Moncalieri", 45.001, 7.685, false),
             new LocationInfo("Rivoli", 45.070, 7.520, false),
             new LocationInfo("Collegno", 45.079, 7.573, false),
@@ -108,10 +135,13 @@ public final class LocationCatalog {
             new LocationInfo("Biella", 45.566, 8.058, false),
 
             // ---- Veneto ----
-            new LocationInfo("Venezia", 45.440, 12.315, true),
+            new LocationInfo("Venezia", 45.440, 12.315, false),
+            new LocationInfo("Venezia – Ca' Foscari", 45.440, 12.315, true),
             new LocationInfo("Mestre", 45.490, 12.242, false),
-            new LocationInfo("Padova", 45.407, 11.877, true),
-            new LocationInfo("Verona", 45.438, 10.992, true),
+            new LocationInfo("Padova", 45.407, 11.877, false),
+            new LocationInfo("Padova – Università di Padova", 45.407, 11.877, true),
+            new LocationInfo("Verona", 45.438, 10.992, false),
+            new LocationInfo("Verona – Università di Verona", 45.438, 10.992, true),
             new LocationInfo("Vicenza", 45.547, 11.546, false),
             new LocationInfo("Treviso", 45.667, 12.244, false),
             new LocationInfo("Rovigo", 45.070, 11.790, false),
@@ -122,11 +152,15 @@ public final class LocationCatalog {
             new LocationInfo("Montebelluna", 45.775, 12.045, false),
 
             // ---- Emilia-Romagna ----
-            new LocationInfo("Bologna", 44.494, 11.343, true),
-            new LocationInfo("Modena", 44.647, 10.925, true),
-            new LocationInfo("Parma", 44.801, 10.328, true),
+            new LocationInfo("Bologna", 44.494, 11.343, false),
+            new LocationInfo("Bologna – Alma Mater Studiorum", 44.494, 11.343, true),
+            new LocationInfo("Modena", 44.647, 10.925, false),
+            new LocationInfo("Modena – Unimore", 44.647, 10.925, true),
+            new LocationInfo("Parma", 44.801, 10.328, false),
+            new LocationInfo("Parma – Università di Parma", 44.801, 10.328, true),
             new LocationInfo("Reggio Emilia", 44.698, 10.631, false),
-            new LocationInfo("Ferrara", 44.836, 11.619, true),
+            new LocationInfo("Ferrara", 44.836, 11.619, false),
+            new LocationInfo("Ferrara – Università di Ferrara", 44.836, 11.619, true),
             new LocationInfo("Ravenna", 44.417, 12.200, false),
             new LocationInfo("Rimini", 44.059, 12.568, false),
             new LocationInfo("Forlì", 44.223, 12.041, false),
@@ -137,11 +171,14 @@ public final class LocationCatalog {
             new LocationInfo("Faenza", 44.286, 11.882, false),
 
             // ---- Toscana ----
-            new LocationInfo("Firenze", 43.769, 11.256, true),
+            new LocationInfo("Firenze", 43.769, 11.256, false),
+            new LocationInfo("Firenze – Università di Firenze", 43.769, 11.256, true),
             new LocationInfo("Prato", 43.881, 11.097, false),
-            new LocationInfo("Pisa", 43.716, 10.400, true),
+            new LocationInfo("Pisa", 43.716, 10.400, false),
+            new LocationInfo("Pisa – Università di Pisa", 43.716, 10.400, true),
             new LocationInfo("Livorno", 43.551, 10.313, false),
-            new LocationInfo("Siena", 43.319, 11.331, true),
+            new LocationInfo("Siena", 43.319, 11.331, false),
+            new LocationInfo("Siena – Università di Siena", 43.319, 11.331, true),
             new LocationInfo("Arezzo", 43.463, 11.879, false),
             new LocationInfo("Grosseto", 42.760, 11.114, false),
             new LocationInfo("Lucca", 43.844, 10.501, false),
@@ -152,9 +189,12 @@ public final class LocationCatalog {
             new LocationInfo("Scandicci", 43.759, 11.192, false),
 
             // ---- Sicilia ----
-            new LocationInfo("Palermo", 38.116, 13.362, true),
-            new LocationInfo("Catania", 37.508, 15.083, true),
-            new LocationInfo("Messina", 38.193, 15.554, true),
+            new LocationInfo("Palermo", 38.116, 13.362, false),
+            new LocationInfo("Palermo – Università di Palermo", 38.116, 13.362, true),
+            new LocationInfo("Catania", 37.508, 15.083, false),
+            new LocationInfo("Catania – Università di Catania", 37.508, 15.083, true),
+            new LocationInfo("Messina", 38.193, 15.554, false),
+            new LocationInfo("Messina – Università di Messina", 38.193, 15.554, true),
             new LocationInfo("Siracusa", 37.075, 15.287, false),
             new LocationInfo("Ragusa", 36.926, 14.727, false),
             new LocationInfo("Trapani", 38.018, 12.514, false),
