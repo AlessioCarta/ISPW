@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Suite di Unit Testing (JUnit 5) per {@code FsStudentDAO}: persistenza su file CSV reale
  * (students.csv), inclusa la retro-compatibilità del campo opzionale homeLocation.
+ * @author Alessio Carta
  */
 class FsStudentDAOTest {
 

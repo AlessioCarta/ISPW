@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Suite di Unit Testing (JUnit 5) per {@code FsBookingDAO}: persistenza su file CSV reale
  * (bookings.csv), incluso il corretto ripristino dello stato (REQUESTED/CONFIRMED/REJECTED/CANCELLED)
  * dopo una rilettura da disco.
+ * @author Alessio Carta
  */
 class FsBookingDAOTest {
 

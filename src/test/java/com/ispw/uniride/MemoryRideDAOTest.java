@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Suite di Unit Testing (JUnit 5) per {@code MemoryRideDAO}: operazioni CRUD dirette sullo
  * storage in RAM condiviso. Ogni test usa partenza/destinazione/driver univoci per restare
  * indipendente dagli altri, dato che lo storage è uno Singleton condiviso per l'intera JVM.
+ * @author Alessio Carta
  */
 class MemoryRideDAOTest {
 

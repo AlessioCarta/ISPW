@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Suite di Unit Testing (JUnit 5) per {@code JdbcStudentDAO}.
+ * @author Alessio Carta
  */
 class JdbcStudentDAOTest {
 

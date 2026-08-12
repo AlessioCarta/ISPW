@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Suite di Unit Testing (JUnit 5) per {@code OfferRideController}: creazione di un passaggio
  * e le validazioni di dominio applicate prima della persistenza.
+ * @author Alessio Carta
  */
 class OfferRideControllerTest {
 

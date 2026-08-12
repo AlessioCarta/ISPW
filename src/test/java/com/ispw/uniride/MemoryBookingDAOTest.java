@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Suite di Unit Testing (JUnit 5) per {@code MemoryBookingDAO}.
+ * @author Alessio Carta
  */
 class MemoryBookingDAOTest {
 

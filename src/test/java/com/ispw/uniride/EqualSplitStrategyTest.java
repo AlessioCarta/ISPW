@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Suite di Test per validare le regole di calcolo imposte dallo Strategy Pattern.
+ * @author Alessio Carta
  */
 class EqualSplitStrategyTest {
 

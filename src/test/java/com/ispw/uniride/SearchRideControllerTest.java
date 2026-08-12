@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Suite di Unit Testing (JUnit 5) per {@code SearchRideController}: ricerca dei passaggi
  * disponibili e richiesta di prenotazione (che riserva subito il posto senza confermarlo).
+ * @author Alessio Carta
  */
 class SearchRideControllerTest {
 

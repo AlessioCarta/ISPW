@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Suite di Unit Testing (JUnit 5) per {@code MemoryStudentDAO}.
+ * @author Alessio Carta
  */
 class MemoryStudentDAOTest {
 

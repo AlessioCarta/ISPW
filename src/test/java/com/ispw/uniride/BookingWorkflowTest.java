@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Suite di Unit Testing (JUnit 5) per il workflow di prenotazione richiesta -> conferma/rifiuto:
  * verifica sia le transizioni dell'entità {@code Booking} sia la loro combinazione con il
  * Pattern State di {@code Ride} (riserva del posto alla richiesta, rilascio sul rifiuto).
+ * @author Alessio Carta
  */
 class BookingWorkflowTest {
 

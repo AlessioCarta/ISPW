@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Suite di Unit Testing (JUnit 5) per {@code LoginController}: registrazione, login e logout.
  * Session e DAOFactory sono Singleton condivisi per tutta la JVM di test, quindi ogni test usa
  * uno username univoco per restare indipendente dagli altri indipendentemente dall'ordine di esecuzione.
+ * @author Alessio Carta
  */
 class LoginControllerTest {
 

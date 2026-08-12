@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * Suite di Test per validare le regole di calcolo imposte dalla Strategy alternativa
  * basata su un ricarico a favore del guidatore.
+ * @author Alessio Carta
  */
 class DistanceCostStrategyTest {
 

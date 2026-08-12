@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Suite di Unit Testing (JUnit 5) per convalidare il core business.
  * Verifica la correttezza del Design Pattern State applicato alla classe `Ride`.
+ * @author Alessio Carta
  */
 class RideStateTest {
 

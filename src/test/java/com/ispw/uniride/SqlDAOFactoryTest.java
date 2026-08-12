@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 /**
  * Suite di Unit Testing (JUnit 5) per {@code SqlDAOFactory}: verifica che la famiglia di DAO
  * restituita sia effettivamente quella collegata al database relazionale (H2 via JDBC).
+ * @author Alessio Carta
  */
 class SqlDAOFactoryTest {
 

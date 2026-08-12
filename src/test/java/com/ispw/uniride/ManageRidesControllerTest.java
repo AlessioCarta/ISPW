@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Suite di Unit Testing (JUnit 5) per {@code ManageRidesController}: workflow di conferma/rifiuto
  * delle richieste, annullamento/completamento di una corsa offerta e annullamento di una
  * prenotazione da parte del passeggero.
+ * @author Alessio Carta
  */
 class ManageRidesControllerTest {
 

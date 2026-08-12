@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Suite di Unit Testing (JUnit 5) per le transizioni di fine vita di un {@code Ride}:
  * completamento e annullamento (Pattern State, stati {@code CompletedState}/{@code CancelledState}).
+ * @author Alessio Carta
  */
 class RideLifecycleTest {
 

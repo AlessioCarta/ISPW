@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Suite di Unit Testing (JUnit 5) per {@code JdbcRideDAO}: persistenza su database relazionale
  * reale (H2 embedded). Il database su file è condiviso fra tutti i test della JVM, quindi ogni
  * test usa identificativi univoci invece di assumere che le tabelle siano vuote.
+ * @author Alessio Carta
  */
 class JdbcRideDAOTest {
 

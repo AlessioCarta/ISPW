@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Suite di Unit Testing (JUnit 5) per {@code FsRideDAO}: persistenza su file CSV reale
  * (rides.csv nella root del progetto). La cache statica è condivisa per l'intera JVM di test,
  * quindi ogni test usa identificativi univoci invece di assumere che il file sia vuoto.
+ * @author Alessio Carta
  */
 class FsRideDAOTest {
 

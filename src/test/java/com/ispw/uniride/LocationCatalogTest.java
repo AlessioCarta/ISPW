@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Suite di Unit Testing (JUnit 5) per {@code LocationCatalog}: ricerca per nome, ordinamento
  * per vicinanza e individuazione della città universitaria più vicina.
+ * @author Alessio Carta
  */
 class LocationCatalogTest {
 

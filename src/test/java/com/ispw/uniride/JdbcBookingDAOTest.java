@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Suite di Unit Testing (JUnit 5) per {@code JdbcBookingDAO}.
+ * @author Alessio Carta
  */
 class JdbcBookingDAOTest {
 
