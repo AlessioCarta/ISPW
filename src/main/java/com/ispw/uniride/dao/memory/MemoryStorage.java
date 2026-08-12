@@ -34,8 +34,11 @@ public class MemoryStorage {
         // i suggerimenti di vicinanza in Offri/Cerca Passaggio senza dover registrare un nuovo utente).
         // Il prefisso "[HASHED]" è solo un segnaposto testuale (non un vero hash crittografico),
         // sufficiente per il livello prototipale di autenticazione richiesto dal corso.
+        // Entrambi gli utenti demo sono nella stessa area (Lazio, Prenestino/Castelli Romani):
+        // così anche i suggerimenti di vicinanza del secondo utente (passeggero) restano coerenti
+        // con la tratta Palestrina -> Roma offerta dal primo, utile per demo/registrazioni video.
         studentsMap.put("mario.rossi", new Student("mario.rossi", "[HASHED]password", "Mario Rossi", "Palestrina"));
-        studentsMap.put("luigi.verdi", new Student("luigi.verdi", "[HASHED]password", "Luigi Verdi", "Milano"));
+        studentsMap.put("luigi.verdi", new Student("luigi.verdi", "[HASHED]password", "Luigi Verdi", "Frascati"));
     }
 
     public static synchronized MemoryStorage getInstance() {
