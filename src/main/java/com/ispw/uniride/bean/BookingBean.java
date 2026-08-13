@@ -25,6 +25,11 @@ public class BookingBean {
     // Stato della richiesta: REQUESTED, CONFIRMED, REJECTED o CANCELLED (vedi Booking).
     private String state;
 
+    // Gli 8 parametri sono tutti campi primitivi/String indipendenti di sola visualizzazione (una
+    // riga della ListView): introdurre un oggetto Builder o un value-object annidato avrebbe
+    // aggiunto complessità senza reali benefici per un semplice DTO come questo (stessa scelta
+    // già motivata per RideBean).
+    @SuppressWarnings("java:S107")
     public BookingBean(String bookingId, String rideId, String departure, String destination,
                         String date, String counterpartName, String counterpartPhone, String state) {
         this.bookingId = bookingId;
