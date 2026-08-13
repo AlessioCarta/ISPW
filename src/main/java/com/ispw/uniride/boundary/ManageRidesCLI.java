@@ -3,6 +3,9 @@ package com.ispw.uniride.boundary;
 import com.ispw.uniride.bean.BookingBean;
 import com.ispw.uniride.bean.RideBean;
 import com.ispw.uniride.controller.ManageRidesController;
+import com.ispw.uniride.exceptions.RideActionException;
+import com.ispw.uniride.exceptions.RideNotFoundException;
+import com.ispw.uniride.exceptions.UserNotAuthorizedException;
 
 import java.util.List;
 import java.util.Scanner;
@@ -32,7 +35,7 @@ public class ManageRidesCLI {
         }
     }
 
-    private void printOfferedRides() throws Exception {
+    private void printOfferedRides() throws UserNotAuthorizedException {
         System.out.println("\n[OFFERTE - Come Guidatore]");
         List<RideBean> offered = controller.getMyOfferedRides();
         if (offered.isEmpty()) {
@@ -51,7 +54,7 @@ public class ManageRidesCLI {
      * per mantenere la complessità cognitiva di start() entro la soglia consentita.
      * @return l'elenco appena stampato, riusato dal chiamante per l'eventuale annullamento.
      */
-    private List<BookingBean> printBookedRides() throws Exception {
+    private List<BookingBean> printBookedRides() throws UserNotAuthorizedException {
         System.out.println("\n[PRENOTAZIONI - Come Passeggero]");
         List<BookingBean> booked = controller.getMyBookedRides();
         if (booked.isEmpty()) {
@@ -70,7 +73,8 @@ public class ManageRidesCLI {
         return booked;
     }
 
-    private void handleCancelPrompt(Scanner scanner, List<BookingBean> booked) throws Exception {
+    private void handleCancelPrompt(Scanner scanner, List<BookingBean> booked)
+            throws UserNotAuthorizedException, RideNotFoundException, RideActionException {
         if (booked.isEmpty()) {
             // Nessuna prenotazione da annullare: si attende solo un Invio prima di tornare
             // al menu precedente, per dare il tempo di leggere l'elenco appena stampato.
