@@ -22,6 +22,8 @@ public class OfferRideCLI {
         String destination = scanner.nextLine();
         System.out.print("Data (gg/mm/aaaa): ");
         String date = scanner.nextLine();
+        System.out.print("Orario di partenza (HH:mm): ");
+        String departureTime = scanner.nextLine();
         System.out.print("Posti Totali: ");
         int totalSeats = scanner.nextInt();
         System.out.print("Costo Base Stimato (Carburante+Pedaggio): ");
@@ -29,7 +31,7 @@ public class OfferRideCLI {
 
         // Stesso Bean, stesso Controller Applicativo usato dalla Boundary grafica: nessuna
         // regola di business viene ripetuta o reinterpretata qui.
-        RideBean bean = new RideBean(departure, destination, date, totalSeats, basePrice);
+        RideBean bean = new RideBean(departure, destination, date, departureTime, totalSeats, basePrice);
 
         try {
             offerRideController.offerRide(bean);

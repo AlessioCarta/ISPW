@@ -70,8 +70,8 @@ public class SearchRideBoundary {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText(String.format("Da: %s A: %s | Data: %s | Guidatore: %s | Posti: %d | Costo Stimato Attuale: %.2f€",
-                            item.getDeparture(), item.getDestination(), item.getDate(),
+                    setText(String.format("Da: %s A: %s | Data: %s | Ore: %s | Guidatore: %s | Posti: %d | Costo Stimato Attuale: %.2f€",
+                            item.getDeparture(), item.getDestination(), item.getDate(), formatTime(item.getDepartureTime()),
                             item.getDriver(), item.getAvailableSeats(), item.getComputedPrice()));
                 }
             }
@@ -97,6 +97,14 @@ public class SearchRideBoundary {
             messageLabel.setText("Risultati aggiornati.");
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
         }
+    }
+
+    /**
+     * Rende leggibile un orario di partenza eventualmente assente (passaggi creati prima
+     * dell'introduzione di questo campo), invece di stampare "null" nella cella della lista.
+     */
+    private static String formatTime(String departureTime) {
+        return departureTime != null && !departureTime.isEmpty() ? departureTime : "n.d.";
     }
 
     /**

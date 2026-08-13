@@ -55,11 +55,14 @@ public class LoginCLI {
                 String username = scanner.nextLine();
                 System.out.print("Password: ");
                 String password = scanner.nextLine();
+                System.out.print("Numero di telefono (facoltativo, invio per saltare): ");
+                String phoneNumber = scanner.nextLine();
 
                 try {
                     // Overload senza homeLocation: la CLI, a differenza della GUI, non offre
-                    // ancora un modo pratico per scegliere una posizione da un catalogo.
-                    loginController.registerUser(username, password, fullName);
+                    // ancora un modo pratico per scegliere una posizione da un catalogo. Il
+                    // telefono invece è già raccolto anche qui, essendo un semplice campo testuale.
+                    loginController.registerUser(username, password, fullName, null, phoneNumber);
                     System.out.println("Registrazione completata! Ora puoi fare il login.");
                 } catch (Exception e) {
                     // Le eccezioni di dominio (username duplicato, password troppo corta)

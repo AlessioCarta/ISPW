@@ -88,6 +88,42 @@ class LoginControllerTest {
     }
 
     /**
+     * Una registrazione con un numero di telefono in formato plausibile deve avere successo e
+     * il numero deve essere recuperabile dalla sessione dopo il login.
+     */
+    @Test
+    void testRegisterWithValidPhoneNumberSucceeds() throws UserNotAuthorizedException {
+        String username = uniqueUsername("contelefono.test");
+        controller.registerUser(username, "password123", "Con Telefono", "Roma", "+39 333 1234567");
+
+        controller.login(new UserBean(username, "password123"));
+
+        assertEquals("+39 333 1234567", Session.getInstance().getLoggedUser().getPhoneNumber());
+        Session.getInstance().logout();
+    }
+
+    /**
+     * Un numero di telefono con caratteri non ammessi (lettere) deve essere rifiutato in fase
+     * di registrazione, così la funzionalità di contatto fra studenti resta affidabile.
+     */
+    @Test
+    void testRegisterWithInvalidPhoneNumberFormatFails() {
+        String username = uniqueUsername("telefonoinvalido.test");
+        UserNotAuthorizedException ex = assertThrows(UserNotAuthorizedException.class,
+                () -> controller.registerUser(username, "password123", "Telefono Invalido", "Roma", "chiamami!"));
+        assertEquals("Numero di telefono non valido: usa solo cifre, spazi ed eventualmente un + iniziale.", ex.getMessage());
+    }
+
+    /**
+     * Il telefono è facoltativo come la posizione: lasciato vuoto, la registrazione deve comunque riuscire.
+     */
+    @Test
+    void testRegisterWithoutPhoneNumberSucceeds() {
+        String username = uniqueUsername("senzatelefono.test");
+        assertDoesNotThrow(() -> controller.registerUser(username, "password123", "Senza Telefono", "Roma", null));
+    }
+
+    /**
      * Il logout deve azzerare l'utente attualmente loggato in Sessione.
      */
     @Test

@@ -64,7 +64,8 @@ final class JdbcSupport {
                         username VARCHAR(255) PRIMARY KEY,
                         password VARCHAR(255) NOT NULL,
                         full_name VARCHAR(255) NOT NULL,
-                        home_location VARCHAR(255)
+                        home_location VARCHAR(255),
+                        phone_number VARCHAR(32)
                     )
                     """);
             statement.execute("""
@@ -74,6 +75,7 @@ final class JdbcSupport {
                         departure VARCHAR(255) NOT NULL,
                         destination VARCHAR(255) NOT NULL,
                         ride_date VARCHAR(64) NOT NULL,
+                        departure_time VARCHAR(16),
                         total_seats INT NOT NULL,
                         available_seats INT NOT NULL,
                         base_price DOUBLE NOT NULL,

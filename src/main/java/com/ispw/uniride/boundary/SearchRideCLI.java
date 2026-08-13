@@ -34,8 +34,9 @@ public class SearchRideCLI {
         System.out.println("\nPassaggi disponibili:");
         for (int i = 0; i < rides.size(); i++) {
             RideBean r = rides.get(i);
-            System.out.printf("%d. [%s] Da: %s A: %s | Data: %s | Guidatore: %s | Posti: %d | Costo Stimato Attuale: %.2f€%n",
+            System.out.printf("%d. [%s] Da: %s A: %s | Data: %s | Ore: %s | Guidatore: %s | Posti: %d | Costo Stimato Attuale: %.2f€%n",
                     (i + 1), r.getId(), r.getDeparture(), r.getDestination(), r.getDate(),
+                    r.getDepartureTime() != null ? r.getDepartureTime() : "n.d.",
                     r.getDriver(), r.getAvailableSeats(), r.getComputedPrice());
         }
 

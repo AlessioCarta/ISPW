@@ -38,6 +38,7 @@ public class OfferRideBoundary {
     @FXML private ComboBox<String> departureField;
     @FXML private ComboBox<String> destinationField;
     @FXML private DatePicker dateField;
+    @FXML private TextField departureTimeField;
     @FXML private Spinner<Integer> seatsField;
     @FXML private TextField priceField;
     @FXML private Label messageLabel;
@@ -89,12 +90,13 @@ public class OfferRideBoundary {
             // DatePicker può essere vuoto (nessuna data scelta): in tal caso si passa una
             // stringa vuota, che sarà poi il Controller Applicativo a rifiutare come invalida.
             String date = dateField.getValue() != null ? dateField.getValue().format(DATE_FORMAT) : "";
+            String departureTime = departureTimeField.getText() != null ? departureTimeField.getText().trim() : "";
             int seats = seatsField.getValue();
             // parseDouble può lanciare NumberFormatException se il campo non contiene un
             // numero valido: gestito esplicitamente nel catch sottostante.
             double price = Double.parseDouble(priceField.getText());
 
-            RideBean bean = new RideBean(departure, destination, date, seats, price);
+            RideBean bean = new RideBean(departure, destination, date, departureTime, seats, price);
             offerRideController.offerRide(bean);
 
             messageLabel.setText("Passaggio offerto con successo!");
@@ -107,6 +109,7 @@ public class OfferRideBoundary {
             destinationField.getEditor().clear();
             destinationField.setValue(null);
             dateField.setValue(null);
+            departureTimeField.clear();
             seatsField.getValueFactory().setValue(3);
             priceField.clear();
 

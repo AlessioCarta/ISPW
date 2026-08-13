@@ -85,4 +85,33 @@ class FsRideDAOTest {
 
         assertNull(dao.getRideById(ride.getId()));
     }
+
+    /**
+     * L'orario di partenza deve sopravvivere al giro completo scrittura/rilettura da CSV, anche
+     * quando è l'ultimo campo della riga (nessun passeggero a seguire) — caso limite in cui
+     * uno split() che scarta i campi vuoti finali romperebbe silenziosamente il parsing.
+     */
+    @Test
+    void testDepartureTimePersistsAcrossReload() {
+        Ride ride = new Ride(unique("driver"), unique("Da"), unique("A"), "01/01/2027", 2, 10.0, "08:30");
+        dao.saveRide(ride);
+
+        Ride reloaded = dao.getRideById(ride.getId());
+
+        assertEquals("08:30", reloaded.getDepartureTime());
+    }
+
+    /**
+     * Un passaggio creato senza orario di partenza (retro-compatibilità) deve restare leggibile,
+     * con il campo che torna correttamente {@code null} invece di una stringa vuota o "null".
+     */
+    @Test
+    void testMissingDepartureTimePersistsAsNull() {
+        Ride ride = new Ride(unique("driver"), unique("Da"), unique("A"), "01/01/2027", 2, 10.0);
+        dao.saveRide(ride);
+
+        Ride reloaded = dao.getRideById(ride.getId());
+
+        assertNull(reloaded.getDepartureTime());
+    }
 }

@@ -27,6 +27,7 @@ public class RegisterBoundary {
     @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
     @FXML private ComboBox<String> homeLocationField;
+    @FXML private TextField phoneNumberField;
     @FXML private Label messageLabel;
 
     // Dependency injection manuale del Controller Applicativo: essendo questa classe istanziata
@@ -57,6 +58,7 @@ public class RegisterBoundary {
         // digitare una località non presente nel catalogo), quindi si legge sempre il testo
         // effettivamente scritto nel campo, non solo un valore selezionato dalla lista.
         String homeLocation = homeLocationField.getEditor().getText();
+        String phoneNumber = phoneNumberField.getText();
 
         // Validazione di solo formato (campi non vuoti): compito del Controller Grafico secondo
         // BCE, non delle regole di business più profonde (username duplicato, password troppo
@@ -68,9 +70,9 @@ public class RegisterBoundary {
         }
 
         try {
-            // La posizione è facoltativa: se lasciata vuota, Offri/Cerca Passaggio mostreranno
-            // l'elenco completo delle località senza suggerimenti di vicinanza.
-            loginController.registerUser(username, password, fullName, homeLocation);
+            // Posizione e telefono sono entrambi facoltativi: se lasciati vuoti, l'account resta
+            // pienamente funzionante, solo privo dei relativi suggerimenti/contatti.
+            loginController.registerUser(username, password, fullName, homeLocation, phoneNumber);
             messageLabel.setText("Registrazione Completata!");
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
         } catch (Exception e) {

@@ -42,7 +42,7 @@ class SearchRideControllerTest {
         String departure = unique("Partenza");
         String destination = unique("Destinazione");
         loginAs(driverUsername);
-        offerRideController.offerRide(new RideBean(departure, destination, "10/12/2026", 2, 20.0));
+        offerRideController.offerRide(new RideBean(departure, destination, "10/12/2026", "08:30", 2, 20.0));
 
         List<RideBean> results = searchRideController.searchRides(departure, destination);
         assertEquals(1, results.size(), "La ricerca deve trovare esattamente la corsa appena offerta");

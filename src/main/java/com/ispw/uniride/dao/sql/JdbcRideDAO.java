@@ -29,7 +29,7 @@ public class JdbcRideDAO implements RideDAO {
         // esiste già viene aggiornata, altrimenti viene inserita — un'unica istruzione al posto
         // di un SELECT preventivo per decidere fra INSERT e UPDATE.
         String upsertRide = "MERGE INTO rides (id, driver_username, departure, destination, ride_date, "
-                + "total_seats, available_seats, base_price, status) KEY (id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "departure_time, total_seats, available_seats, base_price, status) KEY (id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection connection = JdbcSupport.getConnection()) {
             // Disattiviamo l'autocommit: il salvataggio del Ride e la ricostruzione della lista
             // passeggeri devono avvenire come un'unica transazione atomica (vedi replacePassengers).
@@ -42,10 +42,11 @@ public class JdbcRideDAO implements RideDAO {
                 stmt.setString(3, ride.getDeparture());
                 stmt.setString(4, ride.getDestination());
                 stmt.setString(5, ride.getDate());
-                stmt.setInt(6, ride.getTotalSeats());
-                stmt.setInt(7, ride.getAvailableSeats());
-                stmt.setDouble(8, ride.getBasePrice());
-                stmt.setString(9, ride.getStatus());
+                stmt.setString(6, ride.getDepartureTime());
+                stmt.setInt(7, ride.getTotalSeats());
+                stmt.setInt(8, ride.getAvailableSeats());
+                stmt.setDouble(9, ride.getBasePrice());
+                stmt.setString(10, ride.getStatus());
                 stmt.executeUpdate();
             }
             replacePassengers(connection, ride);
@@ -187,7 +188,8 @@ public class JdbcRideDAO implements RideDAO {
                 rs.getString("destination"),
                 rs.getString("ride_date"),
                 rs.getInt("total_seats"),
-                rs.getDouble("base_price")
+                rs.getDouble("base_price"),
+                rs.getString("departure_time")
         );
         ride.setId(rs.getString("id"));
         ride.setAvailableSeats(rs.getInt("available_seats"));

@@ -55,6 +55,7 @@ public class SearchRideController {
                     ride.getDeparture(),
                     ride.getDestination(),
                     ride.getDate(),
+                    ride.getDepartureTime(),
                     ride.getTotalSeats(),
                     ride.getAvailableSeats(),
                     ride.getBasePrice(),

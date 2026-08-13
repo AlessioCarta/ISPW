@@ -20,15 +20,16 @@ public class JdbcStudentDAO implements StudentDAO {
     public void saveStudent(Student student) {
         // MERGE INTO ... KEY (username): upsert atomico, username come chiave di unicità (uno
         // studente non può registrarsi due volte con lo stesso username).
-        String sql = "MERGE INTO students (username, password, full_name, home_location) KEY (username) VALUES (?, ?, ?, ?)";
+        String sql = "MERGE INTO students (username, password, full_name, home_location, phone_number) KEY (username) VALUES (?, ?, ?, ?, ?)";
         try (Connection connection = JdbcSupport.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, student.getUsername());
             stmt.setString(2, student.getPassword());
             stmt.setString(3, student.getFullName());
-            // home_location può essere null (studente che non ha dichiarato la posizione):
+            // home_location e phone_number possono essere null (campi facoltativi non dichiarati):
             // setString(null) su H2 scrive correttamente un NULL SQL, non lancia eccezione.
             stmt.setString(4, student.getHomeLocation());
+            stmt.setString(5, student.getPhoneNumber());
             stmt.executeUpdate();
         } catch (SQLException e) {
             LoggerCustom.error("Errore nel salvataggio dello studente su database", e);
@@ -37,7 +38,7 @@ public class JdbcStudentDAO implements StudentDAO {
 
     @Override
     public Student getStudentByUsername(String username) {
-        String sql = "SELECT username, password, full_name, home_location FROM students WHERE username = ?";
+        String sql = "SELECT username, password, full_name, home_location, phone_number FROM students WHERE username = ?";
         try (Connection connection = JdbcSupport.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, username);
@@ -61,7 +62,8 @@ public class JdbcStudentDAO implements StudentDAO {
                 rs.getString("username"),
                 rs.getString("password"),
                 rs.getString("full_name"),
-                rs.getString("home_location")
+                rs.getString("home_location"),
+                rs.getString("phone_number")
         );
     }
 }

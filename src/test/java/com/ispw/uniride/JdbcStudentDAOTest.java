@@ -59,4 +59,19 @@ class JdbcStudentDAOTest {
         assertEquals("Nome Nuovo", found.getFullName());
         assertEquals("Roma", found.getHomeLocation());
     }
+
+    /**
+     * Il numero di telefono deve sopravvivere al giro completo scrittura/rilettura dal database.
+     */
+    @Test
+    void testPhoneNumberPersistsAcrossReload() {
+        String username = unique("conTelefono");
+        Student student = new Student(username, "[HASHED]password", "Con Telefono", "Roma", "+39 333 1234567");
+
+        dao.saveStudent(student);
+        Student found = dao.getStudentByUsername(username);
+
+        assertNotNull(found);
+        assertEquals("+39 333 1234567", found.getPhoneNumber());
+    }
 }

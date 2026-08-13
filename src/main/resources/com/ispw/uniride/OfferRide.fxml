@@ -30,11 +30,14 @@
                     <Label text="Data" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="form-label"/>
                     <DatePicker fx:id="dateField" promptText="Seleziona una data" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
-                    <Label text="Posti Totali" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="form-label"/>
-                    <Spinner fx:id="seatsField" editable="true" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                    <Label text="Orario Partenza" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="form-label"/>
+                    <TextField fx:id="departureTimeField" promptText="Es. 08:30" GridPane.columnIndex="1" GridPane.rowIndex="3" />
 
-                    <Label text="Costo Base (€)" GridPane.columnIndex="0" GridPane.rowIndex="4" styleClass="form-label"/>
-                    <TextField fx:id="priceField" promptText="Es. 10.00" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                    <Label text="Posti Totali" GridPane.columnIndex="0" GridPane.rowIndex="4" styleClass="form-label"/>
+                    <Spinner fx:id="seatsField" editable="true" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+
+                    <Label text="Costo Base (€)" GridPane.columnIndex="0" GridPane.rowIndex="5" styleClass="form-label"/>
+                    <TextField fx:id="priceField" promptText="Es. 10.00" GridPane.columnIndex="1" GridPane.rowIndex="5" />
                 </GridPane>
                 <Button text="Conferma" styleClass="action-button" onAction="#handleSubmit" maxWidth="Infinity" />
                 <Label fx:id="messageLabel" styleClass="message-label" textFill="GREEN" wrapText="true" alignment="CENTER" maxWidth="Infinity" />

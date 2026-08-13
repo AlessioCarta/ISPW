@@ -8,12 +8,18 @@ import com.ispw.uniride.exceptions.UserNotAuthorizedException;
 import com.ispw.uniride.model.Ride;
 import com.ispw.uniride.model.Student;
 
+import java.util.regex.Pattern;
+
 /**
  * Controller logico dedicato alla registrazione formale (inserimento/creazione)
  * di nuove offerte per passaggi (Use Case: "Offerta Passaggio").
  * Rientra nello standard BCE.
  */
 public class OfferRideController {
+
+    // Formato "HH:mm" a 24 ore (es. "08:05", "18:30"): ore 00-23, minuti 00-59. Lo stesso vincolo
+    // che le Boundary (grafica e CLI) chiedono all'utente di rispettare in fase di digitazione.
+    private static final Pattern TIME_PATTERN = Pattern.compile("^([01]\\d|2[0-3]):[0-5]\\d$");
 
     /**
      * Valida un nuovo tragitto proposto convertendo le specifiche del DTO `RideBean` in
@@ -45,7 +51,8 @@ public class OfferRideController {
                 rideBean.getDestination(),
                 rideBean.getDate(),
                 rideBean.getTotalSeats(),
-                rideBean.getBasePrice()
+                rideBean.getBasePrice(),
+                rideBean.getDepartureTime()
         );
 
         // Operazione CRUD finale tramite lo Storage specificato dal file di configurazione
@@ -73,6 +80,11 @@ public class OfferRideController {
         // Un costo negativo non ha significato economico nel dominio del carpooling.
         if (rideBean.getBasePrice() < 0) {
             throw new RideActionException("Il costo base non può essere negativo.");
+        }
+        // L'orario di partenza è deciso dal guidatore ed è obbligatorio: i passeggeri lo vedono
+        // già nell'elenco risultati, prima ancora di richiedere il passaggio.
+        if (rideBean.getDepartureTime() == null || !TIME_PATTERN.matcher(rideBean.getDepartureTime().trim()).matches()) {
+            throw new RideActionException("Inserisci un orario di partenza valido (formato HH:mm, es. 08:30).");
         }
     }
 }

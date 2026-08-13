@@ -30,6 +30,11 @@ public class Ride implements Subject {
     private String destination;
     private String date; // Data mantenuta testualmente per comodità prototipale
 
+    // Orario di partenza deciso dal guidatore (formato testuale "HH:mm", stesso approccio di
+    // "date"), o {@code null} se non specificato (retro-compatibilità con passaggi creati prima
+    // dell'introduzione di questo campo).
+    private String departureTime;
+
     // Statistiche posti a sedere autovettura.
     private int totalSeats;
     private int availableSeats;
@@ -47,17 +52,26 @@ public class Ride implements Subject {
     private List<Observer> observers = new ArrayList<>();
 
     /**
+     * Costruttore breve mantenuto per compatibilità con il codice preesistente (test e chiamate
+     * che non specificano un orario di partenza). L'orario resta non impostato.
+     */
+    public Ride(String driverUsername, String departure, String destination, String date, int totalSeats, double basePrice) {
+        this(driverUsername, departure, destination, date, totalSeats, basePrice, null);
+    }
+
+    /**
      * Costruisce un Passaggio nuovo generando l'UUID interno ed impostando
      * i dati raccolti.
      * Inizializza automaticamente lo State iniziale in Available o Full.
      */
-    public Ride(String driverUsername, String departure, String destination, String date, int totalSeats, double basePrice) {
+    public Ride(String driverUsername, String departure, String destination, String date, int totalSeats, double basePrice, String departureTime) {
         // Ogni Ride ha un id univoco generato internamente: chi crea l'oggetto non deve fornirlo.
         this.id = UUID.randomUUID().toString();
         this.driverUsername = driverUsername;
         this.departure = departure;
         this.destination = destination;
         this.date = date;
+        this.departureTime = departureTime;
         this.totalSeats = totalSeats;
         // Alla nascita nessun posto è ancora stato prenotato: i posti liberi coincidono col totale.
         this.availableSeats = totalSeats;
@@ -75,6 +89,7 @@ public class Ride implements Subject {
     public String getDeparture() { return departure; }
     public String getDestination() { return destination; }
     public String getDate() { return date; }
+    public String getDepartureTime() { return departureTime; }
     public int getTotalSeats() { return totalSeats; }
     public double getBasePrice() { return basePrice; }
     public int getAvailableSeats() { return availableSeats; }

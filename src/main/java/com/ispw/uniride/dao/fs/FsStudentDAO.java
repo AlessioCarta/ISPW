@@ -45,8 +45,8 @@ public class FsStudentDAO implements StudentDAO {
                 // Mock hashed initial data: stesso seed di MemoryStorage, così la demo si
                 // comporta allo stesso modo indipendentemente dalla modalità di persistenza scelta.
                 try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
-                    pw.println("mario.rossi,[HASHED]password,Mario Rossi");
-                    pw.println("luigi.verdi,[HASHED]password,Luigi Verdi");
+                    pw.println("mario.rossi,[HASHED]password,Mario Rossi,Palestrina,+39 333 1234567");
+                    pw.println("luigi.verdi,[HASHED]password,Luigi Verdi,Frascati,+39 347 7654321");
                 }
             } catch (IOException e) {
                 LoggerCustom.error("Failed to create students.csv", e);
@@ -91,7 +91,8 @@ public class FsStudentDAO implements StudentDAO {
     }
 
     /**
-     * Converte una riga CSV (username, password, fullName, [homeLocation]) in uno {@link Student}.
+     * Converte una riga CSV (username, password, fullName, [homeLocation], [phoneNumber]) in
+     * uno {@link Student}.
      * @return lo Student ricostruito, oppure {@code null} se la riga è malformata.
      */
     private static Student parseStudentFromCsvLine(String line) {
@@ -99,10 +100,11 @@ public class FsStudentDAO implements StudentDAO {
         if (parts.length < MIN_CSV_FIELDS) {
             return null;
         }
-        // Il 4° campo (posizione dichiarata) è opzionale: righe CSV storiche scritte prima
-        // di questa funzionalità restano leggibili senza errori.
+        // Il 4° campo (posizione dichiarata) e il 5° (telefono) sono entrambi opzionali: righe
+        // CSV storiche scritte prima dell'introduzione di questi campi restano leggibili senza errori.
         String homeLocation = parts.length >= 4 && !parts[3].trim().isEmpty() ? parts[3] : null;
-        return new Student(parts[0], parts[1], parts[2], homeLocation);
+        String phoneNumber = parts.length >= 5 && !parts[4].trim().isEmpty() ? parts[4] : null;
+        return new Student(parts[0], parts[1], parts[2], homeLocation, phoneNumber);
     }
 
     @Override
@@ -113,7 +115,8 @@ public class FsStudentDAO implements StudentDAO {
             // che modifichi uno Student già registrato — solo creazioni nuove in fase di registrazione.
             try (PrintWriter pw = new PrintWriter(new FileWriter(FILE_PATH, true))) {
                 String homeLocation = student.getHomeLocation() != null ? student.getHomeLocation() : "";
-                pw.println(student.getUsername() + "," + student.getPassword() + "," + student.getFullName() + "," + homeLocation);
+                String phoneNumber = student.getPhoneNumber() != null ? student.getPhoneNumber() : "";
+                pw.println(student.getUsername() + "," + student.getPassword() + "," + student.getFullName() + "," + homeLocation + "," + phoneNumber);
                 // Aggiorniamo la cache in RAM solo se già popolata: se nessuno l'ha ancora letta
                 // (cache == null), la prossima refreshCache() la costruirà da zero includendo
                 // anche questa nuova riga appena scritta.

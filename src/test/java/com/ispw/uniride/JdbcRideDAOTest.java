@@ -84,4 +84,17 @@ class JdbcRideDAOTest {
 
         assertNull(dao.getRideById(ride.getId()));
     }
+
+    /**
+     * L'orario di partenza deve sopravvivere al giro completo scrittura/rilettura dal database.
+     */
+    @Test
+    void testDepartureTimePersistsAcrossReload() {
+        Ride ride = new Ride(unique("driver"), unique("Da"), unique("A"), "01/01/2027", 2, 10.0, "08:30");
+        dao.saveRide(ride);
+
+        Ride reloaded = dao.getRideById(ride.getId());
+
+        assertEquals("08:30", reloaded.getDepartureTime());
+    }
 }

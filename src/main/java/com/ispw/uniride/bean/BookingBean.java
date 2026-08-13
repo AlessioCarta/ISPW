@@ -16,17 +16,24 @@ public class BookingBean {
     // passeggero è il guidatore del passaggio.
     private String counterpartName;
 
+    // Numero di telefono della controparte (facoltativo, {@code null} se non dichiarato): mostrato
+    // solo qui, mai in un elenco di ricerca pubblico, perché esiste già una richiesta di passaggio
+    // concreta fra i due studenti — è il punto in cui ha senso potersi scrivere per accordarsi
+    // sul luogo d'incontro esatto.
+    private String counterpartPhone;
+
     // Stato della richiesta: REQUESTED, CONFIRMED, REJECTED o CANCELLED (vedi Booking).
     private String state;
 
     public BookingBean(String bookingId, String rideId, String departure, String destination,
-                        String date, String counterpartName, String state) {
+                        String date, String counterpartName, String counterpartPhone, String state) {
         this.bookingId = bookingId;
         this.rideId = rideId;
         this.departure = departure;
         this.destination = destination;
         this.date = date;
         this.counterpartName = counterpartName;
+        this.counterpartPhone = counterpartPhone;
         this.state = state;
     }
 
@@ -36,5 +43,6 @@ public class BookingBean {
     public String getDestination() { return destination; }
     public String getDate() { return date; }
     public String getCounterpartName() { return counterpartName; }
+    public String getCounterpartPhone() { return counterpartPhone; }
     public String getState() { return state; }
 }

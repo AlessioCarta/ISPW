@@ -37,8 +37,11 @@ public class MemoryStorage {
         // Entrambi gli utenti demo sono nella stessa area (Lazio, Prenestino/Castelli Romani):
         // così anche i suggerimenti di vicinanza del secondo utente (passeggero) restano coerenti
         // con la tratta Palestrina -> Roma offerta dal primo, utile per demo/registrazioni video.
-        studentsMap.put("mario.rossi", new Student("mario.rossi", "[HASHED]password", "Mario Rossi", "Palestrina"));
-        studentsMap.put("luigi.verdi", new Student("luigi.verdi", "[HASHED]password", "Luigi Verdi", "Frascati"));
+        // I numeri di telefono demo servono a mostrare la funzionalità di contatto fra guidatore
+        // e passeggero (visibile solo dopo una richiesta di passaggio reale, mai in un elenco
+        // pubblico): sono fittizi, non corrispondono a utenze reali.
+        studentsMap.put("mario.rossi", new Student("mario.rossi", "[HASHED]password", "Mario Rossi", "Palestrina", "+39 333 1234567"));
+        studentsMap.put("luigi.verdi", new Student("luigi.verdi", "[HASHED]password", "Luigi Verdi", "Frascati", "+39 347 7654321"));
     }
 
     public static synchronized MemoryStorage getInstance() {

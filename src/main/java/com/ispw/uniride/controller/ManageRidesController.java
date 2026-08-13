@@ -5,6 +5,7 @@ import com.ispw.uniride.bean.RideBean;
 import com.ispw.uniride.dao.BookingDAO;
 import com.ispw.uniride.dao.DAOFactory;
 import com.ispw.uniride.dao.RideDAO;
+import com.ispw.uniride.dao.StudentDAO;
 import com.ispw.uniride.exceptions.RideActionException;
 import com.ispw.uniride.exceptions.RideNotFoundException;
 import com.ispw.uniride.exceptions.UserNotAuthorizedException;
@@ -41,6 +42,7 @@ public class ManageRidesController {
 
         BookingDAO bookingDAO = DAOFactory.getInstance().getBookingDAO();
         RideDAO rideDAO = DAOFactory.getInstance().getRideDAO();
+        StudentDAO studentDAO = DAOFactory.getInstance().getStudentDAO();
 
         List<BookingBean> beans = new ArrayList<>();
         for (Booking booking : bookingDAO.getBookingsByPassenger(user.getUsername())) {
@@ -48,8 +50,12 @@ public class ManageRidesController {
             boolean isActive = Booking.REQUESTED.equals(booking.getState()) || Booking.CONFIRMED.equals(booking.getState());
             Ride ride = isActive ? rideDAO.getRideById(booking.getRideId()) : null;
             if (ride != null) {
+                // Esiste già una richiesta di passaggio concreta fra i due: il passeggero può ora
+                // vedere il telefono del guidatore per accordarsi sul punto d'incontro.
+                Student driver = studentDAO.getStudentByUsername(ride.getDriverUsername());
+                String driverPhone = driver != null ? driver.getPhoneNumber() : null;
                 beans.add(new BookingBean(booking.getId(), ride.getId(), ride.getDeparture(), ride.getDestination(),
-                        ride.getDate(), ride.getDriverUsername(), booking.getState()));
+                        ride.getDate(), ride.getDriverUsername(), driverPhone, booking.getState()));
             }
         }
         return beans;
@@ -73,13 +79,18 @@ public class ManageRidesController {
         }
 
         BookingDAO bookingDAO = DAOFactory.getInstance().getBookingDAO();
+        StudentDAO studentDAO = DAOFactory.getInstance().getStudentDAO();
         List<BookingBean> beans = new ArrayList<>();
         for (Booking booking : bookingDAO.getBookingsByRide(rideId)) {
             if (!Booking.REQUESTED.equals(booking.getState())) {
                 continue; // Solo le richieste ancora da evadere interessano al guidatore.
             }
+            // Il guidatore può già vedere il telefono del passeggero richiedente: la richiesta
+            // stessa è la prova del contatto, non serve attendere la conferma per potersi scrivere.
+            Student passenger = studentDAO.getStudentByUsername(booking.getPassengerUsername());
+            String passengerPhone = passenger != null ? passenger.getPhoneNumber() : null;
             beans.add(new BookingBean(booking.getId(), ride.getId(), ride.getDeparture(), ride.getDestination(),
-                    ride.getDate(), booking.getPassengerUsername(), booking.getState()));
+                    ride.getDate(), booking.getPassengerUsername(), passengerPhone, booking.getState()));
         }
         return beans;
     }
@@ -232,7 +243,7 @@ public class ManageRidesController {
         List<RideBean> beans = new ArrayList<>();
         for (Ride r : rides) {
             RideBean b = new RideBean(r.getId(), r.getDriverUsername(), r.getDeparture(), r.getDestination(),
-                    r.getDate(), r.getTotalSeats(), r.getAvailableSeats(), r.getBasePrice(), r.getStatus());
+                    r.getDate(), r.getDepartureTime(), r.getTotalSeats(), r.getAvailableSeats(), r.getBasePrice(), r.getStatus());
             beans.add(b);
         }
         return beans;

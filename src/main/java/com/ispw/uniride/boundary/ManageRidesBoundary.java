@@ -48,8 +48,8 @@ public class ManageRidesBoundary {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText(String.format("Da: %s A: %s | Data: %s | Stato: %s",
-                            item.getDeparture(), item.getDestination(), item.getDate(), translateRideStatus(item.getStatus())));
+                    setText(String.format("Da: %s A: %s | Data: %s | Ore: %s | Stato: %s",
+                            item.getDeparture(), item.getDestination(), item.getDate(), formatTime(item.getDepartureTime()), translateRideStatus(item.getStatus())));
                 }
             }
         });
@@ -58,7 +58,9 @@ public class ManageRidesBoundary {
             @Override
             protected void updateItem(BookingBean item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : "Richiesta di: " + item.getCounterpartName());
+                // Il telefono del passeggero richiedente è già visibile qui: la richiesta stessa
+                // è la prova del contatto fra i due, non serve attendere la conferma.
+                setText(empty || item == null ? null : "Richiesta di: " + item.getCounterpartName() + " | Tel: " + formatPhone(item.getCounterpartPhone()));
             }
         });
 
@@ -69,9 +71,9 @@ public class ManageRidesBoundary {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText(String.format("Da: %s A: %s | Data: %s | Guidatore: %s | Stato: %s",
+                    setText(String.format("Da: %s A: %s | Data: %s | Guidatore: %s | Tel: %s | Stato: %s",
                             item.getDeparture(), item.getDestination(), item.getDate(),
-                            item.getCounterpartName(), translateBookingStatus(item.getState())));
+                            item.getCounterpartName(), formatPhone(item.getCounterpartPhone()), translateBookingStatus(item.getState())));
                 }
             }
         });
@@ -96,6 +98,22 @@ public class ManageRidesBoundary {
             case "CANCELLED": return "Annullata";
             default: return status;
         }
+    }
+
+    /**
+     * Rende leggibile un orario di partenza eventualmente assente (passaggi creati prima
+     * dell'introduzione di questo campo), invece di stampare "null" nella cella della lista.
+     */
+    private String formatTime(String departureTime) {
+        return departureTime != null && !departureTime.isEmpty() ? departureTime : "n.d.";
+    }
+
+    /**
+     * Rende leggibile un numero di telefono eventualmente non dichiarato dalla controparte,
+     * invece di stampare "null" nella cella della lista.
+     */
+    private String formatPhone(String phoneNumber) {
+        return phoneNumber != null && !phoneNumber.isEmpty() ? phoneNumber : "non fornito";
     }
 
     /** Come {@link #translateRideStatus}, ma per le sigle di stato di {@code Booking}. */

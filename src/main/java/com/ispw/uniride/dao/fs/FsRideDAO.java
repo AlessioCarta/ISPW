@@ -29,8 +29,9 @@ public class FsRideDAO implements RideDAO {
     private static final Object LOCK = new Object();
 
     // Numero minimo di campi attesi su una riga CSV valida (id, driver, partenza, destinazione,
-    // data, posti totali, posti disponibili, prezzo, stato); eventuali passeggeri seguono.
-    private static final int MIN_CSV_FIELDS = 9;
+    // data, posti totali, posti disponibili, prezzo, stato, orario di partenza); eventuali
+    // passeggeri seguono.
+    private static final int MIN_CSV_FIELDS = 10;
 
     // Static Cache: condivisa fra tutte le istanze di FsRideDAO (analogamente a MemoryStorage,
     // ma qui la "fonte di verità" resta il file su disco, la cache è solo un acceleratore).
@@ -107,26 +108,31 @@ public class FsRideDAO implements RideDAO {
 
     /**
      * Converte una singola riga CSV (id, driverUsername, departure, destination, date, totalSeats,
-     * availableSeats, basePrice, status, [passengerUsernames...]) in un'istanza di {@link Ride}.
+     * availableSeats, basePrice, status, departureTime, [passengerUsernames...]) in un'istanza di
+     * {@link Ride}.
      * @return il Ride ricostruito, oppure {@code null} se la riga è malformata.
      */
     private static Ride parseRideFromCsvLine(String line) {
-        String[] parts = line.split(",");
+        String[] parts = line.split(",", -1);
         // Riga troppo corta: probabilmente scrittura incompleta o corruzione — la si scarta
         // silenziosamente invece di lanciare un'eccezione che bloccherebbe l'intero caricamento.
         if (parts.length < MIN_CSV_FIELDS) {
             return null;
         }
 
+        // Campo facoltativo (può essere stato salvato vuoto per passaggi creati prima
+        // dell'introduzione di questo campo): stringa vuota -> null, coerentemente con Ride.
+        String departureTime = parts[9].trim().isEmpty() ? null : parts[9];
+
         // Il costruttore pubblico di Ride genera un nuovo id e imposta availableSeats=totalSeats:
         // per questo, subito dopo, sovrascriviamo entrambi i campi con i valori realmente
         // persistiti (setId, setAvailableSeats), altrimenti perderemmo lo stato reale del Ride.
-        Ride ride = new Ride(parts[1], parts[2], parts[3], parts[4], Integer.parseInt(parts[5]), Double.parseDouble(parts[7]));
+        Ride ride = new Ride(parts[1], parts[2], parts[3], parts[4], Integer.parseInt(parts[5]), Double.parseDouble(parts[7]), departureTime);
         ride.setId(parts[0]);
         ride.setAvailableSeats(Integer.parseInt(parts[6]));
         ride.setState(parseState(parts[8]));
 
-        // I campi dopo il nono (indice MIN_CSV_FIELDS) sono, uno per uno, gli username dei
+        // I campi dopo il decimo (indice MIN_CSV_FIELDS) sono, uno per uno, gli username dei
         // passeggeri prenotati: numero variabile, per questo non fanno parte dei campi fissi.
         for (int i = MIN_CSV_FIELDS; i < parts.length; i++) {
             if (!parts[i].trim().isEmpty()) {
@@ -185,7 +191,7 @@ public class FsRideDAO implements RideDAO {
           .append(r.getDeparture()).append(",").append(r.getDestination()).append(",")
           .append(r.getDate()).append(",").append(r.getTotalSeats()).append(",")
           .append(r.getAvailableSeats()).append(",").append(r.getBasePrice()).append(",")
-          .append(r.getStatus());
+          .append(r.getStatus()).append(",").append(r.getDepartureTime() != null ? r.getDepartureTime() : "");
 
         // Gli username dei passeggeri vengono accodati come campi extra di lunghezza variabile.
         for (String pass : r.getPassengerUsernames()) {

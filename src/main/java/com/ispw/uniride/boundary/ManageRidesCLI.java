@@ -39,8 +39,12 @@ public class ManageRidesCLI {
                 // prenotazione annullare digitando semplicemente il suo numero.
                 for (int i = 0; i < booked.size(); i++) {
                     BookingBean b = booked.get(i);
-                    System.out.printf("%d. [%s] Guidatore: %s | %s -> %s (%s) [%s]%n",
-                            i+1, b.getRideId(), b.getCounterpartName(), b.getDeparture(), b.getDestination(), b.getDate(), b.getState());
+                    // Il telefono del guidatore è mostrato solo qui, dove esiste già una
+                    // richiesta di passaggio concreta fra i due, mai in un elenco di ricerca.
+                    System.out.printf("%d. [%s] Guidatore: %s | Tel: %s | %s -> %s (%s) [%s]%n",
+                            i+1, b.getRideId(), b.getCounterpartName(),
+                            b.getCounterpartPhone() != null ? b.getCounterpartPhone() : "non fornito",
+                            b.getDeparture(), b.getDestination(), b.getDate(), b.getState());
                 }
             }
 

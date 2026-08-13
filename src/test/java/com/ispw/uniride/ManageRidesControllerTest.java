@@ -6,6 +6,7 @@ import com.ispw.uniride.controller.ManageRidesController;
 import com.ispw.uniride.controller.OfferRideController;
 import com.ispw.uniride.controller.SearchRideController;
 import com.ispw.uniride.controller.Session;
+import com.ispw.uniride.dao.DAOFactory;
 import com.ispw.uniride.exceptions.RideActionException;
 import com.ispw.uniride.exceptions.UserNotAuthorizedException;
 import com.ispw.uniride.model.Student;
@@ -54,7 +55,7 @@ class ManageRidesControllerTest {
         String destination = unique("Destinazione");
 
         loginAs(driver);
-        offerRideController.offerRide(new RideBean(departure, destination, "10/12/2026", 2, 20.0));
+        offerRideController.offerRide(new RideBean(departure, destination, "10/12/2026", "08:30", 2, 20.0));
         List<RideBean> found = searchRideController.searchRides(departure, destination);
         String rideId = found.get(0).getId();
 
@@ -184,6 +185,39 @@ class ManageRidesControllerTest {
 
         assertThrows(RideActionException.class, () -> manageRidesController.cancelOfferedRide(s.rideId()));
         assertThrows(RideActionException.class, () -> manageRidesController.completeRide(s.rideId()));
+    }
+
+    /**
+     * Il telefono della controparte deve comparire sia fra le richieste pendenti mostrate al
+     * guidatore (telefono del passeggero) sia fra le prenotazioni mostrate al passeggero
+     * (telefono del guidatore): esiste già una richiesta di passaggio concreta fra i due, quindi
+     * possono scriversi per accordarsi sul punto d'incontro.
+     */
+    @Test
+    void testCounterpartPhoneVisibleInPendingAndBookedLists() throws Exception {
+        String driver = unique("driver");
+        String passenger = unique("passenger");
+        // I due studenti vengono registrati con un telefono dichiarato, così ManageRidesController
+        // può recuperarlo tramite StudentDAO al momento di costruire i BookingBean.
+        DAOFactory.getInstance().getStudentDAO().saveStudent(new Student(driver, "[HASHED]password", "Guidatore Test", null, "+39 111 1111111"));
+        DAOFactory.getInstance().getStudentDAO().saveStudent(new Student(passenger, "[HASHED]password", "Passeggero Test", null, "+39 222 2222222"));
+
+        String departure = unique("Partenza");
+        String destination = unique("Destinazione");
+        loginAs(driver);
+        offerRideController.offerRide(new RideBean(departure, destination, "10/12/2026", "08:30", 2, 20.0));
+        String rideId = searchRideController.searchRides(departure, destination).get(0).getId();
+
+        loginAs(passenger);
+        assertTrue(searchRideController.bookRide(rideId));
+
+        loginAs(driver);
+        List<BookingBean> pending = manageRidesController.getPendingRequestsForRide(rideId);
+        assertEquals("+39 222 2222222", pending.get(0).getCounterpartPhone());
+
+        loginAs(passenger);
+        List<BookingBean> booked = manageRidesController.getMyBookedRides();
+        assertEquals("+39 111 1111111", booked.get(0).getCounterpartPhone());
     }
 
     /**

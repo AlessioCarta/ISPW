@@ -11,6 +11,9 @@ public class RideBean {
     private String departure;
     private String destination;
     private String date;
+    // Orario di partenza deciso dal guidatore (formato "HH:mm"), non sensibile: visibile a
+    // chiunque veda il passaggio (elenco ricerca compreso), a differenza del numero di telefono.
+    private String departureTime;
     private int totalSeats;
     private double basePrice;
 
@@ -27,13 +30,15 @@ public class RideBean {
      * @param departure la città o l'indirizzo dal quale si intende partire.
      * @param destination la destinazione preimpostata per questo tragitto carpooling.
      * @param date momento in cui il guidatore organizza la partenza (formato gg/mm/aaaa o custom).
+     * @param departureTime l'orario di partenza deciso dal guidatore (formato "HH:mm").
      * @param totalSeats posti a sedere fisici della vettura (eccetto l'autista).
      * @param basePrice costo puro di partenza per benzina, usura o pedaggi da coprire globalmente.
      */
-    public RideBean(String departure, String destination, String date, int totalSeats, double basePrice) {
+    public RideBean(String departure, String destination, String date, String departureTime, int totalSeats, double basePrice) {
         this.departure = departure;
         this.destination = destination;
         this.date = date;
+        this.departureTime = departureTime;
         this.totalSeats = totalSeats;
         this.basePrice = basePrice;
     }
@@ -47,21 +52,23 @@ public class RideBean {
      * @param departure l'origine prefissata dal conducente.
      * @param destination meta stabilita del carpooling.
      * @param date la schedulazione testuale o oggettuale indicante il giorno d'avvio.
+     * @param departureTime l'orario di partenza deciso dal guidatore (formato "HH:mm"), o {@code null}.
      * @param totalSeats i posti a sedere massimi inseriti alla creazione.
      * @param availableSeats il conteggio dei passeggeri in tempo reale rispetto agli slot vuoti.
      * @param basePrice spesa base totale che sarà successivamente elaborata dallo Strategy pattern.
      * @param status stringa testuale equivalente allo stato della macchina (AVAILABLE o FULL).
      */
-    // I 9 parametri sono tutti campi primitivi/String indipendenti di sola visualizzazione (una
+    // I 10 parametri sono tutti campi primitivi/String indipendenti di sola visualizzazione (una
     // riga della ListView): introdurre un oggetto Builder o un value-object annidato avrebbe
     // aggiunto complessità senza reali benefici per un semplice DTO come questo.
     @SuppressWarnings("java:S107")
-    public RideBean(String id, String driver, String departure, String destination, String date, int totalSeats, int availableSeats, double basePrice, String status) {
+    public RideBean(String id, String driver, String departure, String destination, String date, String departureTime, int totalSeats, int availableSeats, double basePrice, String status) {
         this.id = id;
         this.driver = driver;
         this.departure = departure;
         this.destination = destination;
         this.date = date;
+        this.departureTime = departureTime;
         this.totalSeats = totalSeats;
         this.availableSeats = availableSeats;
         this.basePrice = basePrice;
@@ -73,6 +80,7 @@ public class RideBean {
     public String getDeparture() { return departure; }
     public String getDestination() { return destination; }
     public String getDate() { return date; }
+    public String getDepartureTime() { return departureTime; }
     public int getTotalSeats() { return totalSeats; }
     public double getBasePrice() { return basePrice; }
     public int getAvailableSeats() { return availableSeats; }
