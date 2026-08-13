@@ -12,8 +12,8 @@ L'obiettivo è consentire agli studenti di offrire o cercare passaggi per andare
 Ogni studente può ricoprire entrambi i ruoli: nulla vieta di offrire una corsa e, in parallelo, cercarne un'altra come passeggero.
 
 ### Casi d'Uso Principali
-1. **Registrazione / Login:** creazione account con username, password e comune/paese di residenza (facoltativo, usato per i suggerimenti di vicinanza).
-2. **Offerta Passaggio:** inserimento di un nuovo viaggio disponibile (partenza, destinazione, data, posti, costo base).
+1. **Registrazione / Login:** creazione account con username, password, comune/paese di residenza (facoltativo, usato per i suggerimenti di vicinanza) e numero di telefono (facoltativo, mostrato solo alla controparte di una richiesta di passaggio già esistente, mai in un elenco di ricerca pubblico).
+2. **Offerta Passaggio:** inserimento di un nuovo viaggio disponibile (partenza, destinazione, data, orario di partenza HH:mm, posti, costo base).
 3. **Ricerca Passaggio:** filtraggio delle corse disponibili in base a partenza e destinazione, con stima del costo per passeggero calcolata dinamicamente.
 4. **Prenotazione Passaggio:** uno studente si iscrive a un passaggio offerto da un altro utente (non è consentito prenotare la propria corsa).
 5. **Gestione Corse:** visione separata delle corse offerte (come guidatore) e di quelle prenotate (come passeggero), con possibilità di annullare una prenotazione o, se non ci sono ancora passeggeri, annullare direttamente una corsa offerta.
