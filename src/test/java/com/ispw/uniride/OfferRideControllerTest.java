@@ -116,7 +116,7 @@ class OfferRideControllerTest {
      * le liste mostrino un formato coerente indipendentemente da come l'ha digitato il guidatore.
      */
     @Test
-    void testOfferRideSingleDigitHourIsAcceptedAndNormalized() throws Exception {
+    void testOfferRideSingleDigitHourIsAcceptedAndNormalized() {
         String driver = uniqueUsername("driver");
         loginAs(driver);
         RideBean bean = new RideBean("Frosinone", "Cassino", "10/12/2026", "9:30", 2, 10.0);
