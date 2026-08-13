@@ -3,11 +3,16 @@ package com.ispw.uniride;
 import com.ispw.uniride.bean.RideBean;
 import com.ispw.uniride.controller.OfferRideController;
 import com.ispw.uniride.controller.Session;
+import com.ispw.uniride.dao.DAOFactory;
+import com.ispw.uniride.dao.RideDAO;
 import com.ispw.uniride.exceptions.RideActionException;
 import com.ispw.uniride.exceptions.UserNotAuthorizedException;
+import com.ispw.uniride.model.Ride;
 import com.ispw.uniride.model.Student;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -102,5 +107,25 @@ class OfferRideControllerTest {
 
         RideActionException ex = assertThrows(RideActionException.class, () -> controller.offerRide(bean));
         assertEquals("Inserisci un orario di partenza valido (formato HH:mm, es. 08:30).", ex.getMessage());
+    }
+
+    /**
+     * Un'ora digitata senza lo zero iniziale (es. "9:30") deve essere accettata, non solo quella
+     * a due cifre: è la digitazione più naturale per chi non guarda l'esempio nel prompt.
+     * Il valore persistito deve però essere sempre normalizzato a due cifre ("09:30"), così che
+     * le liste mostrino un formato coerente indipendentemente da come l'ha digitato il guidatore.
+     */
+    @Test
+    void testOfferRideSingleDigitHourIsAcceptedAndNormalized() throws Exception {
+        String driver = uniqueUsername("driver");
+        loginAs(driver);
+        RideBean bean = new RideBean("Frosinone", "Cassino", "10/12/2026", "9:30", 2, 10.0);
+
+        assertDoesNotThrow(() -> controller.offerRide(bean));
+
+        RideDAO rideDAO = DAOFactory.getInstance().getRideDAO();
+        List<Ride> offered = rideDAO.getRidesByDriver(driver);
+        assertEquals(1, offered.size());
+        assertEquals("09:30", offered.get(0).getDepartureTime());
     }
 }

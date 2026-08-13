@@ -17,9 +17,12 @@ import java.util.regex.Pattern;
  */
 public class OfferRideController {
 
-    // Formato "HH:mm" a 24 ore (es. "08:05", "18:30"): ore 00-23, minuti 00-59. Lo stesso vincolo
-    // che le Boundary (grafica e CLI) chiedono all'utente di rispettare in fase di digitazione.
-    private static final Pattern TIME_PATTERN = Pattern.compile("^([01]\\d|2[0-3]):[0-5]\\d$");
+    // Formato orario a 24 ore, ore 0-23 e minuti 00-59: lo zero iniziale sull'ora è accettato ma
+    // non obbligatorio ("9:30" e "09:30" sono entrambi validi), perché è la digitazione più
+    // naturale per chi scrive un orario senza guardare il prompt di esempio. Il valore viene poi
+    // sempre normalizzato a due cifre da normalizeDepartureTime prima di essere persistito, così
+    // che liste e ricerche mostrino sempre lo stesso formato "HH:mm".
+    private static final Pattern TIME_PATTERN = Pattern.compile("^([01]?\\d|2[0-3]):[0-5]\\d$");
 
     /**
      * Valida un nuovo tragitto proposto convertendo le specifiche del DTO `RideBean` in
@@ -52,7 +55,7 @@ public class OfferRideController {
                 rideBean.getDate(),
                 rideBean.getTotalSeats(),
                 rideBean.getBasePrice(),
-                rideBean.getDepartureTime()
+                normalizeDepartureTime(rideBean.getDepartureTime())
         );
 
         // Operazione CRUD finale tramite lo Storage specificato dal file di configurazione
@@ -86,5 +89,19 @@ public class OfferRideController {
         if (rideBean.getDepartureTime() == null || !TIME_PATTERN.matcher(rideBean.getDepartureTime().trim()).matches()) {
             throw new RideActionException("Inserisci un orario di partenza valido (formato HH:mm, es. 08:30).");
         }
+    }
+
+    /**
+     * Riporta un orario già validato da {@link #TIME_PATTERN} alla forma canonica "HH:mm" (ora
+     * sempre a due cifre), così che un guidatore che digita "9:30" e uno che digita "09:30"
+     * producano lo stesso valore persistito, mostrato in modo coerente in ricerche e liste.
+     * @param departureTime l'orario grezzo, già garantito conforme al pattern dal chiamante.
+     */
+    private String normalizeDepartureTime(String departureTime) {
+        String trimmed = departureTime.trim();
+        // Il pattern garantisce sempre un solo ":" con ore e minuti validi: split è quindi sicuro.
+        String[] parts = trimmed.split(":");
+        String hour = parts[0].length() == 1 ? "0" + parts[0] : parts[0];
+        return hour + ":" + parts[1];
     }
 }
