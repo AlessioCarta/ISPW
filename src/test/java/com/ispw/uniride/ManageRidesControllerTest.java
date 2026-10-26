@@ -8,11 +8,14 @@ import com.ispw.uniride.controller.SearchRideController;
 import com.ispw.uniride.controller.Session;
 import com.ispw.uniride.dao.DAOFactory;
 import com.ispw.uniride.exceptions.RideActionException;
+import com.ispw.uniride.model.Booking;
 import com.ispw.uniride.exceptions.UserNotAuthorizedException;
 import com.ispw.uniride.model.Student;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,6 +31,10 @@ class ManageRidesControllerTest {
     private final OfferRideController offerRideController = new OfferRideController();
     private final SearchRideController searchRideController = new SearchRideController();
     private final ManageRidesController manageRidesController = new ManageRidesController();
+
+    // Data sempre futura rispetto al giorno di esecuzione: una data fissa farebbe fallire i test
+    // non appena superata, ora che OfferRideController rifiuta i passaggi nel passato.
+    private static final String FUTURE_DATE = LocalDate.now().plusMonths(1).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
     private String unique(String prefix) {
         return prefix + "." + System.nanoTime();
@@ -55,7 +62,7 @@ class ManageRidesControllerTest {
         String destination = unique("Destinazione");
 
         loginAs(driver);
-        offerRideController.offerRide(new RideBean(departure, destination, "10/12/2026", "08:30", 2, 20.0));
+        offerRideController.offerRide(new RideBean(departure, destination, FUTURE_DATE, "08:30", 2, 20.0));
         List<RideBean> found = searchRideController.searchRides(departure, destination);
         String rideId = found.get(0).getId();
 
@@ -205,7 +212,7 @@ class ManageRidesControllerTest {
         String departure = unique("Partenza");
         String destination = unique("Destinazione");
         loginAs(driver);
-        offerRideController.offerRide(new RideBean(departure, destination, "10/12/2026", "08:30", 2, 20.0));
+        offerRideController.offerRide(new RideBean(departure, destination, FUTURE_DATE, "08:30", 2, 20.0));
         String rideId = searchRideController.searchRides(departure, destination).get(0).getId();
 
         loginAs(passenger);
@@ -233,5 +240,39 @@ class ManageRidesControllerTest {
         RideBean completed = manageRidesController.getMyOfferedRides().stream()
                 .filter(r -> r.getId().equals(s.rideId())).findFirst().orElseThrow();
         assertEquals("COMPLETED", completed.getStatus());
+    }
+
+    /**
+     * Annullando la corsa, la prenotazione del passeggero deve passare a CANCELLED: prima della
+     * correzione restava "In attesa" e il passeggero la vedeva ancora fra le proprie corse.
+     */
+    @Test
+    void testCancelOfferedRideCancelsPassengerBookings() throws Exception {
+        Scenario s = offerAndRequestBooking();
+
+        loginAs(s.driver());
+        manageRidesController.cancelOfferedRide(s.rideId());
+
+        for (Booking booking : DAOFactory.getInstance().getBookingDAO().getBookingsByRide(s.rideId())) {
+            assertEquals(Booking.CANCELLED, booking.getState());
+        }
+        loginAs(s.passenger());
+        assertTrue(manageRidesController.getMyBookedRides().stream().noneMatch(b -> b.getRideId().equals(s.rideId())));
+    }
+
+    /**
+     * Completando la corsa, le richieste mai evase vengono rifiutate e non sono più confermabili.
+     */
+    @Test
+    void testCompleteRideRejectsPendingRequests() throws Exception {
+        Scenario s = offerAndRequestBooking();
+
+        loginAs(s.driver());
+        manageRidesController.completeRide(s.rideId());
+
+        assertTrue(manageRidesController.getPendingRequestsForRide(s.rideId()).isEmpty());
+        for (Booking booking : DAOFactory.getInstance().getBookingDAO().getBookingsByRide(s.rideId())) {
+            assertEquals(Booking.REJECTED, booking.getState());
+        }
     }
 }

@@ -207,6 +207,15 @@ public class ManageRidesController {
             throw new RideActionException("La corsa è già stata completata o annullata.");
         }
         DAOFactory.getInstance().getRideDAO().updateRide(ride);
+
+        // Le prenotazioni non seguono automaticamente lo stato della corsa: senza questo passo
+        // il passeggero continuerebbe a vedere "In attesa"/"Confermata" su una corsa annullata.
+        BookingDAO bookingDAO = DAOFactory.getInstance().getBookingDAO();
+        for (Booking booking : bookingDAO.getBookingsByRide(rideId)) {
+            if (booking.cancel()) {
+                bookingDAO.updateBooking(booking);
+            }
+        }
     }
 
     /**
@@ -220,6 +229,15 @@ public class ManageRidesController {
             throw new RideActionException("La corsa è già stata completata o annullata.");
         }
         DAOFactory.getInstance().getRideDAO().updateRide(ride);
+
+        // Le richieste mai evase non possono più essere accettate a viaggio concluso: vengono
+        // rifiutate. Le prenotazioni confermate restano tali, come storico del viaggio avvenuto.
+        BookingDAO bookingDAO = DAOFactory.getInstance().getBookingDAO();
+        for (Booking booking : bookingDAO.getBookingsByRide(rideId)) {
+            if (booking.reject()) {
+                bookingDAO.updateBooking(booking);
+            }
+        }
     }
 
     private Ride requireOwnedRide(String rideId) throws UserNotAuthorizedException, RideNotFoundException {

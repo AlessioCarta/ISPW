@@ -12,6 +12,8 @@ import com.ispw.uniride.model.Student;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,6 +26,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class OfferRideControllerTest {
 
     private final OfferRideController controller = new OfferRideController();
+
+    // Data sempre futura rispetto al giorno di esecuzione: una data fissa farebbe fallire i test
+    // non appena superata, ora che OfferRideController rifiuta i passaggi nel passato.
+    private static final String FUTURE_DATE = LocalDate.now().plusMonths(1).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
     private String uniqueUsername(String prefix) {
         return prefix + "." + System.nanoTime();
@@ -45,7 +51,7 @@ class OfferRideControllerTest {
     void testOfferRideSuccess() {
         loginAs(uniqueUsername("driver"));
 
-        RideBean bean = new RideBean("Roma", "Milano", "10/12/2026", "08:30", 3, 20.0);
+        RideBean bean = new RideBean("Roma", "Milano", FUTURE_DATE, "08:30", 3, 20.0);
 
         assertDoesNotThrow(() -> controller.offerRide(bean));
     }
@@ -56,7 +62,7 @@ class OfferRideControllerTest {
     @Test
     void testOfferRideWithoutLoginFails() {
         Session.getInstance().logout();
-        RideBean bean = new RideBean("Roma", "Milano", "10/12/2026", "08:30", 3, 20.0);
+        RideBean bean = new RideBean("Roma", "Milano", FUTURE_DATE, "08:30", 3, 20.0);
 
         assertThrows(UserNotAuthorizedException.class, () -> controller.offerRide(bean));
     }
@@ -67,7 +73,7 @@ class OfferRideControllerTest {
     @Test
     void testOfferRideSameDepartureAndDestinationFails() {
         loginAs(uniqueUsername("driver"));
-        RideBean bean = new RideBean("Torino", "torino", "10/12/2026", "08:30", 2, 15.0);
+        RideBean bean = new RideBean("Torino", "torino", FUTURE_DATE, "08:30", 2, 15.0);
 
         RideActionException ex = assertThrows(RideActionException.class, () -> controller.offerRide(bean));
         assertEquals("Partenza e destinazione non possono coincidere.", ex.getMessage());
@@ -79,7 +85,7 @@ class OfferRideControllerTest {
     @Test
     void testOfferRideZeroSeatsFails() {
         loginAs(uniqueUsername("driver"));
-        RideBean bean = new RideBean("Napoli", "Salerno", "10/12/2026", "08:30", 0, 10.0);
+        RideBean bean = new RideBean("Napoli", "Salerno", FUTURE_DATE, "08:30", 0, 10.0);
 
         RideActionException ex = assertThrows(RideActionException.class, () -> controller.offerRide(bean));
         assertEquals("Il numero di posti deve essere maggiore di zero.", ex.getMessage());
@@ -91,7 +97,7 @@ class OfferRideControllerTest {
     @Test
     void testOfferRideNegativePriceFails() {
         loginAs(uniqueUsername("driver"));
-        RideBean bean = new RideBean("Bari", "Lecce", "10/12/2026", "08:30", 2, -5.0);
+        RideBean bean = new RideBean("Bari", "Lecce", FUTURE_DATE, "08:30", 2, -5.0);
 
         RideActionException ex = assertThrows(RideActionException.class, () -> controller.offerRide(bean));
         assertEquals("Il costo base non può essere negativo.", ex.getMessage());
@@ -103,7 +109,7 @@ class OfferRideControllerTest {
     @Test
     void testOfferRideInvalidDepartureTimeFails() {
         loginAs(uniqueUsername("driver"));
-        RideBean bean = new RideBean("Genova", "Savona", "10/12/2026", "ore otto", 2, 10.0);
+        RideBean bean = new RideBean("Genova", "Savona", FUTURE_DATE, "ore otto", 2, 10.0);
 
         RideActionException ex = assertThrows(RideActionException.class, () -> controller.offerRide(bean));
         assertEquals("Inserisci un orario di partenza valido (formato HH:mm, es. 08:30).", ex.getMessage());
@@ -119,7 +125,7 @@ class OfferRideControllerTest {
     void testOfferRideSingleDigitHourIsAcceptedAndNormalized() {
         String driver = uniqueUsername("driver");
         loginAs(driver);
-        RideBean bean = new RideBean("Frosinone", "Cassino", "10/12/2026", "9:30", 2, 10.0);
+        RideBean bean = new RideBean("Frosinone", "Cassino", FUTURE_DATE, "9:30", 2, 10.0);
 
         assertDoesNotThrow(() -> controller.offerRide(bean));
 
@@ -127,5 +133,31 @@ class OfferRideControllerTest {
         List<Ride> offered = rideDAO.getRidesByDriver(driver);
         assertEquals(1, offered.size());
         assertEquals("09:30", offered.get(0).getDepartureTime());
+    }
+
+    /**
+     * Una data mancante (DatePicker vuoto), inesistente o già passata deve essere rifiutata.
+     */
+    @Test
+    void testOfferRideInvalidDateFails() {
+        loginAs(uniqueUsername("driver"));
+        String yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+        assertThrows(RideActionException.class, () -> controller.offerRide(new RideBean("Roma", "Milano", "", "08:30", 2, 10.0)));
+        assertThrows(RideActionException.class, () -> controller.offerRide(new RideBean("Roma", "Milano", "31/02/2030", "08:30", 2, 10.0)));
+        RideActionException ex = assertThrows(RideActionException.class,
+                () -> controller.offerRide(new RideBean("Roma", "Milano", yesterday, "08:30", 2, 10.0)));
+        assertEquals("Non si può offrire un passaggio in una data già passata.", ex.getMessage());
+    }
+
+    /**
+     * Una virgola in partenza/destinazione spezzerebbe le colonne di rides.csv.
+     */
+    @Test
+    void testOfferRideCommaInCityFails() {
+        loginAs(uniqueUsername("driver"));
+        RideBean bean = new RideBean("Roma, Italia", "Milano", FUTURE_DATE, "08:30", 2, 10.0);
+
+        assertThrows(RideActionException.class, () -> controller.offerRide(bean));
     }
 }
