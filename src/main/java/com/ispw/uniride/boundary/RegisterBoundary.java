@@ -1,6 +1,7 @@
 package com.ispw.uniride.boundary;
 
 import com.ispw.uniride.config.LocationCatalog;
+import com.ispw.uniride.bean.RegistrationBean;
 import com.ispw.uniride.controller.LoginController;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
@@ -33,7 +34,7 @@ public class RegisterBoundary {
     // Dependency injection manuale del Controller Applicativo: essendo questa classe istanziata
     // dall'FXMLLoader (non da un costruttore che controlliamo noi), l'inizializzazione diretta
     // del campo è il modo più semplice per garantirne la disponibilità.
-    private LoginController loginController = new LoginController();
+    private final LoginController loginController = new LoginController();
 
     /**
      * Popola il menu a tendina delle località con l'intero catalogo, per far scegliere
@@ -51,28 +52,18 @@ public class RegisterBoundary {
 
     @FXML
     public void handleRegisterSubmit(ActionEvent event) {
-        String fullName = fullNameField.getText();
-        String username = usernameField.getText();
-        String password = passwordField.getText();
-        // getEditor().getText() invece di getValue(): la ComboBox è editabile (l'utente può
-        // digitare una località non presente nel catalogo), quindi si legge sempre il testo
-        // effettivamente scritto nel campo, non solo un valore selezionato dalla lista.
-        String homeLocation = homeLocationField.getEditor().getText();
-        String phoneNumber = phoneNumberField.getText();
-
-        // Validazione di solo formato (campi non vuoti): compito del Controller Grafico secondo
-        // BCE, non delle regole di business più profonde (username duplicato, password troppo
-        // corta), che restano nel Controller Applicativo.
-        if (fullName.isEmpty() || username.isEmpty() || password.isEmpty()) {
-            messageLabel.setText("Compila tutti i campi!");
-            messageLabel.setTextFill(javafx.scene.paint.Color.RED);
-            return;
-        }
-
         try {
-            // Posizione e telefono sono entrambi facoltativi: se lasciati vuoti, l'account resta
-            // pienamente funzionante, solo privo dei relativi suggerimenti/contatti.
-            loginController.registerUser(username, password, fullName, homeLocation, phoneNumber);
+            // I setter del Bean verificano il formato di ogni campo (obbligatori, username,
+            // lunghezza della password, telefono): la Boundary si limita a raccogliere i valori.
+            // Posizione e telefono restano facoltativi. getEditor().getText() invece di getValue():
+            // la ComboBox è editabile, quindi si legge il testo effettivamente scritto nel campo.
+            RegistrationBean bean = new RegistrationBean();
+            bean.setFullName(fullNameField.getText());
+            bean.setUsername(usernameField.getText());
+            bean.setPassword(passwordField.getText());
+            bean.setHomeLocation(homeLocationField.getEditor().getText());
+            bean.setPhoneNumber(phoneNumberField.getText());
+            loginController.registerUser(bean);
             messageLabel.setText("Registrazione Completata!");
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
         } catch (Exception e) {

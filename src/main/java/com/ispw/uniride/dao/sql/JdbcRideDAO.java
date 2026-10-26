@@ -11,7 +11,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,21 +29,13 @@ public class JdbcRideDAO implements RideDAO {
         // di un SELECT preventivo per decidere fra INSERT e UPDATE.
         String upsertRide = "MERGE INTO rides (id, driver_username, departure, destination, ride_date, "
                 + "departure_time, total_seats, available_seats, base_price, status) KEY (id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection connection = JdbcSupport.getConnection()) {
-            // Disattiviamo l'autocommit: il salvataggio del Ride e la ricostruzione della lista
-            // passeggeri devono avvenire come un'unica transazione atomica (vedi replacePassengers).
-            connection.setAutoCommit(false);
-            try {
+        // Il salvataggio del Ride e la ricostruzione della lista passeggeri devono avvenire come
+        // un'unica transazione atomica (vedi replacePassengers e inTransaction).
+        try {
+            inTransaction(connection -> {
                 executeRideUpsert(connection, upsertRide, ride);
                 replacePassengers(connection, ride);
-                // Solo se ENTRAMBE le operazioni sono andate a buon fine si conferma la transazione.
-                connection.commit();
-            } catch (SQLException e) {
-                // Rollback esplicito: lo standard JDBC non garantisce cosa accada alle modifiche
-                // non confermate alla chiusura della connessione, quindi non ci si affida a close().
-                connection.rollback();
-                throw e;
-            }
+            });
         } catch (SQLException e) {
             LoggerCustom.error("Errore nel salvataggio del passaggio su database", e);
             throw new PersistenceException("Impossibile salvare il passaggio: database non disponibile.", e);
@@ -141,15 +132,8 @@ public class JdbcRideDAO implements RideDAO {
 
     @Override
     public void deleteRide(String id) {
-        try (Connection connection = JdbcSupport.getConnection()) {
-            connection.setAutoCommit(false);
-            try {
-                deleteRideRows(connection, id);
-                connection.commit();
-            } catch (SQLException e) {
-                connection.rollback();
-                throw e;
-            }
+        try {
+            inTransaction(connection -> deleteRideRows(connection, id));
         } catch (SQLException e) {
             LoggerCustom.error("Errore nell'eliminazione del passaggio dal database", e);
             throw new PersistenceException("Impossibile eliminare il passaggio: database non disponibile.", e);
@@ -167,6 +151,37 @@ public class JdbcRideDAO implements RideDAO {
         try (PreparedStatement deleteRide = connection.prepareStatement("DELETE FROM rides WHERE id = ?")) {
             deleteRide.setString(1, id);
             deleteRide.executeUpdate();
+        }
+    }
+
+    /**
+     * Operazione da eseguire su una connessione già aperta, all'interno di una transazione.
+     */
+    @FunctionalInterface
+    private interface TransactionWork {
+        void run(Connection connection) throws SQLException;
+    }
+
+    /**
+     * Esegue le operazioni indicate in un'unica transazione: o vengono confermate tutte, o nessuna.
+     */
+    private void inTransaction(TransactionWork work) throws SQLException {
+        try (Connection connection = JdbcSupport.getConnection()) {
+            connection.setAutoCommit(false);
+            commitOrRollback(connection, work);
+        }
+    }
+
+    private void commitOrRollback(Connection connection, TransactionWork work) throws SQLException {
+        try {
+            work.run(connection);
+            // Solo se TUTTE le operazioni sono andate a buon fine si conferma la transazione.
+            connection.commit();
+        } catch (SQLException e) {
+            // Rollback esplicito: lo standard JDBC non garantisce cosa accada alle modifiche
+            // non confermate alla chiusura della connessione, quindi non ci si affida a close().
+            connection.rollback();
+            throw e;
         }
     }
 
@@ -232,14 +247,11 @@ public class JdbcRideDAO implements RideDAO {
         for (Ride ride : rides) {
             byId.put(ride.getId(), ride);
         }
-        // Un segnaposto "?" per ogni id: i valori restano parametri legati, mai concatenati nella query.
-        String placeholders = String.join(", ", Collections.nCopies(byId.size(), "?"));
-        String sql = "SELECT ride_id, username FROM ride_passengers WHERE ride_id IN (" + placeholders + ")";
+        // Tutti gli id passano in un solo parametro di tipo array (= ANY(?)): la query resta un
+        // testo fisso, senza segnaposto generati a runtime, e i valori non vengono mai concatenati.
+        String sql = "SELECT ride_id, username FROM ride_passengers WHERE ride_id = ANY(?)";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            int index = 1;
-            for (String id : byId.keySet()) {
-                stmt.setString(index++, id);
-            }
+            stmt.setArray(1, connection.createArrayOf("VARCHAR", byId.keySet().toArray()));
             try (ResultSet passengers = stmt.executeQuery()) {
                 while (passengers.next()) {
                     byId.get(passengers.getString("ride_id")).addPassengerUsername(passengers.getString("username"));

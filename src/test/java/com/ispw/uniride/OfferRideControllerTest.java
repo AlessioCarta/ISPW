@@ -5,6 +5,7 @@ import com.ispw.uniride.controller.OfferRideController;
 import com.ispw.uniride.controller.Session;
 import com.ispw.uniride.dao.DAOFactory;
 import com.ispw.uniride.dao.RideDAO;
+import com.ispw.uniride.exceptions.InvalidInputException;
 import com.ispw.uniride.exceptions.RideActionException;
 import com.ispw.uniride.exceptions.UserNotAuthorizedException;
 import com.ispw.uniride.model.Ride;
@@ -48,10 +49,10 @@ class OfferRideControllerTest {
      * Un'offerta con dati validi deve avere successo per un utente autenticato.
      */
     @Test
-    void testOfferRideSuccess() {
+    void testOfferRideSuccess() throws InvalidInputException {
         loginAs(uniqueUsername("driver"));
 
-        RideBean bean = new RideBean("Roma", "Milano", FUTURE_DATE, "08:30", 3, 20.0);
+        RideBean bean = TestBeans.ride("Roma", "Milano", FUTURE_DATE, "08:30", 3, 20.0);
 
         assertDoesNotThrow(() -> controller.offerRide(bean));
     }
@@ -60,9 +61,9 @@ class OfferRideControllerTest {
      * Senza un utente loggato l'operazione deve essere rifiutata.
      */
     @Test
-    void testOfferRideWithoutLoginFails() {
+    void testOfferRideWithoutLoginFails() throws InvalidInputException {
         Session.getInstance().logout();
-        RideBean bean = new RideBean("Roma", "Milano", FUTURE_DATE, "08:30", 3, 20.0);
+        RideBean bean = TestBeans.ride("Roma", "Milano", FUTURE_DATE, "08:30", 3, 20.0);
 
         assertThrows(UserNotAuthorizedException.class, () -> controller.offerRide(bean));
     }
@@ -71,9 +72,9 @@ class OfferRideControllerTest {
      * Partenza e destinazione coincidenti devono essere rifiutate.
      */
     @Test
-    void testOfferRideSameDepartureAndDestinationFails() {
+    void testOfferRideSameDepartureAndDestinationFails() throws InvalidInputException {
         loginAs(uniqueUsername("driver"));
-        RideBean bean = new RideBean("Torino", "torino", FUTURE_DATE, "08:30", 2, 15.0);
+        RideBean bean = TestBeans.ride("Torino", "torino", FUTURE_DATE, "08:30", 2, 15.0);
 
         RideActionException ex = assertThrows(RideActionException.class, () -> controller.offerRide(bean));
         assertEquals("Partenza e destinazione non possono coincidere.", ex.getMessage());
@@ -83,9 +84,9 @@ class OfferRideControllerTest {
      * Un numero di posti non positivo deve essere rifiutato.
      */
     @Test
-    void testOfferRideZeroSeatsFails() {
+    void testOfferRideZeroSeatsFails() throws InvalidInputException {
         loginAs(uniqueUsername("driver"));
-        RideBean bean = new RideBean("Napoli", "Salerno", FUTURE_DATE, "08:30", 0, 10.0);
+        RideBean bean = TestBeans.ride("Napoli", "Salerno", FUTURE_DATE, "08:30", 0, 10.0);
 
         RideActionException ex = assertThrows(RideActionException.class, () -> controller.offerRide(bean));
         assertEquals("Il numero di posti deve essere maggiore di zero.", ex.getMessage());
@@ -95,9 +96,9 @@ class OfferRideControllerTest {
      * Un costo base negativo deve essere rifiutato.
      */
     @Test
-    void testOfferRideNegativePriceFails() {
+    void testOfferRideNegativePriceFails() throws InvalidInputException {
         loginAs(uniqueUsername("driver"));
-        RideBean bean = new RideBean("Bari", "Lecce", FUTURE_DATE, "08:30", 2, -5.0);
+        RideBean bean = TestBeans.ride("Bari", "Lecce", FUTURE_DATE, "08:30", 2, -5.0);
 
         RideActionException ex = assertThrows(RideActionException.class, () -> controller.offerRide(bean));
         assertEquals("Il costo base non può essere negativo.", ex.getMessage());
@@ -108,10 +109,10 @@ class OfferRideControllerTest {
      */
     @Test
     void testOfferRideInvalidDepartureTimeFails() {
-        loginAs(uniqueUsername("driver"));
-        RideBean bean = new RideBean("Genova", "Savona", FUTURE_DATE, "ore otto", 2, 10.0);
+        // Controllo sintattico: lo esegue il Bean, prima ancora di arrivare al Controller.
+        RideBean bean = new RideBean();
 
-        RideActionException ex = assertThrows(RideActionException.class, () -> controller.offerRide(bean));
+        InvalidInputException ex = assertThrows(InvalidInputException.class, () -> bean.setDepartureTime("ore otto"));
         assertEquals("Inserisci un orario di partenza valido (formato HH:mm, es. 08:30).", ex.getMessage());
     }
 
@@ -122,10 +123,10 @@ class OfferRideControllerTest {
      * le liste mostrino un formato coerente indipendentemente da come l'ha digitato il guidatore.
      */
     @Test
-    void testOfferRideSingleDigitHourIsAcceptedAndNormalized() {
+    void testOfferRideSingleDigitHourIsAcceptedAndNormalized() throws InvalidInputException {
         String driver = uniqueUsername("driver");
         loginAs(driver);
-        RideBean bean = new RideBean("Frosinone", "Cassino", FUTURE_DATE, "9:30", 2, 10.0);
+        RideBean bean = TestBeans.ride("Frosinone", "Cassino", FUTURE_DATE, "9:30", 2, 10.0);
 
         assertDoesNotThrow(() -> controller.offerRide(bean));
 
@@ -139,14 +140,17 @@ class OfferRideControllerTest {
      * Una data mancante (DatePicker vuoto), inesistente o già passata deve essere rifiutata.
      */
     @Test
-    void testOfferRideInvalidDateFails() {
+    void testOfferRideInvalidDateFails() throws InvalidInputException {
+        // Data mancante (DatePicker vuoto) o inesistente: errori di formato, rilevati dal Bean.
+        RideBean bean = new RideBean();
+        assertThrows(InvalidInputException.class, () -> bean.setDate(""));
+        assertThrows(InvalidInputException.class, () -> bean.setDate("31/02/2030"));
+
+        // Data già passata: regola di business, verificata dal Controller Applicativo.
         loginAs(uniqueUsername("driver"));
         String yesterday = LocalDate.now().minusDays(1).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-
-        assertThrows(RideActionException.class, () -> controller.offerRide(new RideBean("Roma", "Milano", "", "08:30", 2, 10.0)));
-        assertThrows(RideActionException.class, () -> controller.offerRide(new RideBean("Roma", "Milano", "31/02/2030", "08:30", 2, 10.0)));
-        RideActionException ex = assertThrows(RideActionException.class,
-                () -> controller.offerRide(new RideBean("Roma", "Milano", yesterday, "08:30", 2, 10.0)));
+        RideBean pastRide = TestBeans.ride("Roma", "Milano", yesterday, "08:30", 2, 10.0);
+        RideActionException ex = assertThrows(RideActionException.class, () -> controller.offerRide(pastRide));
         assertEquals("Non si può offrire un passaggio in una data già passata.", ex.getMessage());
     }
 
@@ -155,9 +159,22 @@ class OfferRideControllerTest {
      */
     @Test
     void testOfferRideCommaInCityFails() {
-        loginAs(uniqueUsername("driver"));
-        RideBean bean = new RideBean("Roma, Italia", "Milano", FUTURE_DATE, "08:30", 2, 10.0);
+        RideBean bean = new RideBean();
 
-        assertThrows(RideActionException.class, () -> controller.offerRide(bean));
+        assertThrows(InvalidInputException.class, () -> bean.setDeparture("Roma, Italia"));
+    }
+
+    /**
+     * Posti e costo arrivano come testo dalla GUI/CLI: un valore non numerico è un errore di
+     * formato, mentre la virgola decimale ("12,50") è accettata.
+     */
+    @Test
+    void testRideBeanParsesNumbers() throws InvalidInputException {
+        RideBean bean = new RideBean();
+        assertThrows(InvalidInputException.class, () -> bean.setTotalSeats("tre"));
+        assertThrows(InvalidInputException.class, () -> bean.setBasePrice("gratis"));
+
+        bean.setBasePrice("12,50");
+        assertEquals(12.5, bean.getBasePrice());
     }
 }

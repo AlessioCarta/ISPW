@@ -1,9 +1,10 @@
 package com.ispw.uniride;
 
 import com.ispw.uniride.bean.ProfileBean;
-import com.ispw.uniride.bean.UserBean;
+import com.ispw.uniride.bean.RegistrationBean;
 import com.ispw.uniride.controller.LoginController;
 import com.ispw.uniride.controller.Session;
+import com.ispw.uniride.exceptions.InvalidInputException;
 import com.ispw.uniride.exceptions.UserNotAuthorizedException;
 import org.junit.jupiter.api.Test;
 
@@ -28,11 +29,11 @@ class LoginControllerTest {
      * con le stesse credenziali.
      */
     @Test
-    void testRegisterAndLoginSuccess() throws UserNotAuthorizedException {
+    void testRegisterAndLoginSuccess() throws UserNotAuthorizedException, InvalidInputException {
         String username = uniqueUsername("mario.test");
-        controller.registerUser(username, "password123", "Mario Test", "Roma");
+        controller.registerUser(TestBeans.registration(username, "password123", "Mario Test", "Roma", null));
 
-        boolean success = controller.login(new UserBean(username, "password123"));
+        boolean success = controller.login(TestBeans.user(username, "password123"));
 
         assertTrue(success, "Il login con le credenziali appena registrate deve riuscire");
         assertNotNull(Session.getInstance().getLoggedUser());
@@ -45,12 +46,12 @@ class LoginControllerTest {
      * Un secondo tentativo di registrazione con lo stesso username deve essere rifiutato.
      */
     @Test
-    void testRegisterDuplicateUsernameFails() throws UserNotAuthorizedException {
+    void testRegisterDuplicateUsernameFails() throws UserNotAuthorizedException, InvalidInputException {
         String username = uniqueUsername("duplicate.test");
-        controller.registerUser(username, "password123", "Primo Utente", null);
+        controller.registerUser(TestBeans.registration(username, "password123", "Primo Utente", null, null));
 
-        UserNotAuthorizedException ex = assertThrows(UserNotAuthorizedException.class,
-                () -> controller.registerUser(username, "altrapassword", "Secondo Utente", null));
+        RegistrationBean second = TestBeans.registration(username, "altrapassword", "Secondo Utente", null, null);
+        UserNotAuthorizedException ex = assertThrows(UserNotAuthorizedException.class, () -> controller.registerUser(second));
         assertEquals("Username già in uso!", ex.getMessage());
     }
 
@@ -59,9 +60,9 @@ class LoginControllerTest {
      */
     @Test
     void testRegisterShortPasswordFails() {
-        String username = uniqueUsername("shortpw.test");
-        UserNotAuthorizedException ex = assertThrows(UserNotAuthorizedException.class,
-                () -> controller.registerUser(username, "abc", "Utente Corto", null));
+        // Controllo sintattico: lo esegue il Bean di registrazione, non il Controller.
+        RegistrationBean bean = new RegistrationBean();
+        InvalidInputException ex = assertThrows(InvalidInputException.class, () -> bean.setPassword("abc"));
         assertEquals("La password deve essere di almeno 6 caratteri.", ex.getMessage());
     }
 
@@ -69,11 +70,11 @@ class LoginControllerTest {
      * Il login con la password sbagliata deve fallire senza promuovere alcun utente in Sessione.
      */
     @Test
-    void testLoginWrongPasswordFails() throws UserNotAuthorizedException {
+    void testLoginWrongPasswordFails() throws UserNotAuthorizedException, InvalidInputException {
         String username = uniqueUsername("wrongpw.test");
-        controller.registerUser(username, "password123", "Utente Test", null);
+        controller.registerUser(TestBeans.registration(username, "password123", "Utente Test", null, null));
 
-        boolean success = controller.login(new UserBean(username, "passwordSbagliata"));
+        boolean success = controller.login(TestBeans.user(username, "passwordSbagliata"));
 
         assertFalse(success);
     }
@@ -82,8 +83,8 @@ class LoginControllerTest {
      * Il login con uno username mai registrato deve fallire.
      */
     @Test
-    void testLoginUnknownUserFails() {
-        boolean success = controller.login(new UserBean(uniqueUsername("nobody"), "qualsiasi"));
+    void testLoginUnknownUserFails() throws InvalidInputException {
+        boolean success = controller.login(TestBeans.user(uniqueUsername("nobody"), "qualsiasi"));
 
         assertFalse(success);
     }
@@ -93,11 +94,11 @@ class LoginControllerTest {
      * il numero deve essere recuperabile dalla sessione dopo il login.
      */
     @Test
-    void testRegisterWithValidPhoneNumberSucceeds() throws UserNotAuthorizedException {
+    void testRegisterWithValidPhoneNumberSucceeds() throws UserNotAuthorizedException, InvalidInputException {
         String username = uniqueUsername("contelefono.test");
-        controller.registerUser(username, "password123", "Con Telefono", "Roma", "+39 333 1234567");
+        controller.registerUser(TestBeans.registration(username, "password123", "Con Telefono", "Roma", "+39 333 1234567"));
 
-        controller.login(new UserBean(username, "password123"));
+        controller.login(TestBeans.user(username, "password123"));
 
         assertEquals("+39 333 1234567", Session.getInstance().getLoggedUser().getPhoneNumber());
         Session.getInstance().logout();
@@ -109,9 +110,8 @@ class LoginControllerTest {
      */
     @Test
     void testRegisterWithInvalidPhoneNumberFormatFails() {
-        String username = uniqueUsername("telefonoinvalido.test");
-        UserNotAuthorizedException ex = assertThrows(UserNotAuthorizedException.class,
-                () -> controller.registerUser(username, "password123", "Telefono Invalido", "Roma", "chiamami!"));
+        RegistrationBean bean = new RegistrationBean();
+        InvalidInputException ex = assertThrows(InvalidInputException.class, () -> bean.setPhoneNumber("chiamami!"));
         assertEquals("Numero di telefono non valido: usa solo cifre, spazi ed eventualmente un + iniziale.", ex.getMessage());
     }
 
@@ -119,19 +119,19 @@ class LoginControllerTest {
      * Il telefono è facoltativo come la posizione: lasciato vuoto, la registrazione deve comunque riuscire.
      */
     @Test
-    void testRegisterWithoutPhoneNumberSucceeds() {
-        String username = uniqueUsername("senzatelefono.test");
-        assertDoesNotThrow(() -> controller.registerUser(username, "password123", "Senza Telefono", "Roma", null));
+    void testRegisterWithoutPhoneNumberSucceeds() throws InvalidInputException {
+        RegistrationBean bean = TestBeans.registration(uniqueUsername("senzatelefono.test"), "password123", "Senza Telefono", "Roma", null);
+        assertDoesNotThrow(() -> controller.registerUser(bean));
     }
 
     /**
      * Il logout deve azzerare l'utente attualmente loggato in Sessione.
      */
     @Test
-    void testLogoutClearsSession() throws UserNotAuthorizedException {
+    void testLogoutClearsSession() throws UserNotAuthorizedException, InvalidInputException {
         String username = uniqueUsername("logout.test");
-        controller.registerUser(username, "password123", "Utente Logout", null);
-        controller.login(new UserBean(username, "password123"));
+        controller.registerUser(TestBeans.registration(username, "password123", "Utente Logout", null, null));
+        controller.login(TestBeans.user(username, "password123"));
         assertNotNull(Session.getInstance().getLoggedUser());
 
         controller.logout();
@@ -145,10 +145,11 @@ class LoginControllerTest {
      */
     @Test
     void testRegisterInvalidUsernameOrNameFails() {
-        assertThrows(UserNotAuthorizedException.class, () -> controller.registerUser("ab", "password123", "Nome Valido", null));
-        assertThrows(UserNotAuthorizedException.class, () -> controller.registerUser("mario rossi", "password123", "Nome Valido", null));
-        assertThrows(UserNotAuthorizedException.class, () -> controller.registerUser(uniqueUsername("u"), "password123", "  ", null));
-        assertThrows(UserNotAuthorizedException.class, () -> controller.registerUser(uniqueUsername("u"), "password123", "Rossi, Mario", null));
+        RegistrationBean bean = new RegistrationBean();
+        assertThrows(InvalidInputException.class, () -> bean.setUsername("ab"));
+        assertThrows(InvalidInputException.class, () -> bean.setUsername("mario rossi"));
+        assertThrows(InvalidInputException.class, () -> bean.setFullName("  "));
+        assertThrows(InvalidInputException.class, () -> bean.setFullName("Rossi, Mario"));
     }
 
     /**
@@ -156,12 +157,13 @@ class LoginControllerTest {
      * "nome " e "nome" non possono diventare due account distinti.
      */
     @Test
-    void testUsernameIsTrimmedOnRegisterAndLogin() throws UserNotAuthorizedException {
+    void testUsernameIsTrimmedOnRegisterAndLogin() throws UserNotAuthorizedException, InvalidInputException {
         String username = uniqueUsername("trim.test");
-        controller.registerUser("  " + username + " ", "password123", "Utente Trim", null);
+        controller.registerUser(TestBeans.registration("  " + username + " ", "password123", "Utente Trim", null, null));
 
-        assertThrows(UserNotAuthorizedException.class, () -> controller.registerUser(username, "password123", "Duplicato", null));
-        assertTrue(controller.login(new UserBean(username + " ", "password123")));
+        RegistrationBean duplicate = TestBeans.registration(username, "password123", "Duplicato", null, null);
+        assertThrows(UserNotAuthorizedException.class, () -> controller.registerUser(duplicate));
+        assertTrue(controller.login(TestBeans.user(username + " ", "password123")));
     }
 
     /**
@@ -169,10 +171,10 @@ class LoginControllerTest {
      * dopo il logout.
      */
     @Test
-    void testLoggedUserProfileExposedAsBean() throws UserNotAuthorizedException {
+    void testLoggedUserProfileExposedAsBean() throws UserNotAuthorizedException, InvalidInputException {
         String username = uniqueUsername("profilo.test");
-        controller.registerUser(username, "password123", "Utente Profilo", "Roma");
-        assertTrue(controller.login(new UserBean(username, "password123")));
+        controller.registerUser(TestBeans.registration(username, "password123", "Utente Profilo", "Roma", null));
+        assertTrue(controller.login(TestBeans.user(username, "password123")));
 
         ProfileBean profile = controller.getLoggedUserProfile();
         assertEquals("Utente Profilo", profile.getFullName());

@@ -46,7 +46,10 @@ public class ManageRidesController {
         StudentDAO studentDAO = DAOFactory.getInstance().getStudentDAO();
 
         List<BookingBean> beans = new ArrayList<>();
-        for (Booking booking : bookingDAO.getBookingsByPassenger(user.getUsername())) {
+        List<Booking> myBookings = bookingDAO.getBookingsByPassenger(user.getUsername());
+        // Una richiesta rimasta senza risposta per 24 ore scade prima di essere mostrata.
+        RequestExpiry.expireOverdue(myBookings);
+        for (Booking booking : myBookings) {
             // Rifiutate/annullate: il passeggero non ha più un posto attivo, quindi non compaiono.
             boolean isActive = Booking.REQUESTED.equals(booking.getState()) || Booking.CONFIRMED.equals(booking.getState());
             Ride ride = isActive ? rideDAO.getRideById(booking.getRideId()) : null;
@@ -82,7 +85,10 @@ public class ManageRidesController {
         BookingDAO bookingDAO = DAOFactory.getInstance().getBookingDAO();
         StudentDAO studentDAO = DAOFactory.getInstance().getStudentDAO();
         List<BookingBean> beans = new ArrayList<>();
-        for (Booking booking : bookingDAO.getBookingsByRide(rideId)) {
+        List<Booking> rideBookings = bookingDAO.getBookingsByRide(rideId);
+        // Le richieste scadute (24 ore senza risposta) non vanno più proposte al guidatore.
+        RequestExpiry.expireOverdue(rideBookings);
+        for (Booking booking : rideBookings) {
             if (!Booking.REQUESTED.equals(booking.getState())) {
                 continue; // Solo le richieste ancora da evadere interessano al guidatore.
             }
@@ -154,7 +160,7 @@ public class ManageRidesController {
      * Recupera una richiesta di prenotazione verificando che l'utente loggato sia il conducente
      * della corsa a cui si riferisce (unico autorizzato a confermarla o rifiutarla).
      */
-    private Booking requireOwnedPendingBooking(String bookingId) throws UserNotAuthorizedException, RideNotFoundException {
+    private Booking requireOwnedPendingBooking(String bookingId) throws UserNotAuthorizedException, RideNotFoundException, RideActionException {
         Student user = Session.getInstance().getLoggedUser();
         if (user == null) throw new UserNotAuthorizedException("Utente non loggato!");
 
@@ -167,6 +173,11 @@ public class ManageRidesController {
         if (ride == null) throw new RideNotFoundException("Corsa inesistente.");
         if (!ride.getDriverUsername().equals(user.getUsername())) {
             throw new UserNotAuthorizedException("Non sei il conducente di questa corsa.");
+        }
+        // Una risposta data dopo 24 ore arriva troppo tardi: la richiesta è già scaduta.
+        RequestExpiry.expireOverdue(List.of(booking));
+        if (Booking.EXPIRED.equals(booking.getState())) {
+            throw new RideActionException("La richiesta è scaduta: sono trascorse 24 ore senza risposta.");
         }
         return booking;
     }

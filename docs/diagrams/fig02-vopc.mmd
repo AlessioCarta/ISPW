@@ -59,13 +59,12 @@ classDiagram
     namespace Control {
         class LoginController {
             +login(UserBean) bool
-            +registerUser(String, String, String, String, String)
+            +registerUser(RegistrationBean)
             +getLoggedUserProfile() ProfileBean
             +logout()
         }
         class OfferRideController {
             -validateRide(RideBean)
-            -validateDate(String)
             +offerRide(RideBean)
         }
         class SearchRideController {
@@ -82,6 +81,9 @@ classDiagram
             +cancelOfferedRide(String)
             +completeRide(String)
         }
+        class RequestExpiry {
+            +expireOverdue(List~Booking~)$
+        }
         class Session {
             <<Singleton>>
             -instance : Session
@@ -97,8 +99,20 @@ classDiagram
         class UserBean {
             -username : String
             -password : String
-            +getUsername() String
-            +getPassword() String
+            +setUsername(String)
+            +setPassword(String)
+        }
+        class RegistrationBean {
+            -username : String
+            -password : String
+            -fullName : String
+            -homeLocation : String
+            -phoneNumber : String
+            +setUsername(String)
+            +setPassword(String)
+            +setFullName(String)
+            +setHomeLocation(String)
+            +setPhoneNumber(String)
         }
         class ProfileBean {
             -username : String
@@ -120,13 +134,14 @@ classDiagram
             -status : String
             -driver : String
             -computedPrice : double
+            +setDeparture(String)
+            +setDestination(String)
+            +setDate(String)
+            +setDepartureTime(String)
+            +setTotalSeats(String)
+            +setBasePrice(String)
             +getId() String
-            +getDeparture() String
-            +getDestination() String
-            +getDepartureTime() String
-            +getAvailableSeats() int
             +getComputedPrice() double
-            +setComputedPrice(double)
         }
         class BookingBean {
             -bookingId : String
@@ -181,9 +196,11 @@ classDiagram
             -rideId : String
             -passengerUsername : String
             -state : String
+            -requestedAt : long
             +confirm() bool
             +reject() bool
             +cancel() bool
+            +expire() bool
         }
         class RideState {
             <<interface>>
@@ -203,6 +220,7 @@ classDiagram
     LoginBoundary ..> LoginController
     LoginBoundary ..> UserBean
     RegisterBoundary ..> LoginController
+    RegisterBoundary ..> RegistrationBean
     StudentDashboardBoundary ..> LoginController
     StudentDashboardBoundary ..> ProfileBean
     OfferRideBoundary ..> OfferRideController
@@ -225,6 +243,9 @@ classDiagram
     SearchRideController ..> Session
     SearchRideController ..> Ride
     SearchRideController ..> Booking
+    SearchRideController ..> RequestExpiry
+    ManageRidesController ..> RequestExpiry
+    RequestExpiry ..> Booking
     ManageRidesController ..> Session
     ManageRidesController ..> Ride
     ManageRidesController ..> Booking
@@ -245,6 +266,8 @@ classDiagram
     style OfferRideBoundary fill:#DBEEFF,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
     style SearchRideBoundary fill:#DBEEFF,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
     style ManageRidesBoundary fill:#DBEEFF,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+    style RegistrationBean fill:#FFF3D6,stroke:#B7791F,color:#744210,stroke-width:1.5px
+    style RequestExpiry fill:#E3FAEA,stroke:#2F855A,color:#1C4532,stroke-width:1.5px
     style UserBean fill:#FFF3D6,stroke:#B7791F,color:#744210,stroke-width:1.5px
     style ProfileBean fill:#FFF3D6,stroke:#B7791F,color:#744210,stroke-width:1.5px
     style RideBean fill:#FFF3D6,stroke:#B7791F,color:#744210,stroke-width:1.5px

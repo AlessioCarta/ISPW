@@ -35,7 +35,7 @@ public class SearchRideBoundary {
     @FXML private ListView<RideBean> resultsList;
     @FXML private Label messageLabel;
 
-    private SearchRideController searchRideController = new SearchRideController();
+    private final SearchRideController searchRideController = new SearchRideController();
 
     @FXML
     public void initialize() {

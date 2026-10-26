@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Implementazione concreta di {@link RideDAO} per la famiglia File System (Pattern Abstract
@@ -32,9 +33,9 @@ public class FsRideDAO implements RideDAO {
 
     // Static Cache: condivisa fra tutte le istanze di FsRideDAO (analogamente a MemoryStorage,
     // ma qui la "fonte di verità" resta il file su disco, la cache è solo un acceleratore).
-    // volatile: la cache viene letta anche fuori dal lock (vedi refreshCache), quindi ogni
+    // AtomicReference: la cache viene letta anche fuori dal lock (vedi refreshCache), quindi ogni
     // thread deve vedere subito il riferimento aggiornato o azzerato da un altro thread.
-    private static volatile Map<String, Ride> cache = null;
+    private static final AtomicReference<Map<String, Ride>> CACHE = new AtomicReference<>();
     private static volatile long lastModified = 0;
 
     public FsRideDAO() {
@@ -67,7 +68,7 @@ public class FsRideDAO implements RideDAO {
         File file = new File(FILE_PATH);
         // Si lavora su un riferimento locale: un altro thread potrebbe azzerare il campo cache
         // (invalidazione dopo una scrittura fallita) mentre questo lo sta ancora usando.
-        Map<String, Ride> current = cache;
+        Map<String, Ride> current = CACHE.get();
         // Primo controllo (senza lock): se la cache esiste già ed è aggiornata, evitiamo del
         // tutto il costo di acquisire il lock — ottimizzazione per il caso comune (nessuna
         // modifica esterna dall'ultima lettura).
@@ -76,10 +77,10 @@ public class FsRideDAO implements RideDAO {
                 // Secondo controllo IDENTICO, ma dentro il lock: necessario perché un altro
                 // thread potrebbe aver già ricaricato la cache fra il primo controllo e
                 // l'acquisizione del lock (pattern check-lock-check, evita ricariche duplicate).
-                if (cache == null || file.lastModified() > lastModified) {
+                if (CACHE.get() == null || file.lastModified() > lastModified) {
                     loadCacheFromFile(file);
                 }
-                current = cache;
+                current = CACHE.get();
             }
         }
         return current;
@@ -105,7 +106,7 @@ public class FsRideDAO implements RideDAO {
             }
             // Solo a lettura completata sostituiamo la cache: se il file fosse corrotto a metà
             // lettura, non si arriva mai a questo punto e la vecchia cache (se presente) resta valida.
-            cache = loaded;
+            CACHE.set(loaded);
             lastModified = file.lastModified();
         } catch (IOException e) {
             LoggerCustom.error("Error reading rides.csv", e);
@@ -305,6 +306,6 @@ public class FsRideDAO implements RideDAO {
      * aver già modificato prima di chiedere il salvataggio.
      */
     private static void invalidateCache() {
-        cache = null;
+        CACHE.set(null);
     }
 }

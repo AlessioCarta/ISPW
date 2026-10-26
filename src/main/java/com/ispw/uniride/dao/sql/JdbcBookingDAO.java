@@ -53,13 +53,14 @@ public class JdbcBookingDAO implements BookingDAO {
         // MERGE INTO ... KEY (id): stessa sintassi usata da JdbcRideDAO/JdbcStudentDAO per
         // evitare di dover distinguere manualmente fra INSERT (nuova richiesta) e UPDATE
         // (conferma/rifiuto/annullamento di una richiesta esistente).
-        String sql = "MERGE INTO bookings (id, ride_id, passenger_username, state) KEY (id) VALUES (?, ?, ?, ?)";
+        String sql = "MERGE INTO bookings (id, ride_id, passenger_username, state, requested_at) KEY (id) VALUES (?, ?, ?, ?, ?)";
         try (Connection connection = JdbcSupport.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, booking.getId());
             stmt.setString(2, booking.getRideId());
             stmt.setString(3, booking.getPassengerUsername());
             stmt.setString(4, booking.getState());
+            stmt.setLong(5, booking.getRequestedAt());
             stmt.executeUpdate();
         } catch (SQLException e) {
             LoggerCustom.error("Errore nel salvataggio della prenotazione su database", e);
@@ -99,6 +100,8 @@ public class JdbcBookingDAO implements BookingDAO {
         Booking booking = new Booking(rs.getString("ride_id"), rs.getString("passenger_username"));
         booking.setId(rs.getString("id"));
         applyState(booking, rs.getString("state"));
+        // getLong restituisce 0 per un valore NULL (righe salvate prima della scadenza a 24h).
+        booking.setRequestedAt(rs.getLong("requested_at"));
         return booking;
     }
 
@@ -116,6 +119,8 @@ public class JdbcBookingDAO implements BookingDAO {
             booking.reject();
         } else if (Booking.CANCELLED.equals(state)) {
             booking.cancel();
+        } else if (Booking.EXPIRED.equals(state)) {
+            booking.expire();
         }
         // REQUESTED: nessuna transizione necessaria, è lo stato iniziale del costruttore.
     }

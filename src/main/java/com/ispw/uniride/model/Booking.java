@@ -19,11 +19,19 @@ public class Booking {
     public static final String REJECTED = "REJECTED";
     /** Il passeggero ha annullato di propria iniziativa: il posto va liberato su {@code Ride}. */
     public static final String CANCELLED = "CANCELLED";
+    /** Il guidatore non ha risposto entro {@link #RESPONSE_TIME_LIMIT_MILLIS}: il posto va liberato su {@code Ride}. */
+    public static final String EXPIRED = "EXPIRED";
+
+    /** Tempo a disposizione del guidatore per rispondere a una richiesta: 24 ore. */
+    public static final long RESPONSE_TIME_LIMIT_MILLIS = 24L * 60 * 60 * 1000;
 
     private String id;
-    private String rideId;
-    private String passengerUsername;
+    private final String rideId;
+    private final String passengerUsername;
     private String state;
+    // Istante della richiesta (millisecondi epoch); 0 per le richieste salvate prima che questo
+    // dato esistesse, che non scadono mai perché non se ne conosce l'età.
+    private long requestedAt;
 
     /**
      * Crea una nuova richiesta di prenotazione, generando un identificativo univoco e
@@ -40,6 +48,7 @@ public class Booking {
         // Ogni nuova richiesta nasce sempre in attesa di decisione: non esiste un percorso
         // di creazione che salti direttamente a CONFIRMED/REJECTED.
         this.state = REQUESTED;
+        this.requestedAt = System.currentTimeMillis();
     }
 
     // Getter e setter di base.
@@ -49,6 +58,30 @@ public class Booking {
     public String getRideId() { return rideId; }
     public String getPassengerUsername() { return passengerUsername; }
     public String getState() { return state; }
+    public long getRequestedAt() { return requestedAt; }
+    // Usato dai DAO in fase di ricostruzione dell'oggetto da storage.
+    public void setRequestedAt(long requestedAt) { this.requestedAt = requestedAt; }
+
+    /**
+     * @param now istante corrente in millisecondi epoch.
+     * @return {@code true} se la richiesta è ancora in attesa ed è trascorso il tempo massimo di risposta.
+     */
+    public boolean isResponseOverdue(long now) {
+        return REQUESTED.equals(state) && requestedAt > 0 && now - requestedAt >= RESPONSE_TIME_LIMIT_MILLIS;
+    }
+
+    /**
+     * La richiesta scade perché il guidatore non ha risposto in tempo. Come per il rifiuto, il
+     * chiamante è responsabile di liberare il posto corrispondente su {@code Ride}.
+     * @return {@code true} se la transizione è avvenuta, {@code false} se la richiesta non era più in {@code REQUESTED}.
+     */
+    public boolean expire() {
+        if (!REQUESTED.equals(state)) {
+            return false;
+        }
+        this.state = EXPIRED;
+        return true;
+    }
 
     /**
      * Il guidatore accetta la richiesta: il posto, già riservato su {@code Ride}, resta tale.
@@ -87,7 +120,7 @@ public class Booking {
         // A differenza di confirm()/reject(), cancel() è ammesso da REQUESTED o CONFIRMED
         // (il passeggero può ripensarci anche dopo l'ok del guidatore): resta vietato solo
         // da uno stato già chiuso (REJECTED/CANCELLED), per non ri-eseguire una transizione finale.
-        if (REJECTED.equals(state) || CANCELLED.equals(state)) {
+        if (REJECTED.equals(state) || CANCELLED.equals(state) || EXPIRED.equals(state)) {
             return false;
         }
         this.state = CANCELLED;

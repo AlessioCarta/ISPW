@@ -24,24 +24,24 @@ public class Ride implements Subject {
     private String id;
 
     // Username del guidatore (ForeignKey virtuale alla classe Student).
-    private String driverUsername;
+    private final String driverUsername;
 
     // Attributi descrittivi del percorso e tempi.
-    private String departure;
-    private String destination;
-    private String date; // Data mantenuta testualmente per comodità prototipale
+    private final String departure;
+    private final String destination;
+    private final String date; // Data mantenuta testualmente per comodità prototipale
 
     // Orario di partenza deciso dal guidatore (formato testuale "HH:mm", stesso approccio di
     // "date"), o {@code null} se non specificato (retro-compatibilità con passaggi creati prima
     // dell'introduzione di questo campo).
-    private String departureTime;
+    private final String departureTime;
 
     // Statistiche posti a sedere autovettura.
-    private int totalSeats;
+    private final int totalSeats;
     private int availableSeats;
 
     // Costo stimato base della spesa del viaggio intero (benzina + autostrada).
-    private double basePrice;
+    private final double basePrice;
 
     // Riferimento di tipo State-Pattern per cambiare il comportamento in base allo stato.
     private RideState state;
@@ -50,7 +50,7 @@ public class Ride implements Subject {
     private List<String> passengerUsernames = new ArrayList<>();
 
     // Lista di listener in ascolto di modifiche sul passaggio per l'Observer Pattern.
-    private List<Observer> observers = new ArrayList<>();
+    private final List<Observer> observers = new ArrayList<>();
 
     /**
      * Costruttore breve mantenuto per compatibilità con il codice preesistente (test e chiamate

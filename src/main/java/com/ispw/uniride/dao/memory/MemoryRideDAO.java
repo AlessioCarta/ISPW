@@ -15,7 +15,7 @@ import java.util.List;
 public class MemoryRideDAO implements RideDAO {
     // Riferimento al Singleton condiviso: non una copia dei dati, ma l'accesso alla stessa
     // mappa usata da ogni altra istanza di MemoryRideDAO nell'applicazione.
-    private MemoryStorage storage;
+    private final MemoryStorage storage;
 
     public MemoryRideDAO() {
         this.storage = MemoryStorage.getInstance();

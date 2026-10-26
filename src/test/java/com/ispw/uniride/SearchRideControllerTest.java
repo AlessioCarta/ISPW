@@ -4,6 +4,7 @@ import com.ispw.uniride.bean.RideBean;
 import com.ispw.uniride.controller.OfferRideController;
 import com.ispw.uniride.controller.SearchRideController;
 import com.ispw.uniride.controller.Session;
+import com.ispw.uniride.exceptions.InvalidInputException;
 import com.ispw.uniride.exceptions.RideActionException;
 import com.ispw.uniride.exceptions.RideNotFoundException;
 import com.ispw.uniride.exceptions.UserNotAuthorizedException;
@@ -44,11 +45,11 @@ class SearchRideControllerTest {
         Session.getInstance().logout();
     }
 
-    private RideBean offerUniqueRide(String driverUsername) throws UserNotAuthorizedException, RideActionException {
+    private RideBean offerUniqueRide(String driverUsername) throws UserNotAuthorizedException, RideActionException, InvalidInputException {
         String departure = unique("Partenza");
         String destination = unique("Destinazione");
         loginAs(driverUsername);
-        offerRideController.offerRide(new RideBean(departure, destination, FUTURE_DATE, "08:30", 2, 20.0));
+        offerRideController.offerRide(TestBeans.ride(departure, destination, FUTURE_DATE, "08:30", 2, 20.0));
 
         List<RideBean> results = searchRideController.searchRides(departure, destination);
         assertEquals(1, results.size(), "La ricerca deve trovare esattamente la corsa appena offerta");
@@ -59,7 +60,7 @@ class SearchRideControllerTest {
      * Una corsa appena offerta deve comparire nella ricerca per la stessa tratta esatta.
      */
     @Test
-    void testSearchRidesFindsOfferedRide() throws UserNotAuthorizedException, RideActionException {
+    void testSearchRidesFindsOfferedRide() throws UserNotAuthorizedException, RideActionException, InvalidInputException {
         RideBean ride = offerUniqueRide(unique("driver"));
         assertNotNull(ride.getId());
     }
@@ -132,7 +133,7 @@ class SearchRideControllerTest {
         String destination = "Destinazione." + System.nanoTime();
         String driver = "driver." + System.nanoTime();
         loginAs(driver);
-        offerRideController.offerRide(new RideBean(departure, destination, FUTURE_DATE, "08:30", 2, 20.0));
+        offerRideController.offerRide(TestBeans.ride(departure, destination, FUTURE_DATE, "08:30", 2, 20.0));
         String rideId = searchRideController.searchRides(departure, destination).get(0).getId();
         new com.ispw.uniride.controller.ManageRidesController().cancelOfferedRide(rideId);
 

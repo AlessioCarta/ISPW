@@ -9,6 +9,7 @@ import com.ispw.uniride.utils.PasswordHasher;
 import java.io.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Implementazione concreta di {@link StudentDAO} per la famiglia File System.
@@ -26,9 +27,9 @@ public class FsStudentDAO implements StudentDAO {
     private static final int MIN_CSV_FIELDS = 3;
 
     // Static Cache: condivisa fra tutte le istanze di FsStudentDAO.
-    // volatile: la cache viene letta anche fuori dal lock (vedi refreshCache), quindi ogni
+    // AtomicReference: la cache viene letta anche fuori dal lock (vedi refreshCache), quindi ogni
     // thread deve vedere subito il riferimento aggiornato o azzerato da un altro thread.
-    private static volatile Map<String, Student> cache = null;
+    private static final AtomicReference<Map<String, Student>> CACHE = new AtomicReference<>();
     private static volatile long lastModified = 0;
 
     public FsStudentDAO() {
@@ -65,15 +66,15 @@ public class FsStudentDAO implements StudentDAO {
         File file = new File(FILE_PATH);
         // Si lavora su un riferimento locale: un altro thread potrebbe azzerare il campo cache
         // (invalidazione dopo una scrittura fallita) mentre questo lo sta ancora usando.
-        Map<String, Student> current = cache;
+        Map<String, Student> current = CACHE.get();
         // Pattern check-lock-check, identico a FsRideDAO: evita di acquisire il lock quando
         // la cache è già aggiornata, e previene ricariche duplicate sotto concorrenza.
         if (current == null || file.lastModified() > lastModified) {
             synchronized (LOCK) {
-                if (cache == null || file.lastModified() > lastModified) {
+                if (CACHE.get() == null || file.lastModified() > lastModified) {
                     loadCacheFromFile(file);
                 }
-                current = cache;
+                current = CACHE.get();
             }
         }
         return current;
@@ -96,7 +97,7 @@ public class FsStudentDAO implements StudentDAO {
                     loaded.put(student.getUsername(), student);
                 }
             }
-            cache = loaded;
+            CACHE.set(loaded);
             lastModified = file.lastModified();
         } catch (IOException e) {
             LoggerCustom.error("Error reading students.csv", e);
@@ -158,7 +159,7 @@ public class FsStudentDAO implements StudentDAO {
                 // Aggiorniamo la cache in RAM solo se già popolata: se nessuno l'ha ancora letta
                 // (cache == null), la prossima refreshCache() la costruirà da zero includendo
                 // anche questa nuova riga appena scritta.
-                Map<String, Student> current = cache;
+                Map<String, Student> current = CACHE.get();
                 if (current != null) {
                     current.put(student.getUsername(), student);
                 }

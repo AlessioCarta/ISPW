@@ -9,10 +9,7 @@ import com.ispw.uniride.model.Ride;
 import com.ispw.uniride.model.Student;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.format.ResolverStyle;
-import java.util.regex.Pattern;
+import java.time.ZoneId;
 
 /**
  * Controller logico dedicato alla registrazione formale (inserimento/creazione)
@@ -20,17 +17,6 @@ import java.util.regex.Pattern;
  * Rientra nello standard BCE.
  */
 public class OfferRideController {
-
-    // Formato orario a 24 ore, ore 0-23 e minuti 00-59: lo zero iniziale sull'ora è accettato ma
-    // non obbligatorio ("9:30" e "09:30" sono entrambi validi), perché è la digitazione più
-    // naturale per chi scrive un orario senza guardare il prompt di esempio. Il valore viene poi
-    // sempre normalizzato a due cifre da normalizeDepartureTime prima di essere persistito, così
-    // che liste e ricerche mostrino sempre lo stesso formato "HH:mm".
-    private static final Pattern TIME_PATTERN = Pattern.compile("^([01]?\\d|2[0-3]):[0-5]\\d$");
-
-    // Stesso formato prodotto dal DatePicker della GUI e richiesto dalla CLI ("gg/mm/aaaa").
-    // STRICT (con "uuuu" per l'anno) rifiuta date inesistenti come 31/02 invece di "aggiustarle".
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/uuuu").withResolverStyle(ResolverStyle.STRICT);
 
     /**
      * Valida un nuovo tragitto proposto convertendo le specifiche del DTO `RideBean` in
@@ -63,7 +49,7 @@ public class OfferRideController {
                 rideBean.getDate(),
                 rideBean.getTotalSeats(),
                 rideBean.getBasePrice(),
-                normalizeDepartureTime(rideBean.getDepartureTime())
+                rideBean.getDepartureTime()
         );
 
         // Operazione CRUD finale tramite lo Storage specificato dal file di configurazione
@@ -75,17 +61,15 @@ public class OfferRideController {
      * @throws RideActionException se una delle regole di business non è rispettata.
      */
     private void validateRide(RideBean rideBean) throws RideActionException {
-        // Entrambi i campi obbligatori: null o stringa vuota/di soli spazi non sono ammessi.
-        if (rideBean.getDeparture() == null || rideBean.getDeparture().trim().isEmpty()
-                || rideBean.getDestination() == null || rideBean.getDestination().trim().isEmpty()) {
-            throw new RideActionException("Partenza e destinazione sono obbligatorie.");
-        }
-        // La virgola è il separatore dei file CSV: in partenza/destinazione sposterebbe le colonne.
-        if (rideBean.getDeparture().contains(",") || rideBean.getDestination().contains(",")) {
-            throw new RideActionException("Partenza e destinazione non possono contenere virgole.");
+        // Il formato di ogni campo (obbligatorietà, data e orario leggibili, numeri) è già stato
+        // verificato dal Bean: qui restano solo le regole di dominio del carpooling. Il controllo
+        // sui campi obbligatori resta come difesa per un Bean compilato solo in parte.
+        if (rideBean.getDeparture() == null || rideBean.getDestination() == null
+                || rideBean.getDate() == null || rideBean.getDepartureTime() == null) {
+            throw new RideActionException("Partenza, destinazione, data e orario sono obbligatori.");
         }
         // Un passaggio con partenza e destinazione identiche non ha senso nel dominio.
-        if (rideBean.getDeparture().trim().equalsIgnoreCase(rideBean.getDestination().trim())) {
+        if (rideBean.getDeparture().equalsIgnoreCase(rideBean.getDestination())) {
             throw new RideActionException("Partenza e destinazione non possono coincidere.");
         }
         // Zero o meno posti renderebbero il passaggio inutilizzabile fin da subito.
@@ -96,44 +80,10 @@ public class OfferRideController {
         if (rideBean.getBasePrice() < 0) {
             throw new RideActionException("Il costo base non può essere negativo.");
         }
-        // L'orario di partenza è deciso dal guidatore ed è obbligatorio: i passeggeri lo vedono
-        // già nell'elenco risultati, prima ancora di richiedere il passaggio.
-        if (rideBean.getDepartureTime() == null || !TIME_PATTERN.matcher(rideBean.getDepartureTime().trim()).matches()) {
-            throw new RideActionException("Inserisci un orario di partenza valido (formato HH:mm, es. 08:30).");
-        }
-        validateDate(rideBean.getDate());
-    }
-
-    /**
-     * La data è obbligatoria (la GUI passa una stringa vuota se il DatePicker non è stato
-     * compilato), deve essere una data reale e non può essere già passata.
-     */
-    private void validateDate(String date) throws RideActionException {
-        if (date == null || date.trim().isEmpty()) {
-            throw new RideActionException("La data del passaggio è obbligatoria.");
-        }
-        LocalDate parsed;
-        try {
-            parsed = LocalDate.parse(date.trim(), DATE_FORMAT);
-        } catch (DateTimeParseException _) {
-            throw new RideActionException("Data non valida: usa il formato gg/mm/aaaa (es. 15/03/2027).");
-        }
-        if (parsed.isBefore(LocalDate.now())) {
+        // Non si offre un passaggio per un giorno già trascorso: nessuno potrebbe prenotarlo.
+        LocalDate rideDate = LocalDate.parse(rideBean.getDate(), RideBean.DATE_FORMAT);
+        if (rideDate.isBefore(LocalDate.now(ZoneId.systemDefault()))) {
             throw new RideActionException("Non si può offrire un passaggio in una data già passata.");
         }
-    }
-
-    /**
-     * Riporta un orario già validato da {@link #TIME_PATTERN} alla forma canonica "HH:mm" (ora
-     * sempre a due cifre), così che un guidatore che digita "9:30" e uno che digita "09:30"
-     * producano lo stesso valore persistito, mostrato in modo coerente in ricerche e liste.
-     * @param departureTime l'orario grezzo, già garantito conforme al pattern dal chiamante.
-     */
-    private String normalizeDepartureTime(String departureTime) {
-        String trimmed = departureTime.trim();
-        // Il pattern garantisce sempre un solo ":" con ore e minuti validi: split è quindi sicuro.
-        String[] parts = trimmed.split(":");
-        String hour = parts[0].length() == 1 ? "0" + parts[0] : parts[0];
-        return hour + ":" + parts[1];
     }
 }

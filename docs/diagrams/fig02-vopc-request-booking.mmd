@@ -1,0 +1,111 @@
+%%{init: {"theme": "default", "themeVariables": {"clusterBkg": "#FAFAFA", "clusterBorder": "#CCCCCC"}}}%%
+classDiagram
+    direction LR
+
+    namespace Boundary {
+        class SearchRideBoundary {
+            -departureField : ComboBox~String~
+            -destinationField : ComboBox~String~
+            -resultsList : ListView~RideBean~
+            -messageLabel : Label
+            +handleSearch(ActionEvent)
+            +handleBook(ActionEvent)
+        }
+    }
+
+    namespace Bean {
+        class RideBean {
+            -id : String
+            -departure : String
+            -destination : String
+            -date : String
+            -departureTime : String
+            -availableSeats : int
+            -driver : String
+            -computedPrice : double
+            +getId() String
+            +getComputedPrice() double
+        }
+    }
+
+    namespace Control {
+        class SearchRideController {
+            +searchRides(String, String) List~RideBean~
+            +bookRide(String) bool
+        }
+        class Session {
+            <<Singleton>>
+            -loggedUser : Student
+            +getInstance() Session
+            +getLoggedUser() Student
+        }
+        class RequestExpiry {
+            +expireOverdue(List~Booking~)$
+        }
+    }
+
+    namespace Entity {
+        class Ride {
+            -id : String
+            -driverUsername : String
+            -availableSeats : int
+            -state : RideState
+            -passengerUsernames : List~String~
+            +bookSeat(Observer, String) bool
+            +cancelSeat(String) bool
+            +getStatus() String
+        }
+        class Booking {
+            -id : String
+            -rideId : String
+            -passengerUsername : String
+            -state : String
+            -requestedAt : long
+            +isResponseOverdue(long) bool
+            +expire() bool
+        }
+        class Student {
+            -username : String
+            -fullName : String
+        }
+    }
+
+    namespace DAO {
+        class RideDAO {
+            <<interface>>
+            +getAvailableRides(String, String) List~Ride~
+            +getRideById(String) Ride
+            +updateRide(Ride)
+        }
+        class BookingDAO {
+            <<interface>>
+            +getBookingsByRide(String) List~Booking~
+            +saveBooking(Booking)
+            +updateBooking(Booking)
+        }
+    }
+
+    SearchRideBoundary ..> SearchRideController : searchRides / bookRide
+    SearchRideBoundary ..> RideBean
+    SearchRideController ..> RideBean : creates
+    SearchRideController ..> Session
+    SearchRideController ..> RequestExpiry
+    SearchRideController ..> RideDAO
+    SearchRideController ..> BookingDAO
+    SearchRideController ..> Booking : creates
+    RequestExpiry ..> Booking
+    Session --> "0..1" Student : loggedUser
+    RideDAO ..> Ride
+    BookingDAO ..> Booking
+    Ride "1" --> "0..*" Booking : has
+
+    style SearchRideBoundary fill:#DBEEFF,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+    style RideBean fill:#FFF3D6,stroke:#B7791F,color:#744210,stroke-width:1.5px
+    style SearchRideController fill:#E3FAEA,stroke:#2F855A,color:#1C4532,stroke-width:1.5px
+    style Session fill:#E3FAEA,stroke:#2F855A,color:#1C4532,stroke-width:1.5px
+    style RequestExpiry fill:#E3FAEA,stroke:#2F855A,color:#1C4532,stroke-width:1.5px
+    style Ride fill:#FFF8DC,stroke:#B8860B,color:#5F4B00,stroke-width:1.5px
+    style Booking fill:#FFF8DC,stroke:#B8860B,color:#5F4B00,stroke-width:1.5px
+    style Student fill:#FFF8DC,stroke:#B8860B,color:#5F4B00,stroke-width:1.5px
+    style RideDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style BookingDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px

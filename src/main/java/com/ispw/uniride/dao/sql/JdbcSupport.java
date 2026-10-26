@@ -104,9 +104,13 @@ final class JdbcSupport {
                         id VARCHAR(64) PRIMARY KEY,
                         ride_id VARCHAR(64) NOT NULL,
                         passenger_username VARCHAR(255) NOT NULL,
-                        state VARCHAR(32) NOT NULL
+                        state VARCHAR(32) NOT NULL,
+                        requested_at BIGINT
                     )
                     """);
+            // Un database creato prima della scadenza a 24h ha già la tabella senza questa colonna:
+            // CREATE TABLE IF NOT EXISTS non la aggiungerebbe, ALTER TABLE ... IF NOT EXISTS sì.
+            statement.execute("ALTER TABLE bookings ADD COLUMN IF NOT EXISTS requested_at BIGINT");
         } catch (SQLException e) {
             LoggerCustom.error("Errore nella creazione dello schema del database H2", e);
             throw e;

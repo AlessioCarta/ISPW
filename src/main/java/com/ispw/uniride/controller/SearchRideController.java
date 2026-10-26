@@ -96,6 +96,10 @@ public class SearchRideController {
             throw new UserNotAuthorizedException("Utente non loggato!");
         }
 
+        // Le richieste scadute (24 ore senza risposta) liberano il proprio posto prima che si
+        // valuti la disponibilità della corsa: va fatto prima di leggerla, perché la aggiornano.
+        RequestExpiry.expireOverdue(DAOFactory.getInstance().getBookingDAO().getBookingsByRide(rideId));
+
         // Ritrova il record "reale" tramite DBMS Abstract Factory
         RideDAO rideDAO = DAOFactory.getInstance().getRideDAO();
         Ride ride = rideDAO.getRideById(rideId);

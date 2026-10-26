@@ -12,7 +12,7 @@ import java.util.List;
  * di {@link MemoryStorage}, indicizzata per id della richiesta di prenotazione.
  */
 public class MemoryBookingDAO implements BookingDAO {
-    private MemoryStorage storage;
+    private final MemoryStorage storage;
 
     public MemoryBookingDAO() {
         this.storage = MemoryStorage.getInstance();

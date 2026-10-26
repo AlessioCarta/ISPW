@@ -7,13 +7,13 @@ package com.ispw.uniride.model;
  */
 public class Student {
     // Identificativo univoco (es. email universitaria o matricola usata come handle)
-    private String username;
+    private final String username;
 
     // Chiave di accesso, salvata in chiaro (cleartext) unicamente a scopo di simulazione prototipale
-    private String password;
+    private final String password;
 
     // Nome e cognome per le funzioni di rubrica e visualizzazione profilo
-    private String fullName;
+    private final String fullName;
 
     // Comune/paese dichiarato dallo studente in fase di registrazione (facoltativo). Usato per
     // suggerire le località di partenza più vicine e l'ateneo più prossimo in Offri/Cerca Passaggio.
@@ -22,7 +22,7 @@ public class Student {
     // Numero di telefono dichiarato dallo studente (facoltativo). Visibile solo alla controparte
     // di una richiesta di passaggio già esistente (mai in un elenco pubblico di ricerca), così i
     // due studenti possono scriversi per accordarsi sul punto d'incontro esatto.
-    private String phoneNumber;
+    private final String phoneNumber;
 
     /**
      * Costruttore breve mantenuto per compatibilità con il codice preesistente (dati mock,

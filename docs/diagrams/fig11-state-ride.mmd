@@ -1,0 +1,22 @@
+%%{init: {"theme": "default", "themeVariables": {"lineColor": "#444444", "fontSize": "16px"}}}%%
+stateDiagram-v2
+    direction TB
+    [*] --> AVAILABLE
+    AVAILABLE --> AVAILABLE : bookSeat() [availableSeats > 1] / reserve seat<br/>cancelSeat() [seat booked] / release seat
+    AVAILABLE --> FULL : bookSeat() [availableSeats = 1] / reserve last seat
+    FULL --> AVAILABLE : cancelSeat() / release seat
+    AVAILABLE --> COMPLETED : complete() / reject pending requests
+    FULL --> COMPLETED : complete() / reject pending requests
+    AVAILABLE --> CANCELLED : cancel() / cancel bookings, notify passengers
+    FULL --> CANCELLED : cancel() / cancel bookings, notify passengers
+    COMPLETED --> [*]
+    CANCELLED --> [*]
+
+    classDef available fill:#DBEEFF,stroke:#2B6CB0,color:#1A365D,stroke-width:2px
+    classDef full fill:#FFF3D6,stroke:#B7791F,color:#744210,stroke-width:2px
+    classDef completed fill:#E3FAEA,stroke:#2F855A,color:#1C4532,stroke-width:2px
+    classDef cancelled fill:#FDE8E8,stroke:#C53030,color:#63171B,stroke-width:2px
+    class AVAILABLE available
+    class FULL full
+    class COMPLETED completed
+    class CANCELLED cancelled

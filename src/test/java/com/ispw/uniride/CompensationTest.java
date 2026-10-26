@@ -1,6 +1,5 @@
 package com.ispw.uniride;
 
-import com.ispw.uniride.bean.RideBean;
 import com.ispw.uniride.controller.OfferRideController;
 import com.ispw.uniride.controller.SearchRideController;
 import com.ispw.uniride.controller.Session;
@@ -63,14 +62,15 @@ class CompensationTest {
         String departure = "Partenza." + System.nanoTime();
         String destination = "Destinazione." + System.nanoTime();
         Session.getInstance().setLoggedUser(new Student("driver." + System.nanoTime(), "x", "Guidatore"));
-        new OfferRideController().offerRide(new RideBean(departure, destination, FUTURE_DATE, "08:30", 2, 10.0));
+        new OfferRideController().offerRide(TestBeans.ride(departure, destination, FUTURE_DATE, "08:30", 2, 10.0));
         String rideId = new SearchRideController().searchRides(departure, destination).get(0).getId();
 
         DAOFactory.setInstance(new FailingBookingFactory());
         String passenger = "passenger." + System.nanoTime();
         Session.getInstance().setLoggedUser(new Student(passenger, "x", "Passeggero"));
 
-        assertThrows(PersistenceException.class, () -> new SearchRideController().bookRide(rideId));
+        SearchRideController controller = new SearchRideController();
+        assertThrows(PersistenceException.class, () -> controller.bookRide(rideId));
 
         Ride ride = DAOFactory.getInstance().getRideDAO().getRideById(rideId);
         assertEquals(2, ride.getAvailableSeats());

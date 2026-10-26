@@ -70,4 +70,20 @@ class JdbcBookingDAOTest {
         Booking reloaded = dao.getBookingById(booking.getId());
         assertEquals(Booking.REJECTED, reloaded.getState());
     }
+
+    /**
+     * L'istante della richiesta (usato dalla scadenza a 24 ore) e lo stato EXPIRED devono
+     * sopravvivere al salvataggio e alla rilettura.
+     */
+    @Test
+    void testRequestedAtAndExpiredStatePersist() {
+        Booking booking = new Booking("ride." + System.nanoTime(), "passenger." + System.nanoTime());
+        booking.setRequestedAt(1_700_000_000_000L);
+        booking.expire();
+        dao.saveBooking(booking);
+
+        Booking reloaded = dao.getBookingById(booking.getId());
+        assertEquals(1_700_000_000_000L, reloaded.getRequestedAt());
+        assertEquals(Booking.EXPIRED, reloaded.getState());
+    }
 }
