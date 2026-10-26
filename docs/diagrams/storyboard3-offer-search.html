@@ -1,0 +1,66 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box} body{margin:0;width:1830px;height:990px;background:#F7F8FC;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;color:#1F2937;position:relative}
+h1{position:absolute;left:46px;top:20px;margin:0;font-size:30px;font-weight:700}
+.win{position:absolute;background:#fff;border:3px solid #E5E7EB;border-radius:22px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+.top{height:80px;background:linear-gradient(90deg,#4F46E5,#6366F1);color:#fff;display:flex;align-items:center;padding:0 28px;font-size:20px;font-weight:600;gap:24px}
+.back{background:#fff;color:#4F46E5;border-radius:8px;padding:8px 14px;font-size:15px;font-weight:700}
+.body{padding:32px 40px}
+.card{border:2px solid #E0E7FF;border-radius:16px;padding:26px 30px;background:#fff}
+.row{display:flex;align-items:center;margin-bottom:16px}
+.row label{width:150px;font-size:16px;font-weight:600;color:#374151}
+.field{flex:1;border:2px solid #D1D5DB;border-radius:8px;padding:10px 12px;font-size:16px;color:#111827;background:#fff;display:flex;justify-content:space-between}
+.field .hint{color:#9CA3AF}
+.btn{background:#4F46E5;color:#fff;border-radius:10px;text-align:center;padding:13px;font-size:17px;font-weight:700;margin-top:8px}
+.ok{color:#2F855A;font-size:16px;text-align:center;margin-top:14px;font-weight:600}
+.search{display:flex;gap:14px;align-items:center;margin-bottom:18px}
+.search .field{flex:1}
+.sbtn{background:#4F46E5;color:#fff;border-radius:10px;padding:11px 18px;font-weight:700;font-size:16px}
+.res{border:2px solid #E5E7EB;border-radius:10px;padding:12px 14px;font-size:14.5px;margin-bottom:10px;background:#F3F4F6;line-height:1.5}
+.res.sel{background:#EEF2FF;border-color:#A5B4FC;font-weight:600}
+.foot{position:absolute;bottom:22px;left:0;right:0;text-align:center;color:#9CA3AF;font-size:14px}
+.arrow{position:absolute;left:780px;top:300px;width:165px;text-align:center;color:#4F46E5;font-weight:700;font-size:16px}
+.arrow .line{height:3px;background:#4F46E5;margin-top:12px;position:relative}
+.arrow .line:after{content:"";position:absolute;right:-4px;top:-9px;border-left:22px solid #4F46E5;border-top:10px solid transparent;border-bottom:10px solid transparent}
+</style></head><body>
+<h1>Storyboard 3 — Offrire e cercare un passaggio</h1>
+
+<div class="win" style="left:60px;top:90px;width:690px;height:760px">
+  <div class="top"><span class="back">⭠ Indietro</span>Offri un Passaggio</div>
+  <div class="body">
+    <div class="card">
+      <div class="row"><label>Partenza</label><div class="field">Palestrina<span class="hint">▾</span></div></div>
+      <div class="row"><label>Destinazione</label><div class="field">Roma – Sapienza<span class="hint">▾</span></div></div>
+      <div class="row"><label>Data</label><div class="field">14/12/2026<span class="hint">📅</span></div></div>
+      <div class="row"><label>Orario Partenza</label><div class="field">08:30</div></div>
+      <div class="row"><label>Posti Totali</label><div class="field">3<span class="hint">⇅</span></div></div>
+      <div class="row"><label>Costo Base (€)</label><div class="field">12,50</div></div>
+      <div class="btn">Conferma</div>
+      <div class="ok">Passaggio offerto con successo!</div>
+    </div>
+  </div>
+  <div class="foot">OfferRideBoundary — OfferRide.fxml (560×640, scalato)</div>
+</div>
+
+<div class="arrow">un altro studente:<br>"Cerca Passaggio"<div class="line"></div></div>
+
+<div class="win" style="left:990px;top:30px;width:780px;height:930px">
+  <div class="top"><span class="back">⭠ Indietro</span>Cerca un Passaggio</div>
+  <div class="body">
+    <div class="search">
+      <div class="field">Palestrina<span class="hint">▾</span></div>
+      <div class="field">Roma – Sapienza<span class="hint">▾</span></div>
+      <div class="sbtn">🔎 Cerca</div>
+    </div>
+    <div class="res sel">Da: Palestrina A: Roma – Sapienza | Data: 14/12/2026 | Ore: 08:30<br>Guidatore: mario.rossi | Posti: 3 | Costo Stimato Attuale: 6,25€</div>
+    <div class="res">Da: Palestrina A: Roma – Sapienza | Data: 15/12/2026 | Ore: 07:45<br>Guidatore: giulia.neri | Posti: 1 | Costo Stimato Attuale: 4,00€</div>
+    <div class="btn" style="margin-top:22px">Prenota Selezionato</div>
+    <div class="ok">Richiesta inviata! In attesa di conferma del guidatore.</div>
+    <div style="margin-top:26px;font-size:14.5px;color:#6B7280;line-height:1.55;border-top:2px solid #E5E7EB;padding-top:18px">
+      Partenza e destinazione sono preimpostate in base alla posizione dichiarata dallo studente
+      (paese di residenza e ateneo più vicino). Il posto viene riservato subito; se il guidatore
+      non risponde entro 24 ore la richiesta scade e il posto torna disponibile.
+    </div>
+  </div>
+  <div class="foot">SearchRideBoundary — SearchRide.fxml (820×600, scalato)</div>
+</div>
+</body></html>

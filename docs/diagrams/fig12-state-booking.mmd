@@ -1,0 +1,25 @@
+%%{init: {"theme": "default", "themeVariables": {"lineColor": "#444444", "fontSize": "16px"}}}%%
+stateDiagram-v2
+    direction TB
+    [*] --> REQUESTED
+    REQUESTED --> CONFIRMED : confirm() / keep seat reserved
+    REQUESTED --> REJECTED : reject() / release seat
+    REQUESTED --> REJECTED : rideCompleted() / close request
+    REQUESTED --> EXPIRED : after(24 h) / release seat
+    REQUESTED --> CANCELLED : cancel() / release seat
+    REQUESTED --> CANCELLED : rideCancelled() / notify passenger
+    CONFIRMED --> CANCELLED : cancel() / release seat
+    CONFIRMED --> CANCELLED : rideCancelled() / notify passenger
+    CONFIRMED --> [*]
+    REJECTED --> [*]
+    EXPIRED --> [*]
+    CANCELLED --> [*]
+
+    classDef requested fill:#FFF3D6,stroke:#B7791F,color:#744210,stroke-width:2px
+    classDef confirmed fill:#E3FAEA,stroke:#2F855A,color:#1C4532,stroke-width:2px
+    classDef closed fill:#FDE8E8,stroke:#C53030,color:#63171B,stroke-width:2px
+    classDef expired fill:#EDE7FB,stroke:#6B46C1,color:#322659,stroke-width:2px
+    class REQUESTED requested
+    class CONFIRMED confirmed
+    class REJECTED,CANCELLED closed
+    class EXPIRED expired

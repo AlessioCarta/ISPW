@@ -1,0 +1,48 @@
+%%{init: {"theme": "default", "themeVariables": {"lineColor": "#222222", "edgeLabelBackground": "#FFFFFF", "fontSize": "16px"}, "flowchart": {"curve": "linear", "nodeSpacing": 45, "rankSpacing": 38}}}%%
+flowchart TD
+    start@{ shape: f-circ, label: " " }
+    login["Login*"]
+    m1@{ shape: diam, label: " " }
+    search["Search rides<br/>(departure, destination)"]
+    found@{ shape: diam, label: " " }
+    noRides["Show 'no rides found'<br/>message"]
+    m2@{ shape: diam, label: " " }
+    select["Select a ride<br/>from the results"]
+    validate["Validate booking<br/>request"]
+    valid@{ shape: diam, label: " " }
+    error["Show error message"]
+    reserve["Reserve seat on the ride"]
+    create["Create booking<br/>(REQUESTED)"]
+    sent["Show 'request sent'<br/>message"]
+    fork@{ shape: fork, label: " " }
+    wait["Wait for the<br/>driver's response"]
+    timer@{ shape: hourglass, label: " " }
+    join@{ shape: fork, label: " " }
+    outcome@{ shape: diam, label: " " }
+    expire["Expire request,<br/>release seat"]
+    confirm["Confirm booking"]
+    reject["Reject booking,<br/>release seat"]
+    m3@{ shape: diam, label: " " }
+    stop@{ shape: fr-circ, label: " " }
+
+    start --> login --> m1 --> search --> found
+    found -- "[no rides found]" --> noRides --> m1
+    found -- "[rides found]" --> m2 --> select --> validate --> valid
+    valid -- "[own ride or request already active]" --> error --> m2
+    valid -- "[valid request]" --> reserve --> create --> sent --> fork
+    fork --> wait --> join
+    fork --> timer
+    timer -- "24 h" --> join
+    join --> outcome
+    outcome -- "[timer expired]" --> expire --> m3
+    outcome -- "[driver confirmed]" --> confirm --> m3
+    outcome -- "[driver rejected]" --> reject --> m3
+    m3 --> stop
+
+    classDef node fill:#FFFFFF,stroke:#222222,color:#111111,stroke-width:1.5px
+    classDef bar fill:#111111,stroke:#111111,color:#111111
+    class login,search,noRides,select,validate,error,reserve,create,sent,wait,expire,confirm,reject node
+    class fork,join bar
+    class outcome,found,valid,m1,m2,m3 node
+    style start fill:#111111,stroke:#111111
+    style stop fill:#FFFFFF,stroke:#111111,stroke-width:2px

@@ -1,0 +1,87 @@
+%%{init: {"theme": "neutral", "sequence": {"mirrorActors": false, "messageFontSize": 15, "actorFontSize": 15, "noteFontSize": 14, "boxMargin": 8}}}%%
+sequenceDiagram
+    autonumber
+    actor P as Passenger
+    participant LB as Boundary<br/>LoginBoundary
+    participant DB as Boundary<br/>StudentDashboardBoundary
+    participant SB as Boundary<br/>SearchRideBoundary
+    participant LC as Controller<br/>LoginController
+    participant SC as Controller<br/>SearchRideController
+    participant SE as Controller<br/>Session
+    participant UB as Bean<br/>UserBean
+    participant SD as DAO<br/>StudentDAO
+    participant RD as DAO<br/>RideDAO
+    participant BD as DAO<br/>BookingDAO
+    participant R as Entity<br/>Ride
+    participant B as Entity<br/>Booking
+
+    P->>LB: «create» (launch application)
+    activate LB
+    LB->>LC: «create»
+    deactivate LB
+    P->>LB: enters credentials, clicks Login
+    activate LB
+    LB->>UB: «create» setUsername(), setPassword()
+    LB->>LC: login(userBean)
+    activate LC
+    LC->>SD: getStudentByUsername(username)
+    activate SD
+    SD-->>LC: student
+    deactivate SD
+    LC->>LC: verify PBKDF2 hash
+    LC->>SE: setLoggedUser(student)
+    LC-->>LB: true
+    deactivate LC
+    LB->>DB: «create» (switch scene)
+    deactivate LB
+
+    P->>DB: clicks "Cerca Passaggio"
+    activate DB
+    DB->>SB: «create» (switch scene)
+    activate SB
+    SB->>SC: «create»
+    deactivate SB
+    deactivate DB
+
+    P->>SB: enters route, clicks Search
+    activate SB
+    SB->>SC: searchRides(departure, destination)
+    activate SC
+    SC->>RD: getAvailableRides(departure, destination)
+    activate RD
+    RD-->>SC: List of Ride
+    deactivate RD
+    SC-->>SB: List of RideBean
+    deactivate SC
+    SB-->>P: shows available rides
+    deactivate SB
+
+    P->>SB: selects a ride, clicks "Book Selected"
+    activate SB
+    SB->>SC: bookRide(rideId)
+    activate SC
+    SC->>SE: getLoggedUser()
+    SE-->>SC: student
+    SC->>BD: getBookingsByRide(rideId)
+    activate BD
+    BD-->>SC: bookings
+    deactivate BD
+    SC->>SC: expire requests older than 24 h
+    SC->>RD: getRideById(rideId)
+    activate RD
+    RD-->>SC: ride
+    deactivate RD
+    SC->>SC: check not own ride, no active request
+    SC->>R: bookSeat(observer, username)
+    activate R
+    R->>R: state.bookSeat(this)
+    R-)R: notifyObservers("new passenger joined")
+    R-->>SC: true (seat reserved)
+    deactivate R
+    SC->>RD: updateRide(ride)
+    SC->>B: «create» Booking(rideId, username)
+    SC->>BD: saveBooking(booking)
+    SC-->>SB: true
+    deactivate SC
+    SB-->>P: "Richiesta inviata!"
+    deactivate SB
