@@ -6,6 +6,7 @@ import com.ispw.uniride.dao.BookingDAO;
 import com.ispw.uniride.dao.DAOFactory;
 import com.ispw.uniride.dao.RideDAO;
 import com.ispw.uniride.dao.StudentDAO;
+import com.ispw.uniride.exceptions.PersistenceException;
 import com.ispw.uniride.exceptions.RideActionException;
 import com.ispw.uniride.exceptions.RideNotFoundException;
 import com.ispw.uniride.exceptions.UserNotAuthorizedException;
@@ -122,12 +123,31 @@ public class ManageRidesController {
         // pur non avendo più un passeggero confermato.
         RideDAO rideDAO = DAOFactory.getInstance().getRideDAO();
         Ride ride = rideDAO.getRideById(booking.getRideId());
-        if (ride != null) {
-            ride.cancelSeat(booking.getPassengerUsername());
+        boolean seatFreed = ride != null && ride.cancelSeat(booking.getPassengerUsername());
+        if (seatFreed) {
             rideDAO.updateRide(ride);
         }
 
-        DAOFactory.getInstance().getBookingDAO().updateBooking(booking);
+        updateBookingOrRestoreSeat(booking, seatFreed ? ride : null);
+    }
+
+    /**
+     * Salva il nuovo stato della prenotazione dopo che il posto è già stato liberato sulla corsa.
+     * Se il salvataggio fallisce, il posto viene ri-occupato (azione compensativa): corsa e
+     * prenotazione vivono in storage diversi e non possono stare in un'unica transazione, e senza
+     * compensazione il passeggero perderebbe il posto pur risultando ancora prenotato.
+     * @param freedRide la corsa su cui è stato liberato il posto, o {@code null} se nessun posto è stato liberato.
+     */
+    private void updateBookingOrRestoreSeat(Booking booking, Ride freedRide) {
+        try {
+            DAOFactory.getInstance().getBookingDAO().updateBooking(booking);
+        } catch (PersistenceException e) {
+            if (freedRide != null) {
+                freedRide.bookSeat(message -> { }, booking.getPassengerUsername());
+                DAOFactory.getInstance().getRideDAO().updateRide(freedRide);
+            }
+            throw e;
+        }
     }
 
     /**
@@ -188,7 +208,7 @@ public class ManageRidesController {
         rideDAO.updateRide(ride);
 
         activeBooking.cancel();
-        bookingDAO.updateBooking(activeBooking);
+        updateBookingOrRestoreSeat(activeBooking, ride);
     }
 
     /**

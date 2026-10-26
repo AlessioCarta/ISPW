@@ -12,9 +12,9 @@ import com.ispw.uniride.utils.LoggerCustom;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Implementazione concreta di {@link RideDAO} per la famiglia File System (Pattern Abstract
@@ -36,8 +36,10 @@ public class FsRideDAO implements RideDAO {
 
     // Static Cache: condivisa fra tutte le istanze di FsRideDAO (analogamente a MemoryStorage,
     // ma qui la "fonte di verità" resta il file su disco, la cache è solo un acceleratore).
-    private static Map<String, Ride> cache = null;
-    private static long lastModified = 0;
+    // volatile: la cache viene letta anche fuori dal lock (vedi refreshCache), quindi ogni
+    // thread deve vedere subito il riferimento aggiornato o azzerato da un altro thread.
+    private static volatile Map<String, Ride> cache = null;
+    private static volatile long lastModified = 0;
 
     public FsRideDAO() {
         // Ogni volta che viene creato un DAO ci si assicura che il file esista già, per non dover
@@ -65,12 +67,15 @@ public class FsRideDAO implements RideDAO {
         }
     }
 
-    private void refreshCache() {
+    private Map<String, Ride> refreshCache() {
         File file = new File(FILE_PATH);
+        // Si lavora su un riferimento locale: un altro thread potrebbe azzerare il campo cache
+        // (invalidazione dopo una scrittura fallita) mentre questo lo sta ancora usando.
+        Map<String, Ride> current = cache;
         // Primo controllo (senza lock): se la cache esiste già ed è aggiornata, evitiamo del
         // tutto il costo di acquisire il lock — ottimizzazione per il caso comune (nessuna
         // modifica esterna dall'ultima lettura).
-        if (cache == null || file.lastModified() > lastModified) {
+        if (current == null || file.lastModified() > lastModified) {
             synchronized (LOCK) {
                 // Secondo controllo IDENTICO, ma dentro il lock: necessario perché un altro
                 // thread potrebbe aver già ricaricato la cache fra il primo controllo e
@@ -78,8 +83,10 @@ public class FsRideDAO implements RideDAO {
                 if (cache == null || file.lastModified() > lastModified) {
                     loadCacheFromFile(file);
                 }
+                current = cache;
             }
         }
+        return current;
     }
 
     /**
@@ -88,7 +95,7 @@ public class FsRideDAO implements RideDAO {
      * metodo entro la soglia consentita.
      */
     private static void loadCacheFromFile(File file) {
-        Map<String, Ride> loaded = new HashMap<>();
+        Map<String, Ride> loaded = new ConcurrentHashMap<>();
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             int lineNumber = 0;
@@ -187,13 +194,13 @@ public class FsRideDAO implements RideDAO {
         }
     }
 
-    private void rewriteFileFromCache() {
+    private void rewriteFile(Map<String, Ride> current) {
         synchronized (LOCK) {
             // false = non in append: il file viene troncato e riscritto da zero ad ogni chiamata,
             // così la cache in RAM (fonte di verità dopo una modifica) e il file restano identici,
             // senza righe duplicate o obsolete lasciate indietro.
             try (PrintWriter pw = new PrintWriter(new FileWriter(FILE_PATH, false))) {
-                for (Ride r : cache.values()) {
+                for (Ride r : current.values()) {
                     pw.println(formatRideAsCsvLine(r));
                 }
                 // PrintWriter non lancia IOException in scrittura: l'errore va interrogato a mano.
@@ -232,15 +239,13 @@ public class FsRideDAO implements RideDAO {
     public void saveRide(Ride ride) {
         // Prima ci si assicura che la cache rifletta lo stato più recente del file (nel caso
         // sia stato modificato da un altro processo), poi si applica la modifica e si riscrive.
-        refreshCache();
         synchronized (LOCK) {
-            Ride previous = cache.put(ride.getId(), ride);
+            Map<String, Ride> current = refreshCache();
+            current.put(ride.getId(), ride);
             try {
-                rewriteFileFromCache();
+                rewriteFile(current);
             } catch (PersistenceException e) {
-                // Scrittura fallita: si riporta la cache allo stato precedente, così RAM e file
-                // restano coerenti e il dato non salvato non "compare" fino al riavvio.
-                restore(ride.getId(), previous);
+                invalidateCache();
                 throw e;
             }
         }
@@ -248,17 +253,17 @@ public class FsRideDAO implements RideDAO {
 
     @Override
     public List<Ride> getAllRides() {
-        refreshCache();
+        Map<String, Ride> current = refreshCache();
         // Copia difensiva: il chiamante non deve poter alterare la cache interna manipolando
         // la lista ricevuta.
-        return new ArrayList<>(cache.values());
+        return new ArrayList<>(current.values());
     }
 
     @Override
     public List<Ride> getAvailableRides(String departure, String destination) {
-        refreshCache();
+        Map<String, Ride> current = refreshCache();
         List<Ride> available = new ArrayList<>();
-        for (Ride ride : cache.values()) {
+        for (Ride ride : current.values()) {
             if ("AVAILABLE".equals(ride.getStatus()) &&
                 ride.getDeparture().equalsIgnoreCase(departure) &&
                 ride.getDestination().equalsIgnoreCase(destination)) {
@@ -270,8 +275,8 @@ public class FsRideDAO implements RideDAO {
 
     @Override
     public Ride getRideById(String id) {
-        refreshCache();
-        return cache.get(id);
+        Map<String, Ride> current = refreshCache();
+        return current.get(id);
     }
 
     @Override
@@ -283,9 +288,9 @@ public class FsRideDAO implements RideDAO {
 
     @Override
     public List<Ride> getRidesByDriver(String username) {
-        refreshCache();
+        Map<String, Ride> current = refreshCache();
         List<Ride> result = new ArrayList<>();
-        for (Ride ride : cache.values()) {
+        for (Ride ride : current.values()) {
             if (ride.getDriverUsername().equals(username)) {
                 result.add(ride);
             }
@@ -295,9 +300,9 @@ public class FsRideDAO implements RideDAO {
 
     @Override
     public List<Ride> getRidesByPassenger(String username) {
-        refreshCache();
+        Map<String, Ride> current = refreshCache();
         List<Ride> result = new ArrayList<>();
-        for (Ride ride : cache.values()) {
+        for (Ride ride : current.values()) {
             if (ride.getPassengerUsernames().contains(username)) {
                 result.add(ride);
             }
@@ -307,23 +312,25 @@ public class FsRideDAO implements RideDAO {
 
     @Override
     public void deleteRide(String id) {
-        refreshCache();
         synchronized (LOCK) {
-            Ride previous = cache.remove(id);
+            Map<String, Ride> current = refreshCache();
+            current.remove(id);
             try {
-                rewriteFileFromCache();
+                rewriteFile(current);
             } catch (PersistenceException e) {
-                restore(id, previous);
+                invalidateCache();
                 throw e;
             }
         }
     }
 
-    private static void restore(String id, Ride previous) {
-        if (previous == null) {
-            cache.remove(id);
-        } else {
-            cache.put(id, previous);
-        }
+    /**
+     * Scrittura fallita: la cache viene scartata, così la lettura successiva riparte dal file su
+     * disco (la fonte di verità). Ripristinare solo la voce modificata non basterebbe, perché i
+     * metodi di lettura restituiscono le istanze stesse della cache, che il Controller potrebbe
+     * aver già modificato prima di chiedere il salvataggio.
+     */
+    private static void invalidateCache() {
+        cache = null;
     }
 }

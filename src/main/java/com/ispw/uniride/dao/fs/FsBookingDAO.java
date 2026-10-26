@@ -7,9 +7,9 @@ import com.ispw.uniride.utils.LoggerCustom;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Implementazione concreta di {@link BookingDAO} per la famiglia File System.
@@ -26,8 +26,10 @@ public class FsBookingDAO implements BookingDAO {
     private static final int MIN_CSV_FIELDS = 4;
 
     // Static Cache: condivisa fra tutte le istanze di FsBookingDAO.
-    private static Map<String, Booking> cache = null;
-    private static long lastModified = 0;
+    // volatile: la cache viene letta anche fuori dal lock (vedi refreshCache), quindi ogni
+    // thread deve vedere subito il riferimento aggiornato o azzerato da un altro thread.
+    private static volatile Map<String, Booking> cache = null;
+    private static volatile long lastModified = 0;
 
     public FsBookingDAO() {
         ensureFileExists();
@@ -50,23 +52,28 @@ public class FsBookingDAO implements BookingDAO {
         }
     }
 
-    private void refreshCache() {
+    private Map<String, Booking> refreshCache() {
         File file = new File(FILE_PATH);
+        // Si lavora su un riferimento locale: un altro thread potrebbe azzerare il campo cache
+        // (invalidazione dopo una scrittura fallita) mentre questo lo sta ancora usando.
+        Map<String, Booking> current = cache;
         // Stesso pattern check-lock-check delle altre Fs*DAO: evita ricariche non necessarie.
-        if (cache == null || file.lastModified() > lastModified) {
+        if (current == null || file.lastModified() > lastModified) {
             synchronized (LOCK) {
                 if (cache == null || file.lastModified() > lastModified) {
                     loadCacheFromFile(file);
                 }
+                current = cache;
             }
         }
+        return current;
     }
 
     /**
      * Legge integralmente bookings.csv e ricostruisce la cache in memoria, riga per riga.
      */
     private static void loadCacheFromFile(File file) {
-        Map<String, Booking> loaded = new HashMap<>();
+        Map<String, Booking> loaded = new ConcurrentHashMap<>();
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             int lineNumber = 0;
@@ -139,12 +146,12 @@ public class FsBookingDAO implements BookingDAO {
         // REQUESTED: nessuna transizione necessaria, è lo stato iniziale del costruttore.
     }
 
-    private void rewriteFileFromCache() {
+    private void rewriteFile(Map<String, Booking> current) {
         synchronized (LOCK) {
             // Riscrittura completa (non append), come in FsRideDAO: la cache in RAM è la fonte
             // di verità dopo una modifica, il file viene sempre allineato per intero.
             try (PrintWriter pw = new PrintWriter(new FileWriter(FILE_PATH, false))) {
-                for (Booking b : cache.values()) {
+                for (Booking b : current.values()) {
                     pw.println(b.getId() + "," + b.getRideId() + "," + b.getPassengerUsername() + "," + b.getState());
                 }
                 // PrintWriter non lancia IOException in scrittura: l'errore va interrogato a mano.
@@ -161,18 +168,15 @@ public class FsBookingDAO implements BookingDAO {
 
     @Override
     public void saveBooking(Booking booking) {
-        refreshCache();
         synchronized (LOCK) {
-            Booking previous = cache.put(booking.getId(), booking);
+            Map<String, Booking> current = refreshCache();
+            current.put(booking.getId(), booking);
             try {
-                rewriteFileFromCache();
+                rewriteFile(current);
             } catch (PersistenceException e) {
-                // Scrittura fallita: si riporta la cache allo stato precedente (vedi FsRideDAO).
-                if (previous == null) {
-                    cache.remove(booking.getId());
-                } else {
-                    cache.put(booking.getId(), previous);
-                }
+                // Scrittura fallita: la cache viene scartata e ricaricata dal file alla prossima
+                // lettura (stessa motivazione di FsRideDAO.invalidateCache).
+                cache = null;
                 throw e;
             }
         }
@@ -180,15 +184,15 @@ public class FsBookingDAO implements BookingDAO {
 
     @Override
     public Booking getBookingById(String id) {
-        refreshCache();
-        return cache.get(id);
+        Map<String, Booking> current = refreshCache();
+        return current.get(id);
     }
 
     @Override
     public List<Booking> getBookingsByRide(String rideId) {
-        refreshCache();
+        Map<String, Booking> current = refreshCache();
         List<Booking> result = new ArrayList<>();
-        for (Booking booking : cache.values()) {
+        for (Booking booking : current.values()) {
             if (booking.getRideId().equals(rideId)) {
                 result.add(booking);
             }
@@ -198,9 +202,9 @@ public class FsBookingDAO implements BookingDAO {
 
     @Override
     public List<Booking> getBookingsByPassenger(String passengerUsername) {
-        refreshCache();
+        Map<String, Booking> current = refreshCache();
         List<Booking> result = new ArrayList<>();
-        for (Booking booking : cache.values()) {
+        for (Booking booking : current.values()) {
             if (booking.getPassengerUsername().equals(passengerUsername)) {
                 result.add(booking);
             }
