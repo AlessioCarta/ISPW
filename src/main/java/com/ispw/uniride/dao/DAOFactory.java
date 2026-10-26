@@ -50,6 +50,15 @@ public abstract class DAOFactory {
     }
 
     /**
+     * Sostituisce la factory in uso con una fornita dall'esterno (Dependency Injection). Pensato
+     * per i test, che possono così simulare un guasto dello storage con una factory dedicata.
+     * Passando {@code null}, la prossima {@link #getInstance()} torna a leggere la configurazione.
+     */
+    public static synchronized void setInstance(DAOFactory factory) {
+        instance = factory;
+    }
+
+    /**
      * @return Il componente DAO di famiglia Ride.
      */
     public abstract RideDAO getRideDAO();

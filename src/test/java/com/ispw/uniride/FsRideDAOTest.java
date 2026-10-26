@@ -2,9 +2,13 @@ package com.ispw.uniride;
 
 import com.ispw.uniride.dao.RideDAO;
 import com.ispw.uniride.dao.fs.FsRideDAO;
+import com.ispw.uniride.exceptions.PersistenceException;
 import com.ispw.uniride.model.Ride;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -113,5 +117,42 @@ class FsRideDAOTest {
         Ride reloaded = dao.getRideById(ride.getId());
 
         assertNull(reloaded.getDepartureTime());
+    }
+
+    @Test
+    void testCorruptLineIsSkippedWithoutLosingOtherRides() throws IOException {
+        Ride ride = new Ride(unique("driver"), unique("Da"), unique("A"), "01/01/2027", 3, 15.0);
+        dao.saveRide(ride);
+
+        // Riga con un numero di posti non numerico: prima della correzione la
+        // NumberFormatException interrompeva l'intero caricamento del file.
+        File file = new File("rides.csv");
+        try (FileWriter fw = new FileWriter(file, true)) {
+            fw.write(unique("corrotto") + ",driver,Da,A,01/01/2027,NON_UN_NUMERO,1,10.0,AVAILABLE,\n");
+        }
+        // Forza la ricarica della cache, a prescindere dalla granularità del timestamp del file.
+        assertTrue(file.setLastModified(System.currentTimeMillis() + 5000));
+
+        assertNotNull(dao.getRideById(ride.getId()));
+        // Una nuova scrittura riallinea il file alla cache, eliminando la riga corrotta.
+        dao.saveRide(ride);
+    }
+
+    @Test
+    void testFailedWriteThrowsAndDoesNotKeepRideInCache() {
+        // Prima lettura: popola la cache, così il test misura solo il fallimento in scrittura.
+        dao.getAllRides();
+        File file = new File("rides.csv");
+        Ride ride = new Ride(unique("driver"), unique("Da"), unique("A"), "01/01/2027", 3, 15.0);
+
+        assertTrue(file.setWritable(false));
+        try {
+            // Prima della correzione l'errore veniva solo loggato e il passaggio restava in cache,
+            // facendo credere all'utente che fosse stato salvato.
+            assertThrows(PersistenceException.class, () -> dao.saveRide(ride));
+            assertNull(dao.getRideById(ride.getId()));
+        } finally {
+            assertTrue(file.setWritable(true));
+        }
     }
 }

@@ -43,9 +43,22 @@ public class Config {
 
     /**
      * SWITCH architetturale: la modifica di questo parametro farà istanziare al sistema l'intero
-     * ecosistema DAO memory piuttosto che quello legato al disco rigido.
+     * ecosistema DAO memory piuttosto che quello legato al disco rigido. Il valore può essere
+     * scelto all'avvio senza ricompilare, con {@code -Duniride.persistence=FILESYSTEM} (o
+     * {@code SQL}); in assenza della proprietà, o con un valore non riconosciuto, resta MEMORY.
      */
-    public static final DBType PERSISTENCE_TYPE = DBType.MEMORY;
+    public static final DBType PERSISTENCE_TYPE = resolvePersistenceType(System.getProperty("uniride.persistence"));
+
+    static DBType resolvePersistenceType(String value) {
+        if (value == null || value.isBlank()) {
+            return DBType.MEMORY;
+        }
+        try {
+            return DBType.valueOf(value.trim().toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException _) {
+            return DBType.MEMORY;
+        }
+    }
 
     /**
      * Parametro dinamico per calcolare i costi.

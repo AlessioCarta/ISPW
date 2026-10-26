@@ -1,5 +1,6 @@
 package com.ispw.uniride;
 
+import com.ispw.uniride.bean.ProfileBean;
 import com.ispw.uniride.bean.UserBean;
 import com.ispw.uniride.controller.LoginController;
 import com.ispw.uniride.controller.Session;
@@ -136,5 +137,48 @@ class LoginControllerTest {
         controller.logout();
 
         assertNull(Session.getInstance().getLoggedUser());
+    }
+
+    /**
+     * Username con spazi interni, troppo corti o con virgole, e nome completo vuoto o con
+     * virgole, devono essere rifiutati prima di arrivare al DAO.
+     */
+    @Test
+    void testRegisterInvalidUsernameOrNameFails() {
+        assertThrows(UserNotAuthorizedException.class, () -> controller.registerUser("ab", "password123", "Nome Valido", null));
+        assertThrows(UserNotAuthorizedException.class, () -> controller.registerUser("mario rossi", "password123", "Nome Valido", null));
+        assertThrows(UserNotAuthorizedException.class, () -> controller.registerUser(uniqueUsername("u"), "password123", "  ", null));
+        assertThrows(UserNotAuthorizedException.class, () -> controller.registerUser(uniqueUsername("u"), "password123", "Rossi, Mario", null));
+    }
+
+    /**
+     * Gli spazi attorno allo username vengono rimossi sia in registrazione sia al login, così
+     * "nome " e "nome" non possono diventare due account distinti.
+     */
+    @Test
+    void testUsernameIsTrimmedOnRegisterAndLogin() throws UserNotAuthorizedException {
+        String username = uniqueUsername("trim.test");
+        controller.registerUser("  " + username + " ", "password123", "Utente Trim", null);
+
+        assertThrows(UserNotAuthorizedException.class, () -> controller.registerUser(username, "password123", "Duplicato", null));
+        assertTrue(controller.login(new UserBean(username + " ", "password123")));
+    }
+
+    /**
+     * Il profilo esposto alla Boundary riflette l'utente loggato (senza password) ed è null
+     * dopo il logout.
+     */
+    @Test
+    void testLoggedUserProfileExposedAsBean() throws UserNotAuthorizedException {
+        String username = uniqueUsername("profilo.test");
+        controller.registerUser(username, "password123", "Utente Profilo", "Roma");
+        assertTrue(controller.login(new UserBean(username, "password123")));
+
+        ProfileBean profile = controller.getLoggedUserProfile();
+        assertEquals("Utente Profilo", profile.getFullName());
+        assertEquals("Roma", profile.getHomeLocation());
+
+        controller.logout();
+        assertNull(controller.getLoggedUserProfile());
     }
 }

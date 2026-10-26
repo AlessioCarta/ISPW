@@ -1,19 +1,16 @@
 package com.ispw.uniride.dao.fs;
 
 import com.ispw.uniride.dao.RideDAO;
+import com.ispw.uniride.exceptions.PersistenceException;
 import com.ispw.uniride.model.Ride;
-import com.ispw.uniride.model.state.AvailableState;
-import com.ispw.uniride.model.state.CancelledState;
-import com.ispw.uniride.model.state.CompletedState;
-import com.ispw.uniride.model.state.FullState;
 import com.ispw.uniride.model.state.RideState;
 import com.ispw.uniride.utils.LoggerCustom;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Implementazione concreta di {@link RideDAO} per la famiglia File System (Pattern Abstract
@@ -35,8 +32,10 @@ public class FsRideDAO implements RideDAO {
 
     // Static Cache: condivisa fra tutte le istanze di FsRideDAO (analogamente a MemoryStorage,
     // ma qui la "fonte di verità" resta il file su disco, la cache è solo un acceleratore).
-    private static Map<String, Ride> cache = null;
-    private static long lastModified = 0;
+    // volatile: la cache viene letta anche fuori dal lock (vedi refreshCache), quindi ogni
+    // thread deve vedere subito il riferimento aggiornato o azzerato da un altro thread.
+    private static volatile Map<String, Ride> cache = null;
+    private static volatile long lastModified = 0;
 
     public FsRideDAO() {
         // Ogni volta che viene creato un DAO ci si assicura che il file esista già, per non dover
@@ -57,16 +56,22 @@ public class FsRideDAO implements RideDAO {
                 }
             } catch (IOException e) {
                 LoggerCustom.error("Failed to create rides.csv", e);
+                // Senza file non è possibile salvare nulla: meglio fallire subito che lasciar
+                // credere all'utente che le operazioni successive vadano a buon fine.
+                throw new PersistenceException("Impossibile creare il file dati rides.csv.", e);
             }
         }
     }
 
-    private void refreshCache() {
+    private Map<String, Ride> refreshCache() {
         File file = new File(FILE_PATH);
+        // Si lavora su un riferimento locale: un altro thread potrebbe azzerare il campo cache
+        // (invalidazione dopo una scrittura fallita) mentre questo lo sta ancora usando.
+        Map<String, Ride> current = cache;
         // Primo controllo (senza lock): se la cache esiste già ed è aggiornata, evitiamo del
         // tutto il costo di acquisire il lock — ottimizzazione per il caso comune (nessuna
         // modifica esterna dall'ultima lettura).
-        if (cache == null || file.lastModified() > lastModified) {
+        if (current == null || file.lastModified() > lastModified) {
             synchronized (LOCK) {
                 // Secondo controllo IDENTICO, ma dentro il lock: necessario perché un altro
                 // thread potrebbe aver già ricaricato la cache fra il primo controllo e
@@ -74,8 +79,10 @@ public class FsRideDAO implements RideDAO {
                 if (cache == null || file.lastModified() > lastModified) {
                     loadCacheFromFile(file);
                 }
+                current = cache;
             }
         }
+        return current;
     }
 
     /**
@@ -84,12 +91,14 @@ public class FsRideDAO implements RideDAO {
      * metodo entro la soglia consentita.
      */
     private static void loadCacheFromFile(File file) {
-        Map<String, Ride> loaded = new HashMap<>();
+        Map<String, Ride> loaded = new ConcurrentHashMap<>();
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
+            int lineNumber = 0;
             // Ogni riga del CSV rappresenta un Ride: la si converte e la si indicizza per id.
             while ((line = br.readLine()) != null) {
-                Ride ride = parseRideFromCsvLine(line);
+                lineNumber++;
+                Ride ride = parseLineSafely(line, lineNumber);
                 if (ride != null) {
                     loaded.put(ride.getId(), ride);
                 }
@@ -100,9 +109,26 @@ public class FsRideDAO implements RideDAO {
             lastModified = file.lastModified();
         } catch (IOException e) {
             LoggerCustom.error("Error reading rides.csv", e);
-            // Anche in caso di errore assegniamo la cache (parziale/vuota): meglio un elenco
-            // corse vuoto che un'eccezione non gestita propagata al Controller.
-            cache = loaded;
+            // La cache NON viene sostituita con quella parziale: la successiva riscrittura del
+            // file partirebbe da dati incompleti e cancellerebbe da disco le righe non lette.
+            throw new PersistenceException("Impossibile leggere il file dati rides.csv.", e);
+        }
+    }
+
+    /**
+     * Converte una riga CSV senza far fallire l'intero caricamento se la riga è corrotta
+     * (es. un numero non valido): la riga viene scartata e segnalata nel log col suo numero.
+     */
+    private static Ride parseLineSafely(String line, int lineNumber) {
+        try {
+            Ride parsed = parseRideFromCsvLine(line);
+            if (parsed == null) {
+                LoggerCustom.warning("rides.csv: riga " + lineNumber + " malformata, ignorata.");
+            }
+            return parsed;
+        } catch (RuntimeException e) {
+            LoggerCustom.warning("rides.csv: riga " + lineNumber + " non valida (" + e.getMessage() + "), ignorata.");
+            return null;
         }
     }
 
@@ -115,7 +141,7 @@ public class FsRideDAO implements RideDAO {
     private static Ride parseRideFromCsvLine(String line) {
         String[] parts = line.split(",", -1);
         // Riga troppo corta: probabilmente scrittura incompleta o corruzione — la si scarta
-        // silenziosamente invece di lanciare un'eccezione che bloccherebbe l'intero caricamento.
+        // (parseLineSafely la segnala nel log) invece di bloccare l'intero caricamento.
         if (parts.length < MIN_CSV_FIELDS) {
             return null;
         }
@@ -130,7 +156,7 @@ public class FsRideDAO implements RideDAO {
         Ride ride = new Ride(parts[1], parts[2], parts[3], parts[4], Integer.parseInt(parts[5]), Double.parseDouble(parts[7]), departureTime);
         ride.setId(parts[0]);
         ride.setAvailableSeats(Integer.parseInt(parts[6]));
-        ride.setState(parseState(parts[8]));
+        ride.setState(RideState.fromStatus(parts[8]));
 
         // I campi dopo il decimo (indice MIN_CSV_FIELDS) sono, uno per uno, gli username dei
         // passeggeri prenotati: numero variabile, per questo non fanno parte dei campi fissi.
@@ -142,36 +168,18 @@ public class FsRideDAO implements RideDAO {
         return ride;
     }
 
-    /**
-     * Ricostruisce l'istanza di {@link RideState} concreta a partire dalla sigla testuale persistita.
-     */
-    private static RideState parseState(String status) {
-        // Traduzione stringa -> oggetto State: il CSV non può salvare direttamente un'istanza
-        // Java, quindi si persiste solo l'etichetta testuale e la si "reidrata" a un oggetto
-        // State concreto qui, in lettura.
-        switch (status) {
-            case "AVAILABLE":
-                return new AvailableState();
-            case "COMPLETED":
-                return new CompletedState();
-            case "CANCELLED":
-                return new CancelledState();
-            default:
-                // Qualunque valore non riconosciuto (compreso "FULL") ricade su FullState:
-                // scelta prudente, un Ride "sconosciuto" viene trattato come non prenotabile
-                // piuttosto che come liberamente prenotabile.
-                return new FullState();
-        }
-    }
-
-    private void rewriteFileFromCache() {
+    private void rewriteFile(Map<String, Ride> current) {
         synchronized (LOCK) {
             // false = non in append: il file viene troncato e riscritto da zero ad ogni chiamata,
             // così la cache in RAM (fonte di verità dopo una modifica) e il file restano identici,
             // senza righe duplicate o obsolete lasciate indietro.
             try (PrintWriter pw = new PrintWriter(new FileWriter(FILE_PATH, false))) {
-                for (Ride r : cache.values()) {
+                for (Ride r : current.values()) {
                     pw.println(formatRideAsCsvLine(r));
+                }
+                // PrintWriter non lancia IOException in scrittura: l'errore va interrogato a mano.
+                if (pw.checkError()) {
+                    throw new IOException("Scrittura incompleta su " + FILE_PATH);
                 }
                 // Aggiorniamo subito lastModified al valore post-scrittura: evita che la prossima
                 // refreshCache() interpreti la nostra stessa scrittura come "modifica esterna"
@@ -179,6 +187,7 @@ public class FsRideDAO implements RideDAO {
                 lastModified = new File(FILE_PATH).lastModified();
             } catch (IOException e) {
                 LoggerCustom.error("Error writing rides.csv", e);
+                throw new PersistenceException("Impossibile salvare i passaggi sul file rides.csv.", e);
             }
         }
     }
@@ -204,26 +213,31 @@ public class FsRideDAO implements RideDAO {
     public void saveRide(Ride ride) {
         // Prima ci si assicura che la cache rifletta lo stato più recente del file (nel caso
         // sia stato modificato da un altro processo), poi si applica la modifica e si riscrive.
-        refreshCache();
         synchronized (LOCK) {
-            cache.put(ride.getId(), ride);
-            rewriteFileFromCache();
+            Map<String, Ride> current = refreshCache();
+            current.put(ride.getId(), ride);
+            try {
+                rewriteFile(current);
+            } catch (PersistenceException e) {
+                invalidateCache();
+                throw e;
+            }
         }
     }
 
     @Override
     public List<Ride> getAllRides() {
-        refreshCache();
+        Map<String, Ride> current = refreshCache();
         // Copia difensiva: il chiamante non deve poter alterare la cache interna manipolando
         // la lista ricevuta.
-        return new ArrayList<>(cache.values());
+        return new ArrayList<>(current.values());
     }
 
     @Override
     public List<Ride> getAvailableRides(String departure, String destination) {
-        refreshCache();
+        Map<String, Ride> current = refreshCache();
         List<Ride> available = new ArrayList<>();
-        for (Ride ride : cache.values()) {
+        for (Ride ride : current.values()) {
             if ("AVAILABLE".equals(ride.getStatus()) &&
                 ride.getDeparture().equalsIgnoreCase(departure) &&
                 ride.getDestination().equalsIgnoreCase(destination)) {
@@ -235,8 +249,8 @@ public class FsRideDAO implements RideDAO {
 
     @Override
     public Ride getRideById(String id) {
-        refreshCache();
-        return cache.get(id);
+        Map<String, Ride> current = refreshCache();
+        return current.get(id);
     }
 
     @Override
@@ -248,9 +262,9 @@ public class FsRideDAO implements RideDAO {
 
     @Override
     public List<Ride> getRidesByDriver(String username) {
-        refreshCache();
+        Map<String, Ride> current = refreshCache();
         List<Ride> result = new ArrayList<>();
-        for (Ride ride : cache.values()) {
+        for (Ride ride : current.values()) {
             if (ride.getDriverUsername().equals(username)) {
                 result.add(ride);
             }
@@ -260,9 +274,9 @@ public class FsRideDAO implements RideDAO {
 
     @Override
     public List<Ride> getRidesByPassenger(String username) {
-        refreshCache();
+        Map<String, Ride> current = refreshCache();
         List<Ride> result = new ArrayList<>();
-        for (Ride ride : cache.values()) {
+        for (Ride ride : current.values()) {
             if (ride.getPassengerUsernames().contains(username)) {
                 result.add(ride);
             }
@@ -272,10 +286,25 @@ public class FsRideDAO implements RideDAO {
 
     @Override
     public void deleteRide(String id) {
-        refreshCache();
         synchronized (LOCK) {
-            cache.remove(id);
-            rewriteFileFromCache();
+            Map<String, Ride> current = refreshCache();
+            current.remove(id);
+            try {
+                rewriteFile(current);
+            } catch (PersistenceException e) {
+                invalidateCache();
+                throw e;
+            }
         }
+    }
+
+    /**
+     * Scrittura fallita: la cache viene scartata, così la lettura successiva riparte dal file su
+     * disco (la fonte di verità). Ripristinare solo la voce modificata non basterebbe, perché i
+     * metodi di lettura restituiscono le istanze stesse della cache, che il Controller potrebbe
+     * aver già modificato prima di chiedere il salvataggio.
+     */
+    private static void invalidateCache() {
+        cache = null;
     }
 }

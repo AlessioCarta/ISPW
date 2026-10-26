@@ -79,7 +79,7 @@ public class RegisterBoundary {
             // L'eccezione risalita dal Controller Applicativo (username duplicato, password
             // troppo corta) viene qui intercettata e tradotta in un messaggio per l'utente:
             // esattamente il compito del Controller Grafico nel flusso delle eccezioni BCE.
-            messageLabel.setText(e.getMessage());
+            messageLabel.setText(ErrorMessages.forUser(e));
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }
@@ -94,6 +94,7 @@ public class RegisterBoundary {
             stage.setTitle("UniRide - Login");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore schermata Login", e);
+            ErrorMessages.showViewLoadError();
         }
     }
 }

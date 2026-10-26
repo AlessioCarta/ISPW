@@ -1,9 +1,11 @@
 package com.ispw.uniride.controller;
 
+import com.ispw.uniride.bean.ProfileBean;
 import com.ispw.uniride.bean.UserBean;
 import com.ispw.uniride.dao.DAOFactory;
 import com.ispw.uniride.dao.StudentDAO;
 import com.ispw.uniride.model.Student;
+import com.ispw.uniride.utils.PasswordHasher;
 
 import java.util.regex.Pattern;
 
@@ -19,6 +21,12 @@ public class LoginController {
     // portata di un prototipo), solo che "assomigli" a un numero di telefono plausibile.
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\+?[0-9 ]{6,20}$");
 
+    // Username di 3-50 caratteri fra lettere, cifre, punto, trattino e underscore: esclude spazi
+    // (che renderebbero "mario.rossi " un account diverso da "mario.rossi") e virgole, che
+    // spezzerebbero le colonne del file students.csv nella modalità di persistenza su file.
+    private static final Pattern USERNAME_PATTERN = Pattern.compile("^[A-Za-z0-9._-]{3,50}$");
+    private static final int MAX_TEXT_LENGTH = 100;
+
     /**
      * Tenta l'accesso al software valutando lo UserBean iniettato dalla View.
      * @param userBean Data Transfer Object contenente solo nome e pass grezzi.
@@ -29,12 +37,13 @@ public class LoginController {
         // Estrazione astratta del DAO, ignorando di fatto che questo sia
         // Memory o FS, l'obiettivo è incapsulare l'API dati (Pattern Factory/DAO).
         StudentDAO studentDAO = DAOFactory.getInstance().getStudentDAO();
-        Student student = studentDAO.getStudentByUsername(userBean.getUsername());
+        // Stessa normalizzazione applicata in registrazione: uno spazio digitato per errore
+        // prima o dopo lo username non deve impedire l'accesso.
+        String username = userBean.getUsername() == null ? null : userBean.getUsername().trim();
+        Student student = studentDAO.getStudentByUsername(username);
 
-        // Validazione della password rispetto all'oggetto reale estratto in fase DAO (Entity)
-        // Utilizziamo l'hash fittizio per simulare la verifica in chiaro rispetto al db cifrato.
-        String fakeHashToCheck = "[HASHED]" + userBean.getPassword();
-        if (student != null && student.getPassword().equals(fakeHashToCheck)) {
+        // Validazione della password rispetto all'hash PBKDF2 memorizzato nell'entità letta dal DAO.
+        if (student != null && PasswordHasher.verify(userBean.getPassword(), student.getPassword())) {
             // Promuove il dominio a 'utente loggato nel sistema' grazie al Singleton globale "Session".
             Session.getInstance().setLoggedUser(student);
             return true;
@@ -44,7 +53,7 @@ public class LoginController {
     }
 
     /**
-     * Registra un nuovo utente nel sistema simulando il salvataggio sicuro (Hash fittizio per prototipo).
+     * Registra un nuovo utente nel sistema salvando la password come hash PBKDF2.
      * Overload mantenuto per compatibilità (es. CLI) quando posizione e telefono non sono richiesti.
      * @throws com.ispw.uniride.exceptions.UserNotAuthorizedException se l'username è duplicato.
      */
@@ -53,7 +62,7 @@ public class LoginController {
     }
 
     /**
-     * Registra un nuovo utente nel sistema simulando il salvataggio sicuro (Hash fittizio per prototipo),
+     * Registra un nuovo utente nel sistema salvando la password come hash PBKDF2,
      * memorizzando anche il comune/paese di residenza dichiarato per i suggerimenti di vicinanza.
      * Overload mantenuto per compatibilità quando il telefono non è richiesto.
      * @param homeLocation il comune dichiarato dallo studente, o {@code null}/vuoto se non fornito.
@@ -64,7 +73,7 @@ public class LoginController {
     }
 
     /**
-     * Registra un nuovo utente nel sistema simulando il salvataggio sicuro (Hash fittizio per prototipo),
+     * Registra un nuovo utente nel sistema salvando la password come hash PBKDF2,
      * memorizzando anche il comune/paese di residenza e il numero di telefono dichiarati.
      * @param homeLocation il comune dichiarato dallo studente, o {@code null}/vuoto se non fornito.
      * @param phoneNumber il numero di telefono dichiarato, o {@code null}/vuoto se non fornito: resta
@@ -74,10 +83,23 @@ public class LoginController {
      * la password è troppo corta o il telefono ha un formato non valido.
      */
     public void registerUser(String username, String rawPassword, String fullName, String homeLocation, String phoneNumber) throws com.ispw.uniride.exceptions.UserNotAuthorizedException {
+        String normalizedUsername = username == null ? "" : username.trim();
+        if (!USERNAME_PATTERN.matcher(normalizedUsername).matches()) {
+            throw new com.ispw.uniride.exceptions.UserNotAuthorizedException("Username non valido: 3-50 caratteri fra lettere, cifre, punto, trattino e underscore.");
+        }
+        String normalizedFullName = fullName == null ? "" : fullName.trim();
+        if (normalizedFullName.isEmpty() || normalizedFullName.length() > MAX_TEXT_LENGTH) {
+            throw new com.ispw.uniride.exceptions.UserNotAuthorizedException("Il nome completo è obbligatorio (massimo " + MAX_TEXT_LENGTH + " caratteri).");
+        }
+        // La virgola è il separatore dei file CSV: in un campo di testo sposterebbe le colonne.
+        if (normalizedFullName.contains(",") || (homeLocation != null && homeLocation.contains(","))) {
+            throw new com.ispw.uniride.exceptions.UserNotAuthorizedException("Nome e posizione non possono contenere virgole.");
+        }
+
         StudentDAO studentDAO = DAOFactory.getInstance().getStudentDAO();
         // Un username duplicato è un errore di dominio, non un dettaglio di persistenza:
         // la verifica avviene qui nel Controller Applicativo, non dentro il DAO.
-        if (studentDAO.getStudentByUsername(username) != null) {
+        if (studentDAO.getStudentByUsername(normalizedUsername) != null) {
             throw new com.ispw.uniride.exceptions.UserNotAuthorizedException("Username già in uso!");
         }
 
@@ -86,8 +108,8 @@ public class LoginController {
             throw new com.ispw.uniride.exceptions.UserNotAuthorizedException("La password deve essere di almeno 6 caratteri.");
         }
 
-        // Mock Hashing per requisiti di sicurezza simulati.
-        String hashedPassword = "[HASHED]" + rawPassword;
+        // Hash PBKDF2 con salt casuale: la password in chiaro non viene mai persistita.
+        String hashedPassword = PasswordHasher.hash(rawPassword);
 
         // Una stringa vuota o solo spazi viene trattata come "nessuna posizione dichiarata"
         // (null), coerentemente con come home_location viene salvata/letta nei DAO.
@@ -100,8 +122,21 @@ public class LoginController {
             throw new com.ispw.uniride.exceptions.UserNotAuthorizedException("Numero di telefono non valido: usa solo cifre, spazi ed eventualmente un + iniziale.");
         }
 
-        Student newStudent = new Student(username, hashedPassword, fullName, normalizedLocation, normalizedPhone);
+        Student newStudent = new Student(normalizedUsername, hashedPassword, normalizedFullName, normalizedLocation, normalizedPhone);
         studentDAO.saveStudent(newStudent);
+    }
+
+    /**
+     * Espone alla Boundary il profilo dell'utente loggato come Bean, così che la View non debba
+     * mai accedere direttamente alla Sessione né all'entità {@code Student} (che contiene la password).
+     * @return il profilo dell'utente loggato, oppure {@code null} se nessuno ha effettuato l'accesso.
+     */
+    public ProfileBean getLoggedUserProfile() {
+        Student student = Session.getInstance().getLoggedUser();
+        if (student == null) {
+            return null;
+        }
+        return new ProfileBean(student.getUsername(), student.getFullName(), student.getHomeLocation());
     }
 
     /**

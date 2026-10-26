@@ -2,6 +2,7 @@ package com.ispw.uniride.boundary;
 
 import com.ispw.uniride.bean.RideBean;
 import com.ispw.uniride.controller.SearchRideController;
+import com.ispw.uniride.exceptions.PersistenceException;
 
 import java.util.List;
 import java.util.Scanner;
@@ -22,7 +23,13 @@ public class SearchRideCLI {
         System.out.print("Destinazione: ");
         String destination = scanner.nextLine();
 
-        List<RideBean> rides = searchRideController.searchRides(departure, destination);
+        List<RideBean> rides;
+        try {
+            rides = searchRideController.searchRides(departure, destination);
+        } catch (PersistenceException e) {
+            System.out.println("Errore: " + e.getMessage());
+            return;
+        }
 
         if (rides.isEmpty()) {
             System.out.println("Nessun passaggio trovato.");
@@ -55,7 +62,7 @@ public class SearchRideCLI {
                     System.out.println("Impossibile prenotare (posti esauriti).");
                 }
             } catch (Exception e) {
-                System.err.println("Errore: " + e.getMessage());
+                System.err.println("Errore: " + ErrorMessages.forUser(e));
             }
         }
     }

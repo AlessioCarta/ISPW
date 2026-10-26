@@ -5,6 +5,7 @@ import com.ispw.uniride.config.Config;
 import com.ispw.uniride.dao.BookingDAO;
 import com.ispw.uniride.dao.DAOFactory;
 import com.ispw.uniride.dao.RideDAO;
+import com.ispw.uniride.exceptions.PersistenceException;
 import com.ispw.uniride.exceptions.RideActionException;
 import com.ispw.uniride.exceptions.RideNotFoundException;
 import com.ispw.uniride.exceptions.UserNotAuthorizedException;
@@ -127,11 +128,25 @@ public class SearchRideController {
             // Il posto è riservato, ma la richiesta resta "in sospeso" fino alla decisione del guidatore.
             Booking booking = new Booking(ride.getId(), loggedUser.getUsername());
             BookingDAO bookingDAO = DAOFactory.getInstance().getBookingDAO();
-            bookingDAO.saveBooking(booking);
+            try {
+                bookingDAO.saveBooking(booking);
+            } catch (PersistenceException e) {
+                // Le due scritture (corsa e prenotazione) toccano storage diversi e non possono
+                // stare in un'unica transazione: se la seconda fallisce si annulla la prima
+                // (azione compensativa), altrimenti resterebbe un posto occupato senza prenotazione.
+                ride.cancelSeat(loggedUser.getUsername());
+                rideDAO.updateRide(ride);
+                throw e;
+            }
 
             return true;
         }
 
-        return false; // Altrimenti ritorna l'informazione di rigetto dell'iscrizione.
+        // bookSeat fallisce anche su una corsa annullata o completata: false resta riservato al
+        // solo caso "posti esauriti", che è l'unico messaggio mostrato dalle Boundary per false.
+        if (!"FULL".equals(ride.getStatus())) {
+            throw new RideActionException("Questa corsa non è più prenotabile: è stata annullata o completata.");
+        }
+        return false; // Posti esauriti.
     }
 }

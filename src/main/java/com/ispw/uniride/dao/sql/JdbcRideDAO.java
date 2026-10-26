@@ -1,11 +1,8 @@
 package com.ispw.uniride.dao.sql;
 
 import com.ispw.uniride.dao.RideDAO;
+import com.ispw.uniride.exceptions.PersistenceException;
 import com.ispw.uniride.model.Ride;
-import com.ispw.uniride.model.state.AvailableState;
-import com.ispw.uniride.model.state.CancelledState;
-import com.ispw.uniride.model.state.CompletedState;
-import com.ispw.uniride.model.state.FullState;
 import com.ispw.uniride.model.state.RideState;
 import com.ispw.uniride.utils.LoggerCustom;
 
@@ -14,7 +11,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Implementazione DAO su database relazionale (H2, via JDBC standard) per l'entità {@link Ride}.
@@ -34,27 +34,38 @@ public class JdbcRideDAO implements RideDAO {
             // Disattiviamo l'autocommit: il salvataggio del Ride e la ricostruzione della lista
             // passeggeri devono avvenire come un'unica transazione atomica (vedi replacePassengers).
             connection.setAutoCommit(false);
-            try (PreparedStatement stmt = connection.prepareStatement(upsertRide)) {
-                // I "?" sono parametri legati per posizione: PreparedStatement previene ogni
-                // SQL injection, i valori non vengono mai concatenati come stringa nella query.
-                stmt.setString(1, ride.getId());
-                stmt.setString(2, ride.getDriverUsername());
-                stmt.setString(3, ride.getDeparture());
-                stmt.setString(4, ride.getDestination());
-                stmt.setString(5, ride.getDate());
-                stmt.setString(6, ride.getDepartureTime());
-                stmt.setInt(7, ride.getTotalSeats());
-                stmt.setInt(8, ride.getAvailableSeats());
-                stmt.setDouble(9, ride.getBasePrice());
-                stmt.setString(10, ride.getStatus());
-                stmt.executeUpdate();
+            try {
+                executeRideUpsert(connection, upsertRide, ride);
+                replacePassengers(connection, ride);
+                // Solo se ENTRAMBE le operazioni sono andate a buon fine si conferma la transazione.
+                connection.commit();
+            } catch (SQLException e) {
+                // Rollback esplicito: lo standard JDBC non garantisce cosa accada alle modifiche
+                // non confermate alla chiusura della connessione, quindi non ci si affida a close().
+                connection.rollback();
+                throw e;
             }
-            replacePassengers(connection, ride);
-            // Solo se ENTRAMBE le operazioni sono andate a buon fine si conferma la transazione:
-            // in caso di eccezione, nessun commit avviene e il database resta nello stato precedente.
-            connection.commit();
         } catch (SQLException e) {
             LoggerCustom.error("Errore nel salvataggio del passaggio su database", e);
+            throw new PersistenceException("Impossibile salvare il passaggio: database non disponibile.", e);
+        }
+    }
+
+    private void executeRideUpsert(Connection connection, String upsertRide, Ride ride) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(upsertRide)) {
+            // I "?" sono parametri legati per posizione: PreparedStatement previene ogni
+            // SQL injection, i valori non vengono mai concatenati come stringa nella query.
+            stmt.setString(1, ride.getId());
+            stmt.setString(2, ride.getDriverUsername());
+            stmt.setString(3, ride.getDeparture());
+            stmt.setString(4, ride.getDestination());
+            stmt.setString(5, ride.getDate());
+            stmt.setString(6, ride.getDepartureTime());
+            stmt.setInt(7, ride.getTotalSeats());
+            stmt.setInt(8, ride.getAvailableSeats());
+            stmt.setDouble(9, ride.getBasePrice());
+            stmt.setString(10, ride.getStatus());
+            stmt.executeUpdate();
         }
     }
 
@@ -132,20 +143,30 @@ public class JdbcRideDAO implements RideDAO {
     public void deleteRide(String id) {
         try (Connection connection = JdbcSupport.getConnection()) {
             connection.setAutoCommit(false);
-            // Si cancellano prima le righe collegate in ride_passengers (che referenziano
-            // rides.id via foreign key) e solo dopo la riga in rides stessa: l'ordine inverso
-            // fallirebbe per violazione del vincolo di integrità referenziale.
-            try (PreparedStatement deletePassengers = connection.prepareStatement("DELETE FROM ride_passengers WHERE ride_id = ?")) {
-                deletePassengers.setString(1, id);
-                deletePassengers.executeUpdate();
+            try {
+                deleteRideRows(connection, id);
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
             }
-            try (PreparedStatement deleteRide = connection.prepareStatement("DELETE FROM rides WHERE id = ?")) {
-                deleteRide.setString(1, id);
-                deleteRide.executeUpdate();
-            }
-            connection.commit();
         } catch (SQLException e) {
             LoggerCustom.error("Errore nell'eliminazione del passaggio dal database", e);
+            throw new PersistenceException("Impossibile eliminare il passaggio: database non disponibile.", e);
+        }
+    }
+
+    private void deleteRideRows(Connection connection, String id) throws SQLException {
+        // Si cancellano prima le righe collegate in ride_passengers (che referenziano
+        // rides.id via foreign key) e solo dopo la riga in rides stessa: l'ordine inverso
+        // fallirebbe per violazione del vincolo di integrità referenziale.
+        try (PreparedStatement deletePassengers = connection.prepareStatement("DELETE FROM ride_passengers WHERE ride_id = ?")) {
+            deletePassengers.setString(1, id);
+            deletePassengers.executeUpdate();
+        }
+        try (PreparedStatement deleteRide = connection.prepareStatement("DELETE FROM rides WHERE id = ?")) {
+            deleteRide.setString(1, id);
+            deleteRide.executeUpdate();
         }
     }
 
@@ -169,16 +190,18 @@ public class JdbcRideDAO implements RideDAO {
             binder.bind(stmt);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    rides.add(mapRow(connection, rs));
+                    rides.add(mapRow(rs));
                 }
             }
+            loadPassengers(connection, rides);
         } catch (SQLException e) {
             LoggerCustom.error("Errore nella lettura dei passaggi dal database", e);
+            throw new PersistenceException("Impossibile leggere i passaggi: database non disponibile.", e);
         }
         return rides;
     }
 
-    private Ride mapRow(Connection connection, ResultSet rs) throws SQLException {
+    private Ride mapRow(ResultSet rs) throws SQLException {
         // Come per la lettura da CSV: il costruttore pubblico genera un id nuovo e imposta
         // availableSeats=totalSeats, quindi sovrascriviamo subito dopo con i valori reali letti
         // dalla riga del database (setId, setAvailableSeats, setState).
@@ -193,33 +216,35 @@ public class JdbcRideDAO implements RideDAO {
         );
         ride.setId(rs.getString("id"));
         ride.setAvailableSeats(rs.getInt("available_seats"));
-        ride.setState(parseState(rs.getString("status")));
-
-        // Per ogni Ride letto, una query aggiuntiva recupera i suoi passeggeri dalla tabella di
-        // collegamento: costa una query in più per riga, accettabile per i volumi di un prototipo.
-        try (PreparedStatement stmt = connection.prepareStatement("SELECT username FROM ride_passengers WHERE ride_id = ?")) {
-            stmt.setString(1, ride.getId());
-            try (ResultSet passengers = stmt.executeQuery()) {
-                while (passengers.next()) {
-                    ride.addPassengerUsername(passengers.getString("username"));
-                }
-            }
-        }
+        ride.setState(RideState.fromStatus(rs.getString("status")));
         return ride;
     }
 
-    private RideState parseState(String status) {
-        // Stessa logica di traduzione stringa -> oggetto State usata da FsRideDAO: il database,
-        // come il CSV, può persistere solo la sigla testuale, mai un'istanza Java direttamente.
-        switch (status) {
-            case "AVAILABLE":
-                return new AvailableState();
-            case "COMPLETED":
-                return new CompletedState();
-            case "CANCELLED":
-                return new CancelledState();
-            default:
-                return new FullState();
+    /**
+     * Recupera i passeggeri di tutti i Ride letti con un'unica query sulla tabella di collegamento,
+     * invece di una query aggiuntiva per ogni Ride (problema "N+1").
+     */
+    private void loadPassengers(Connection connection, List<Ride> rides) throws SQLException {
+        if (rides.isEmpty()) {
+            return;
+        }
+        Map<String, Ride> byId = new HashMap<>();
+        for (Ride ride : rides) {
+            byId.put(ride.getId(), ride);
+        }
+        // Un segnaposto "?" per ogni id: i valori restano parametri legati, mai concatenati nella query.
+        String placeholders = String.join(", ", Collections.nCopies(byId.size(), "?"));
+        String sql = "SELECT ride_id, username FROM ride_passengers WHERE ride_id IN (" + placeholders + ")";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            int index = 1;
+            for (String id : byId.keySet()) {
+                stmt.setString(index++, id);
+            }
+            try (ResultSet passengers = stmt.executeQuery()) {
+                while (passengers.next()) {
+                    byId.get(passengers.getString("ride_id")).addPassengerUsername(passengers.getString("username"));
+                }
+            }
         }
     }
 }

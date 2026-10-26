@@ -11,6 +11,8 @@ import com.ispw.uniride.model.Student;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,6 +23,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Alessio Carta
  */
 class SearchRideControllerTest {
+
+    // Data sempre futura rispetto al giorno di esecuzione: una data fissa farebbe fallire i test
+    // non appena superata, ora che OfferRideController rifiuta i passaggi nel passato.
+    private static final String FUTURE_DATE = LocalDate.now().plusMonths(1).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
     private final OfferRideController offerRideController = new OfferRideController();
     private final SearchRideController searchRideController = new SearchRideController();
@@ -42,7 +48,7 @@ class SearchRideControllerTest {
         String departure = unique("Partenza");
         String destination = unique("Destinazione");
         loginAs(driverUsername);
-        offerRideController.offerRide(new RideBean(departure, destination, "10/12/2026", "08:30", 2, 20.0));
+        offerRideController.offerRide(new RideBean(departure, destination, FUTURE_DATE, "08:30", 2, 20.0));
 
         List<RideBean> results = searchRideController.searchRides(departure, destination);
         assertEquals(1, results.size(), "La ricerca deve trovare esattamente la corsa appena offerta");
@@ -114,5 +120,24 @@ class SearchRideControllerTest {
     void testBookRideWithoutLoginFails() {
         Session.getInstance().logout();
         assertThrows(UserNotAuthorizedException.class, () -> searchRideController.bookRide("qualsiasi-id"));
+    }
+
+    /**
+     * Una corsa annullata non è "piena": la prenotazione deve fallire con un motivo esplicito
+     * invece di restituire false, che le Boundary mostrano come "Posti esauriti!".
+     */
+    @Test
+    void testBookCancelledRideExplainsWhy() throws Exception {
+        String departure = "Partenza." + System.nanoTime();
+        String destination = "Destinazione." + System.nanoTime();
+        String driver = "driver." + System.nanoTime();
+        loginAs(driver);
+        offerRideController.offerRide(new RideBean(departure, destination, FUTURE_DATE, "08:30", 2, 20.0));
+        String rideId = searchRideController.searchRides(departure, destination).get(0).getId();
+        new com.ispw.uniride.controller.ManageRidesController().cancelOfferedRide(rideId);
+
+        loginAs("passenger." + System.nanoTime());
+        RideActionException ex = assertThrows(RideActionException.class, () -> searchRideController.bookRide(rideId));
+        assertEquals("Questa corsa non è più prenotabile: è stata annullata o completata.", ex.getMessage());
     }
 }

@@ -8,6 +8,10 @@ import com.ispw.uniride.exceptions.UserNotAuthorizedException;
 import com.ispw.uniride.model.Ride;
 import com.ispw.uniride.model.Student;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.regex.Pattern;
 
 /**
@@ -23,6 +27,10 @@ public class OfferRideController {
     // sempre normalizzato a due cifre da normalizeDepartureTime prima di essere persistito, così
     // che liste e ricerche mostrino sempre lo stesso formato "HH:mm".
     private static final Pattern TIME_PATTERN = Pattern.compile("^([01]?\\d|2[0-3]):[0-5]\\d$");
+
+    // Stesso formato prodotto dal DatePicker della GUI e richiesto dalla CLI ("gg/mm/aaaa").
+    // STRICT (con "uuuu" per l'anno) rifiuta date inesistenti come 31/02 invece di "aggiustarle".
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/uuuu").withResolverStyle(ResolverStyle.STRICT);
 
     /**
      * Valida un nuovo tragitto proposto convertendo le specifiche del DTO `RideBean` in
@@ -72,6 +80,10 @@ public class OfferRideController {
                 || rideBean.getDestination() == null || rideBean.getDestination().trim().isEmpty()) {
             throw new RideActionException("Partenza e destinazione sono obbligatorie.");
         }
+        // La virgola è il separatore dei file CSV: in partenza/destinazione sposterebbe le colonne.
+        if (rideBean.getDeparture().contains(",") || rideBean.getDestination().contains(",")) {
+            throw new RideActionException("Partenza e destinazione non possono contenere virgole.");
+        }
         // Un passaggio con partenza e destinazione identiche non ha senso nel dominio.
         if (rideBean.getDeparture().trim().equalsIgnoreCase(rideBean.getDestination().trim())) {
             throw new RideActionException("Partenza e destinazione non possono coincidere.");
@@ -88,6 +100,26 @@ public class OfferRideController {
         // già nell'elenco risultati, prima ancora di richiedere il passaggio.
         if (rideBean.getDepartureTime() == null || !TIME_PATTERN.matcher(rideBean.getDepartureTime().trim()).matches()) {
             throw new RideActionException("Inserisci un orario di partenza valido (formato HH:mm, es. 08:30).");
+        }
+        validateDate(rideBean.getDate());
+    }
+
+    /**
+     * La data è obbligatoria (la GUI passa una stringa vuota se il DatePicker non è stato
+     * compilato), deve essere una data reale e non può essere già passata.
+     */
+    private void validateDate(String date) throws RideActionException {
+        if (date == null || date.trim().isEmpty()) {
+            throw new RideActionException("La data del passaggio è obbligatoria.");
+        }
+        LocalDate parsed;
+        try {
+            parsed = LocalDate.parse(date.trim(), DATE_FORMAT);
+        } catch (DateTimeParseException _) {
+            throw new RideActionException("Data non valida: usa il formato gg/mm/aaaa (es. 15/03/2027).");
+        }
+        if (parsed.isBefore(LocalDate.now())) {
+            throw new RideActionException("Non si può offrire un passaggio in una data già passata.");
         }
     }
 

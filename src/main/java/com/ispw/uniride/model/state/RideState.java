@@ -1,6 +1,7 @@
 package com.ispw.uniride.model.state;
 
 import com.ispw.uniride.model.Ride;
+import com.ispw.uniride.utils.LoggerCustom;
 
 /**
  * Interfaccia base per il Design Pattern State.
@@ -45,4 +46,30 @@ public interface RideState {
      * @return true se la transizione verso {@code CancelledState} è avvenuta.
      */
     boolean cancel(Ride ride);
+
+    /**
+     * Ricostruisce lo stato concreto a partire dalla sigla persistita da un DAO (CSV o database),
+     * che può salvare solo l'etichetta testuale e mai un'istanza Java. Unico punto di traduzione
+     * condiviso da tutte le famiglie di DAO, invece di una copia per ciascuna.
+     * Una sigla non riconosciuta ricade su {@link FullState}: scelta prudente (una corsa
+     * "sconosciuta" non è prenotabile), ma segnalata nel log invece che in silenzio.
+     */
+    static RideState fromStatus(String status) {
+        if (status == null) {
+            status = "";
+        }
+        switch (status) {
+            case "AVAILABLE":
+                return new AvailableState();
+            case "FULL":
+                return new FullState();
+            case "COMPLETED":
+                return new CompletedState();
+            case "CANCELLED":
+                return new CancelledState();
+            default:
+                LoggerCustom.warning("Stato di corsa non riconosciuto \"" + status + "\": trattato come FULL.");
+                return new FullState();
+        }
+    }
 }

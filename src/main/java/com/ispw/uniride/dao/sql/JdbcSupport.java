@@ -51,7 +51,14 @@ final class JdbcSupport {
         // one-shot dello schema, non per serializzare tutte le query.
         Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
         if (!schemaReady) {
-            ensureSchema(connection);
+            try {
+                ensureSchema(connection);
+            } catch (SQLException e) {
+                // La connessione non è ancora nel try-with-resources del chiamante: se la
+                // creazione dello schema fallisce va chiusa qui, altrimenti resterebbe aperta.
+                connection.close();
+                throw e;
+            }
             schemaReady = true;
         }
         return connection;

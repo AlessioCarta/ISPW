@@ -1,7 +1,7 @@
 package com.ispw.uniride.boundary;
 
+import com.ispw.uniride.bean.ProfileBean;
 import com.ispw.uniride.controller.LoginController;
-import com.ispw.uniride.controller.Session;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -28,8 +28,9 @@ public class StudentDashboardBoundary {
     public void initialize() {
         // Se la Sessione risulta valorizzata (login avvenuto con successo prima di arrivare
         // qui), personalizza il messaggio di benvenuto col nome dello studente autenticato.
-        if (Session.getInstance().getLoggedUser() != null) {
-            welcomeLabel.setText("Benvenuto, " + Session.getInstance().getLoggedUser().getFullName() + "!");
+        ProfileBean profile = new LoginController().getLoggedUserProfile();
+        if (profile != null) {
+            welcomeLabel.setText("Benvenuto, " + profile.getFullName() + "!");
         }
     }
 
@@ -46,6 +47,7 @@ public class StudentDashboardBoundary {
             stage.setTitle("UniRide - Offri Passaggio");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Offri Passaggio", e);
+            ErrorMessages.showViewLoadError();
         }
     }
 
@@ -60,6 +62,7 @@ public class StudentDashboardBoundary {
             stage.setTitle("UniRide - Cerca Passaggio");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Cerca Passaggio", e);
+            ErrorMessages.showViewLoadError();
         }
     }
 
@@ -74,6 +77,7 @@ public class StudentDashboardBoundary {
             stage.setTitle("UniRide - Le Mie Corse");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Manage Rides", e);
+            ErrorMessages.showViewLoadError();
         }
     }
 
@@ -91,6 +95,7 @@ public class StudentDashboardBoundary {
             stage.setTitle("UniRide - Login");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Login", e);
+            ErrorMessages.showViewLoadError();
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.ispw.uniride.dao.sql;
 
 import com.ispw.uniride.dao.BookingDAO;
+import com.ispw.uniride.exceptions.PersistenceException;
 import com.ispw.uniride.model.Booking;
 import com.ispw.uniride.utils.LoggerCustom;
 
@@ -62,6 +63,7 @@ public class JdbcBookingDAO implements BookingDAO {
             stmt.executeUpdate();
         } catch (SQLException e) {
             LoggerCustom.error("Errore nel salvataggio della prenotazione su database", e);
+            throw new PersistenceException("Impossibile salvare la prenotazione: database non disponibile.", e);
         }
     }
 
@@ -86,6 +88,7 @@ public class JdbcBookingDAO implements BookingDAO {
             }
         } catch (SQLException e) {
             LoggerCustom.error("Errore nella lettura delle prenotazioni dal database", e);
+            throw new PersistenceException("Impossibile leggere le prenotazioni: database non disponibile.", e);
         }
         return bookings;
     }

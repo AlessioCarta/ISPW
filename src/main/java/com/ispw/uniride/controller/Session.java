@@ -12,8 +12,10 @@ public class Session {
     // Riferimento interno all'unica istanza ammessa nel sistema
     private static Session instance = null;
 
-    // Entità che ha eseguito il login con successo nella schermata
-    private Student loggedUser;
+    // Entità che ha eseguito il login con successo nella schermata. volatile: il valore scritto
+    // al login dal thread della GUI dev'essere subito visibile anche ad eventuali altri thread.
+    // La Sessione resta unica per processo: UniRide è un'applicazione desktop mono-utente.
+    private volatile Student loggedUser;
 
     /**
      * Costruttore bloccato privato per prevenire istanziazioni `new Session()` indesiderate.

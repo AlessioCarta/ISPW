@@ -6,6 +6,7 @@ import com.ispw.uniride.dao.BookingDAO;
 import com.ispw.uniride.dao.DAOFactory;
 import com.ispw.uniride.dao.RideDAO;
 import com.ispw.uniride.dao.StudentDAO;
+import com.ispw.uniride.exceptions.PersistenceException;
 import com.ispw.uniride.exceptions.RideActionException;
 import com.ispw.uniride.exceptions.RideNotFoundException;
 import com.ispw.uniride.exceptions.UserNotAuthorizedException;
@@ -122,12 +123,31 @@ public class ManageRidesController {
         // pur non avendo più un passeggero confermato.
         RideDAO rideDAO = DAOFactory.getInstance().getRideDAO();
         Ride ride = rideDAO.getRideById(booking.getRideId());
-        if (ride != null) {
-            ride.cancelSeat(booking.getPassengerUsername());
+        boolean seatFreed = ride != null && ride.cancelSeat(booking.getPassengerUsername());
+        if (seatFreed) {
             rideDAO.updateRide(ride);
         }
 
-        DAOFactory.getInstance().getBookingDAO().updateBooking(booking);
+        updateBookingOrRestoreSeat(booking, seatFreed ? ride : null);
+    }
+
+    /**
+     * Salva il nuovo stato della prenotazione dopo che il posto è già stato liberato sulla corsa.
+     * Se il salvataggio fallisce, il posto viene ri-occupato (azione compensativa): corsa e
+     * prenotazione vivono in storage diversi e non possono stare in un'unica transazione, e senza
+     * compensazione il passeggero perderebbe il posto pur risultando ancora prenotato.
+     * @param freedRide la corsa su cui è stato liberato il posto, o {@code null} se nessun posto è stato liberato.
+     */
+    private void updateBookingOrRestoreSeat(Booking booking, Ride freedRide) {
+        try {
+            DAOFactory.getInstance().getBookingDAO().updateBooking(booking);
+        } catch (PersistenceException e) {
+            if (freedRide != null) {
+                freedRide.bookSeat(message -> { }, booking.getPassengerUsername());
+                DAOFactory.getInstance().getRideDAO().updateRide(freedRide);
+            }
+            throw e;
+        }
     }
 
     /**
@@ -188,14 +208,14 @@ public class ManageRidesController {
         rideDAO.updateRide(ride);
 
         activeBooking.cancel();
-        bookingDAO.updateBooking(activeBooking);
+        updateBookingOrRestoreSeat(activeBooking, ride);
     }
 
     /**
      * Annulla una corsa offerta dall'utente loggato (in qualità di conducente). A differenza
      * della versione precedente, è consentito anche con passeggeri già prenotati: la corsa
-     * passa allo stato {@code CANCELLED} (non viene più eliminata fisicamente) e i passeggeri
-     * a bordo vengono notificati tramite il Pattern Observer.
+     * passa allo stato {@code CANCELLED} (non viene più eliminata fisicamente) e le prenotazioni
+     * dei passeggeri, iscritte come observer ({@link PassengerBookingObserver}), vengono annullate.
      * @throws UserNotAuthorizedException se l'utente non è loggato o non è il conducente della corsa.
      * @throws RideNotFoundException se l'id non corrisponde ad alcuna corsa esistente.
      * @throws RideActionException se la corsa è già in uno stato terminale (completata o già annullata).
@@ -203,10 +223,37 @@ public class ManageRidesController {
     public void cancelOfferedRide(String rideId) throws UserNotAuthorizedException, RideNotFoundException, RideActionException {
         Ride ride = requireOwnedRide(rideId);
 
-        if (!ride.cancel()) {
-            throw new RideActionException("La corsa è già stata completata o annullata.");
+        // Pattern Observer: ogni prenotazione attiva si iscrive alla corsa prima dell'annullamento.
+        // Gli observer vengono ricreati qui ad ogni chiamata perché la lista degli iscritti vive
+        // solo in memoria e non viene persistita dai DAO, mentre le prenotazioni sì.
+        BookingDAO bookingDAO = DAOFactory.getInstance().getBookingDAO();
+        List<PassengerBookingObserver> passengers = new ArrayList<>();
+        for (Booking booking : bookingDAO.getBookingsByRide(rideId)) {
+            PassengerBookingObserver observer = new PassengerBookingObserver(booking);
+            passengers.add(observer);
+            ride.attach(observer);
+        }
+
+        try {
+            // ride.cancel() notifica gli iscritti: ciascun observer porta la propria prenotazione
+            // in CANCELLED, così il passeggero non la vede più come "In attesa"/"Confermata".
+            if (!ride.cancel()) {
+                throw new RideActionException("La corsa è già stata completata o annullata.");
+            }
+        } finally {
+            // Con i DAO in memoria la corsa è un'istanza condivisa: gli observer non devono
+            // restarvi attaccati dopo questa operazione.
+            passengers.forEach(ride::detach);
         }
         DAOFactory.getInstance().getRideDAO().updateRide(ride);
+
+        // Le prenotazioni si salvano solo dopo la corsa: se il salvataggio della corsa fallisce,
+        // nessuna prenotazione risulta annullata su una corsa ancora attiva.
+        for (PassengerBookingObserver observer : passengers) {
+            if (observer.hasCancelledBooking()) {
+                bookingDAO.updateBooking(observer.getBooking());
+            }
+        }
     }
 
     /**
@@ -220,6 +267,15 @@ public class ManageRidesController {
             throw new RideActionException("La corsa è già stata completata o annullata.");
         }
         DAOFactory.getInstance().getRideDAO().updateRide(ride);
+
+        // Le richieste mai evase non possono più essere accettate a viaggio concluso: vengono
+        // rifiutate. Le prenotazioni confermate restano tali, come storico del viaggio avvenuto.
+        BookingDAO bookingDAO = DAOFactory.getInstance().getBookingDAO();
+        for (Booking booking : bookingDAO.getBookingsByRide(rideId)) {
+            if (booking.reject()) {
+                bookingDAO.updateBooking(booking);
+            }
+        }
     }
 
     private Ride requireOwnedRide(String rideId) throws UserNotAuthorizedException, RideNotFoundException {

@@ -1,11 +1,12 @@
 package com.ispw.uniride.boundary;
 
+import com.ispw.uniride.bean.ProfileBean;
 import com.ispw.uniride.bean.RideBean;
 import com.ispw.uniride.config.LocationCatalog;
 import com.ispw.uniride.config.LocationInfo;
+import com.ispw.uniride.controller.LoginController;
 import com.ispw.uniride.controller.SearchRideController;
-import com.ispw.uniride.controller.Session;
-import com.ispw.uniride.model.Student;
+import com.ispw.uniride.exceptions.PersistenceException;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -41,7 +42,7 @@ public class SearchRideBoundary {
         // Se lo studente ha dichiarato una posizione riconosciuta, mostra prima le località più
         // vicine a lui e preseleziona partenza/destinazione plausibili (paese di residenza e
         // ateneo più vicino), lasciando comunque piena libertà di cercare qualunque altra tratta.
-        Student loggedUser = Session.getInstance().getLoggedUser();
+        ProfileBean loggedUser = new LoginController().getLoggedUserProfile();
         LocationInfo home = loggedUser != null ? LocationCatalog.findByName(loggedUser.getHomeLocation()) : null;
 
         List<String> locationNames = home != null
@@ -83,7 +84,15 @@ public class SearchRideBoundary {
         String departure = readCity(departureField);
         String destination = readCity(destinationField);
 
-        List<RideBean> rides = searchRideController.searchRides(departure, destination);
+        List<RideBean> rides;
+        try {
+            rides = searchRideController.searchRides(departure, destination);
+        } catch (PersistenceException e) {
+            // Senza questo catch un guasto dello storage verrebbe confuso con "nessun risultato".
+            messageLabel.setText(e.getMessage());
+            messageLabel.setTextFill(javafx.scene.paint.Color.RED);
+            return;
+        }
 
         // ObservableList: a differenza di una List normale, la ListView si aggiorna
         // automaticamente quando il suo contenuto osservato cambia.
@@ -138,7 +147,7 @@ public class SearchRideBoundary {
                 messageLabel.setTextFill(javafx.scene.paint.Color.RED);
             }
         } catch (Exception e) {
-            messageLabel.setText("Errore: " + e.getMessage());
+            messageLabel.setText("Errore: " + ErrorMessages.forUser(e));
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }
@@ -153,6 +162,7 @@ public class SearchRideBoundary {
             stage.setTitle("UniRide - Dashboard");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore ritorno alla Dashboard", e);
+            ErrorMessages.showViewLoadError();
         }
     }
 }

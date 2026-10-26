@@ -1,11 +1,11 @@
 package com.ispw.uniride.boundary;
 
+import com.ispw.uniride.bean.ProfileBean;
 import com.ispw.uniride.bean.RideBean;
 import com.ispw.uniride.config.LocationCatalog;
 import com.ispw.uniride.config.LocationInfo;
+import com.ispw.uniride.controller.LoginController;
 import com.ispw.uniride.controller.OfferRideController;
-import com.ispw.uniride.controller.Session;
-import com.ispw.uniride.model.Student;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -54,7 +54,7 @@ public class OfferRideBoundary {
      */
     @FXML
     public void initialize() {
-        Student loggedUser = Session.getInstance().getLoggedUser();
+        ProfileBean loggedUser = new LoginController().getLoggedUserProfile();
         // Se lo studente ha dichiarato una posizione riconosciuta dal catalogo, "home" non è
         // null e guiderà sia l'ordinamento sia i valori preimpostati qui sotto.
         LocationInfo home = loggedUser != null ? LocationCatalog.findByName(loggedUser.getHomeLocation()) : null;
@@ -121,7 +121,7 @@ public class OfferRideBoundary {
         } catch (Exception e) {
             // Cattura anche le eccezioni di dominio (RideActionException, UserNotAuthorizedException)
             // risalite da OfferRideController, mostrandone il messaggio così com'è.
-            messageLabel.setText("Errore: " + e.getMessage());
+            messageLabel.setText("Errore: " + ErrorMessages.forUser(e));
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }
@@ -145,6 +145,7 @@ public class OfferRideBoundary {
             stage.setTitle("UniRide - Dashboard");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore ritorno alla Dashboard", e);
+            ErrorMessages.showViewLoadError();
         }
     }
 }
