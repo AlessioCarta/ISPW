@@ -1,0 +1,264 @@
+%%{init: {"theme": "default", "layout": "elk", "themeVariables": {"clusterBkg": "#FAFAFA", "clusterBorder": "#CCCCCC"}}}%%
+classDiagram
+    direction TB
+
+    namespace Boundary {
+        class LoginBoundary {
+            -usernameField : TextField
+            -passwordField : PasswordField
+            -messageLabel : Label
+            +handleLogin(ActionEvent)
+            +handleRegister(ActionEvent)
+        }
+        class RegisterBoundary {
+            -fullNameField : TextField
+            -usernameField : TextField
+            -passwordField : PasswordField
+            -homeLocationField : ComboBox~String~
+            -phoneNumberField : TextField
+            -messageLabel : Label
+            +handleRegisterSubmit(ActionEvent)
+            +handleBack(ActionEvent)
+        }
+        class StudentDashboardBoundary {
+            -welcomeLabel : Label
+            +handleOfferRide(ActionEvent)
+            +handleSearchRide(ActionEvent)
+            +handleMyRides(ActionEvent)
+            +handleLogout(ActionEvent)
+        }
+        class OfferRideBoundary {
+            -departureField : ComboBox~String~
+            -destinationField : ComboBox~String~
+            -dateField : DatePicker
+            -departureTimeField : TextField
+            -seatsField : Spinner~Integer~
+            -priceField : TextField
+            +handleSubmit(ActionEvent)
+            +handleBack(ActionEvent)
+        }
+        class SearchRideBoundary {
+            -departureField : ComboBox~String~
+            -destinationField : ComboBox~String~
+            -resultsList : ListView~RideBean~
+            +handleSearch(ActionEvent)
+            +handleBook(ActionEvent)
+        }
+        class ManageRidesBoundary {
+            -offeredList : ListView~RideBean~
+            -pendingRequestsList : ListView~BookingBean~
+            -bookedList : ListView~BookingBean~
+            +handleConfirmRequest(ActionEvent)
+            +handleRejectRequest(ActionEvent)
+            +handleCompleteRide(ActionEvent)
+            +handleCancelOfferedRide(ActionEvent)
+            +handleCancelBooking(ActionEvent)
+        }
+    }
+
+    namespace Control {
+        class LoginController {
+            +login(UserBean) bool
+            +registerUser(String, String, String, String, String)
+            +getLoggedUserProfile() ProfileBean
+            +logout()
+        }
+        class OfferRideController {
+            -validateRide(RideBean)
+            -validateDate(String)
+            +offerRide(RideBean)
+        }
+        class SearchRideController {
+            +searchRides(String, String) List~RideBean~
+            +bookRide(String) bool
+        }
+        class ManageRidesController {
+            +getMyOfferedRides() List~RideBean~
+            +getMyBookedRides() List~BookingBean~
+            +getPendingRequestsForRide(String) List~BookingBean~
+            +confirmBooking(String)
+            +rejectBooking(String)
+            +cancelBooking(String)
+            +cancelOfferedRide(String)
+            +completeRide(String)
+        }
+        class Session {
+            <<Singleton>>
+            -instance : Session
+            -loggedUser : Student
+            +getInstance() Session
+            +setLoggedUser(Student)
+            +getLoggedUser() Student
+            +logout()
+        }
+    }
+
+    namespace Bean {
+        class UserBean {
+            -username : String
+            -password : String
+            +getUsername() String
+            +getPassword() String
+        }
+        class ProfileBean {
+            -username : String
+            -fullName : String
+            -homeLocation : String
+            +getUsername() String
+            +getFullName() String
+            +getHomeLocation() String
+        }
+        class RideBean {
+            -id : String
+            -departure : String
+            -destination : String
+            -date : String
+            -departureTime : String
+            -totalSeats : int
+            -availableSeats : int
+            -basePrice : double
+            -status : String
+            -driver : String
+            -computedPrice : double
+            +getId() String
+            +getDeparture() String
+            +getDestination() String
+            +getDepartureTime() String
+            +getAvailableSeats() int
+            +getComputedPrice() double
+            +setComputedPrice(double)
+        }
+        class BookingBean {
+            -bookingId : String
+            -rideId : String
+            -departure : String
+            -destination : String
+            -date : String
+            -counterpartName : String
+            -counterpartPhone : String
+            -state : String
+            +getBookingId() String
+            +getRideId() String
+            +getCounterpartName() String
+            +getCounterpartPhone() String
+            +getState() String
+        }
+    }
+
+    namespace Entity {
+        class Student {
+            -username : String
+            -password : String
+            -fullName : String
+            -homeLocation : String
+            -phoneNumber : String
+            +getUsername() String
+            +getFullName() String
+            +getHomeLocation() String
+            +getPhoneNumber() String
+        }
+        class Ride {
+            -id : String
+            -driverUsername : String
+            -departure : String
+            -destination : String
+            -date : String
+            -departureTime : String
+            -totalSeats : int
+            -availableSeats : int
+            -basePrice : double
+            -state : RideState
+            -passengerUsernames : List~String~
+            -observers : List~Observer~
+            +bookSeat(Observer, String) bool
+            +cancelSeat(String) bool
+            +complete() bool
+            +cancel() bool
+            +getStatus() String
+        }
+        class Booking {
+            -id : String
+            -rideId : String
+            -passengerUsername : String
+            -state : String
+            +confirm() bool
+            +reject() bool
+            +cancel() bool
+        }
+        class RideState {
+            <<interface>>
+            +bookSeat(Ride) bool
+            +cancelSeat(Ride) bool
+            +complete(Ride) bool
+            +cancel(Ride) bool
+            +getStatus() String
+            +fromStatus(String)$ RideState
+        }
+        class AvailableState
+        class FullState
+        class CompletedState
+        class CancelledState
+    }
+
+    LoginBoundary ..> LoginController
+    LoginBoundary ..> UserBean
+    RegisterBoundary ..> LoginController
+    StudentDashboardBoundary ..> LoginController
+    StudentDashboardBoundary ..> ProfileBean
+    OfferRideBoundary ..> OfferRideController
+    OfferRideBoundary ..> LoginController
+    OfferRideBoundary ..> RideBean
+    OfferRideBoundary ..> ProfileBean
+    SearchRideBoundary ..> SearchRideController
+    SearchRideBoundary ..> LoginController
+    SearchRideBoundary ..> RideBean
+    SearchRideBoundary ..> ProfileBean
+    ManageRidesBoundary ..> ManageRidesController
+    ManageRidesBoundary ..> RideBean
+    ManageRidesBoundary ..> BookingBean
+
+    LoginController ..> Session
+    LoginController ..> ProfileBean
+    LoginController ..> Student
+    OfferRideController ..> Session
+    OfferRideController ..> Ride
+    SearchRideController ..> Session
+    SearchRideController ..> Ride
+    SearchRideController ..> Booking
+    ManageRidesController ..> Session
+    ManageRidesController ..> Ride
+    ManageRidesController ..> Booking
+
+    Student "1" --> "0..*" Ride : drives
+    Student "1" --> "0..*" Booking : requests
+    Ride "1" --> "0..*" Booking : has
+    Ride "1" --> "1" RideState : state
+    RideState <|.. AvailableState
+    RideState <|.. FullState
+    RideState <|.. CompletedState
+    RideState <|.. CancelledState
+
+
+    style LoginBoundary fill:#DBEEFF,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+    style RegisterBoundary fill:#DBEEFF,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+    style StudentDashboardBoundary fill:#DBEEFF,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+    style OfferRideBoundary fill:#DBEEFF,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+    style SearchRideBoundary fill:#DBEEFF,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+    style ManageRidesBoundary fill:#DBEEFF,stroke:#2B6CB0,color:#1A365D,stroke-width:1.5px
+    style UserBean fill:#FFF3D6,stroke:#B7791F,color:#744210,stroke-width:1.5px
+    style ProfileBean fill:#FFF3D6,stroke:#B7791F,color:#744210,stroke-width:1.5px
+    style RideBean fill:#FFF3D6,stroke:#B7791F,color:#744210,stroke-width:1.5px
+    style BookingBean fill:#FFF3D6,stroke:#B7791F,color:#744210,stroke-width:1.5px
+    style LoginController fill:#E3FAEA,stroke:#2F855A,color:#1C4532,stroke-width:1.5px
+    style OfferRideController fill:#E3FAEA,stroke:#2F855A,color:#1C4532,stroke-width:1.5px
+    style SearchRideController fill:#E3FAEA,stroke:#2F855A,color:#1C4532,stroke-width:1.5px
+    style ManageRidesController fill:#E3FAEA,stroke:#2F855A,color:#1C4532,stroke-width:1.5px
+    style Session fill:#E3FAEA,stroke:#2F855A,color:#1C4532,stroke-width:1.5px
+    style Student fill:#FFF8DC,stroke:#B8860B,color:#5F4B00,stroke-width:1.5px
+    style Ride fill:#FFF8DC,stroke:#B8860B,color:#5F4B00,stroke-width:1.5px
+    style Booking fill:#FFF8DC,stroke:#B8860B,color:#5F4B00,stroke-width:1.5px
+    style RideState fill:#EDE7FB,stroke:#6B46C1,color:#322659,stroke-width:1.5px
+    style AvailableState fill:#EDE7FB,stroke:#6B46C1,color:#322659,stroke-width:1.5px
+    style FullState fill:#EDE7FB,stroke:#6B46C1,color:#322659,stroke-width:1.5px
+    style CompletedState fill:#EDE7FB,stroke:#6B46C1,color:#322659,stroke-width:1.5px
+    style CancelledState fill:#EDE7FB,stroke:#6B46C1,color:#322659,stroke-width:1.5px

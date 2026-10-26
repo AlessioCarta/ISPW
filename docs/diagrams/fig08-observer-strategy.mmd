@@ -1,0 +1,60 @@
+%%{init: {"theme": "default", "themeVariables": {"clusterBkg": "#FAFAFA", "clusterBorder": "#CCCCCC"}}}%%
+classDiagram
+    direction TB
+
+    class Subject {
+        <<interface>>
+        +attach(Observer)
+        +detach(Observer)
+        +notifyObservers(String)
+    }
+    class Ride {
+        -observers : List~Observer~
+        +cancel() bool
+    }
+    class Observer {
+        <<interface>>
+        +update(String)
+    }
+    class PassengerBookingObserver {
+        -booking : Booking
+        -cancelled : bool
+        +update(String)
+        +hasCancelledBooking() bool
+    }
+    class Booking {
+        -state : String
+        +cancel() bool
+    }
+    class ManageRidesController {
+        +cancelOfferedRide(String)
+    }
+
+    class SearchRideController
+    class CostStrategy {
+        <<interface>>
+        +calculateCost(double, int) double
+    }
+    class EqualSplitStrategy
+    class DistanceCostStrategy
+
+    Subject <|.. Ride
+    Ride "1" --> "0..*" Observer : observers
+    Observer <|.. PassengerBookingObserver
+    PassengerBookingObserver --> "1" Booking : cancels on notify
+    ManageRidesController ..> PassengerBookingObserver : attaches one per booking
+
+    SearchRideController ..> CostStrategy : selects based on Config.COST_STRATEGY_TYPE
+    CostStrategy <|.. EqualSplitStrategy
+    CostStrategy <|.. DistanceCostStrategy
+
+    style Subject fill:#EDE7FB,stroke:#6B46C1,color:#322659,stroke-width:1.5px
+    style Observer fill:#EDE7FB,stroke:#6B46C1,color:#322659,stroke-width:1.5px
+    style CostStrategy fill:#EDE7FB,stroke:#6B46C1,color:#322659,stroke-width:1.5px
+    style Ride fill:#FFF8DC,stroke:#B8860B,color:#5F4B00,stroke-width:1.5px
+    style Booking fill:#FFF8DC,stroke:#B8860B,color:#5F4B00,stroke-width:1.5px
+    style PassengerBookingObserver fill:#E3FAEA,stroke:#2F855A,color:#1C4532,stroke-width:1.5px
+    style ManageRidesController fill:#E3FAEA,stroke:#2F855A,color:#1C4532,stroke-width:1.5px
+    style SearchRideController fill:#E3FAEA,stroke:#2F855A,color:#1C4532,stroke-width:1.5px
+    style EqualSplitStrategy fill:#F0F0F0,stroke:#666666,color:#222222,stroke-width:1.5px
+    style DistanceCostStrategy fill:#F0F0F0,stroke:#666666,color:#222222,stroke-width:1.5px
