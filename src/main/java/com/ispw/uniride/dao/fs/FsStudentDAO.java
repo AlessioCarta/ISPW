@@ -4,6 +4,7 @@ import com.ispw.uniride.dao.StudentDAO;
 import com.ispw.uniride.exceptions.PersistenceException;
 import com.ispw.uniride.model.Student;
 import com.ispw.uniride.utils.LoggerCustom;
+import com.ispw.uniride.utils.PasswordHasher;
 
 import java.io.*;
 import java.util.Map;
@@ -45,11 +46,11 @@ public class FsStudentDAO implements StudentDAO {
                     LoggerCustom.warning("students.csv risultava assente ma non è stato possibile crearlo (probabile race condition concorrente).");
                     return;
                 }
-                // Mock hashed initial data: stesso seed di MemoryStorage, così la demo si
+                // Dati demo iniziali (password hashate con PBKDF2): stesso seed di MemoryStorage, così la demo si
                 // comporta allo stesso modo indipendentemente dalla modalità di persistenza scelta.
                 try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
-                    pw.println("mario.rossi,[HASHED]password,Mario Rossi,Palestrina,+39 333 1234567");
-                    pw.println("luigi.verdi,[HASHED]password,Luigi Verdi,Frascati,+39 347 7654321");
+                    pw.println("mario.rossi," + PasswordHasher.hash("password") + ",Mario Rossi,Palestrina,+39 333 1234567");
+                    pw.println("luigi.verdi," + PasswordHasher.hash("password") + ",Luigi Verdi,Frascati,+39 347 7654321");
                 }
             } catch (IOException e) {
                 LoggerCustom.error("Failed to create students.csv", e);

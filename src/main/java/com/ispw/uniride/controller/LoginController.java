@@ -5,6 +5,7 @@ import com.ispw.uniride.bean.UserBean;
 import com.ispw.uniride.dao.DAOFactory;
 import com.ispw.uniride.dao.StudentDAO;
 import com.ispw.uniride.model.Student;
+import com.ispw.uniride.utils.PasswordHasher;
 
 import java.util.regex.Pattern;
 
@@ -41,10 +42,8 @@ public class LoginController {
         String username = userBean.getUsername() == null ? null : userBean.getUsername().trim();
         Student student = studentDAO.getStudentByUsername(username);
 
-        // Validazione della password rispetto all'oggetto reale estratto in fase DAO (Entity)
-        // Utilizziamo l'hash fittizio per simulare la verifica in chiaro rispetto al db cifrato.
-        String fakeHashToCheck = "[HASHED]" + userBean.getPassword();
-        if (student != null && student.getPassword().equals(fakeHashToCheck)) {
+        // Validazione della password rispetto all'hash PBKDF2 memorizzato nell'entità letta dal DAO.
+        if (student != null && PasswordHasher.verify(userBean.getPassword(), student.getPassword())) {
             // Promuove il dominio a 'utente loggato nel sistema' grazie al Singleton globale "Session".
             Session.getInstance().setLoggedUser(student);
             return true;
@@ -54,7 +53,7 @@ public class LoginController {
     }
 
     /**
-     * Registra un nuovo utente nel sistema simulando il salvataggio sicuro (Hash fittizio per prototipo).
+     * Registra un nuovo utente nel sistema salvando la password come hash PBKDF2.
      * Overload mantenuto per compatibilità (es. CLI) quando posizione e telefono non sono richiesti.
      * @throws com.ispw.uniride.exceptions.UserNotAuthorizedException se l'username è duplicato.
      */
@@ -63,7 +62,7 @@ public class LoginController {
     }
 
     /**
-     * Registra un nuovo utente nel sistema simulando il salvataggio sicuro (Hash fittizio per prototipo),
+     * Registra un nuovo utente nel sistema salvando la password come hash PBKDF2,
      * memorizzando anche il comune/paese di residenza dichiarato per i suggerimenti di vicinanza.
      * Overload mantenuto per compatibilità quando il telefono non è richiesto.
      * @param homeLocation il comune dichiarato dallo studente, o {@code null}/vuoto se non fornito.
@@ -74,7 +73,7 @@ public class LoginController {
     }
 
     /**
-     * Registra un nuovo utente nel sistema simulando il salvataggio sicuro (Hash fittizio per prototipo),
+     * Registra un nuovo utente nel sistema salvando la password come hash PBKDF2,
      * memorizzando anche il comune/paese di residenza e il numero di telefono dichiarati.
      * @param homeLocation il comune dichiarato dallo studente, o {@code null}/vuoto se non fornito.
      * @param phoneNumber il numero di telefono dichiarato, o {@code null}/vuoto se non fornito: resta
@@ -109,8 +108,8 @@ public class LoginController {
             throw new com.ispw.uniride.exceptions.UserNotAuthorizedException("La password deve essere di almeno 6 caratteri.");
         }
 
-        // Mock Hashing per requisiti di sicurezza simulati.
-        String hashedPassword = "[HASHED]" + rawPassword;
+        // Hash PBKDF2 con salt casuale: la password in chiaro non viene mai persistita.
+        String hashedPassword = PasswordHasher.hash(rawPassword);
 
         // Una stringa vuota o solo spazi viene trattata come "nessuna posizione dichiarata"
         // (null), coerentemente con come home_location viene salvata/letta nei DAO.

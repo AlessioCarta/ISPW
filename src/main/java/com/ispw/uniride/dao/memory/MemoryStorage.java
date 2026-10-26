@@ -3,6 +3,7 @@ package com.ispw.uniride.dao.memory;
 import com.ispw.uniride.model.Booking;
 import com.ispw.uniride.model.Ride;
 import com.ispw.uniride.model.Student;
+import com.ispw.uniride.utils.PasswordHasher;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,16 +33,15 @@ public class MemoryStorage {
         bookingsMap = new HashMap<>();
         // Preload some mock data (con posizione dichiarata di esempio, per mostrare da subito
         // i suggerimenti di vicinanza in Offri/Cerca Passaggio senza dover registrare un nuovo utente).
-        // Il prefisso "[HASHED]" è solo un segnaposto testuale (non un vero hash crittografico),
-        // sufficiente per il livello prototipale di autenticazione richiesto dal corso.
+        // Le password demo ("password") sono salvate come hash PBKDF2, come ogni utente registrato.
         // Entrambi gli utenti demo sono nella stessa area (Lazio, Prenestino/Castelli Romani):
         // così anche i suggerimenti di vicinanza del secondo utente (passeggero) restano coerenti
         // con la tratta Palestrina -> Roma offerta dal primo, utile per demo/registrazioni video.
         // I numeri di telefono demo servono a mostrare la funzionalità di contatto fra guidatore
         // e passeggero (visibile solo dopo una richiesta di passaggio reale, mai in un elenco
         // pubblico): sono fittizi, non corrispondono a utenze reali.
-        studentsMap.put("mario.rossi", new Student("mario.rossi", "[HASHED]password", "Mario Rossi", "Palestrina", "+39 333 1234567"));
-        studentsMap.put("luigi.verdi", new Student("luigi.verdi", "[HASHED]password", "Luigi Verdi", "Frascati", "+39 347 7654321"));
+        studentsMap.put("mario.rossi", new Student("mario.rossi", PasswordHasher.hash("password"), "Mario Rossi", "Palestrina", "+39 333 1234567"));
+        studentsMap.put("luigi.verdi", new Student("luigi.verdi", PasswordHasher.hash("password"), "Luigi Verdi", "Frascati", "+39 347 7654321"));
     }
 
     public static synchronized MemoryStorage getInstance() {
