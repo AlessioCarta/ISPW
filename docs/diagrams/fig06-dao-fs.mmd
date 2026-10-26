@@ -1,0 +1,52 @@
+%%{init: {"theme": "default"}}%%
+classDiagram
+    direction TB
+    class RideDAO {
+        <<interface>>
+    }
+    class StudentDAO {
+        <<interface>>
+    }
+    class BookingDAO {
+        <<interface>>
+    }
+    class FsRideDAO {
+        -FILE_PATH : String = "rides.csv"$
+        -CACHE : AtomicReference~Map~$
+        -lastModified : long$
+        -LOCK : Object$
+        -refreshCache() Map~String, Ride~
+        -loadCacheFromFile(File)$
+        -parseLineSafely(String, int) Ride$
+        -rewriteFile(Map~String, Ride~)
+        -invalidateCache()$
+    }
+    class FsStudentDAO {
+        -FILE_PATH : String = "students.csv"$
+        -CACHE : AtomicReference~Map~$
+        -lastModified : long$
+        -LOCK : Object$
+        -refreshCache() Map~String, Student~
+        -loadCacheFromFile(File)$
+        -parseLineSafely(String, int) Student$
+    }
+    class FsBookingDAO {
+        -FILE_PATH : String = "bookings.csv"$
+        -CACHE : AtomicReference~Map~$
+        -lastModified : long$
+        -LOCK : Object$
+        -refreshCache() Map~String, Booking~
+        -loadCacheFromFile(File)$
+        -parseLineSafely(String, int) Booking$
+        -rewriteFile(Map~String, Booking~)
+    }
+    RideDAO <|.. FsRideDAO
+    StudentDAO <|.. FsStudentDAO
+    BookingDAO <|.. FsBookingDAO
+    note for FsRideDAO "Each Fs*DAO manages its own CSV file, cache and lock: there is no shared CsvHelper class"
+    style RideDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style StudentDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style BookingDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style FsRideDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style FsStudentDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style FsBookingDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px

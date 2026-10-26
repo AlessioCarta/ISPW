@@ -1,0 +1,48 @@
+%%{init: {"theme": "default"}}%%
+classDiagram
+    direction TB
+    class RideDAO {
+        <<interface>>
+    }
+    class StudentDAO {
+        <<interface>>
+    }
+    class BookingDAO {
+        <<interface>>
+    }
+    class JdbcRideDAO {
+        -inTransaction(TransactionWork)
+        -replacePassengers(Connection, Ride)
+        -queryRides(String, StatementBinder) List~Ride~
+        -loadPassengers(Connection, List~Ride~)
+        -mapRow(ResultSet) Ride
+    }
+    class JdbcStudentDAO {
+        -mapRow(ResultSet) Student
+    }
+    class JdbcBookingDAO {
+        -upsert(Booking)
+        -query(String, StatementBinder) List~Booking~
+        -applyState(Booking, String)
+    }
+    class JdbcSupport {
+        <<package-private>>
+        -URL : String$
+        -schemaReady : boolean$
+        ~getConnection() Connection$
+        -ensureSchema(Connection)$
+    }
+    RideDAO <|.. JdbcRideDAO
+    StudentDAO <|.. JdbcStudentDAO
+    BookingDAO <|.. JdbcBookingDAO
+    JdbcRideDAO ..> JdbcSupport : uses
+    JdbcStudentDAO ..> JdbcSupport : uses
+    JdbcBookingDAO ..> JdbcSupport : uses
+    note for JdbcSupport "Opens the H2 connection and creates the schema (CREATE TABLE IF NOT EXISTS) on first use"
+    style RideDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style StudentDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style BookingDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style JdbcRideDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style JdbcStudentDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style JdbcBookingDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style JdbcSupport fill:#EEEEEE,stroke:#666666,color:#222222,stroke-width:1.5px
