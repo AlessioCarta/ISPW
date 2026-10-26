@@ -1,6 +1,5 @@
 package com.ispw.uniride;
 
-import com.ispw.uniride.bean.RideBean;
 import com.ispw.uniride.controller.OfferRideController;
 import com.ispw.uniride.controller.SearchRideController;
 import com.ispw.uniride.controller.Session;

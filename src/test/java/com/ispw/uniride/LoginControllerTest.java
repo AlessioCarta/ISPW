@@ -2,7 +2,6 @@ package com.ispw.uniride;
 
 import com.ispw.uniride.bean.ProfileBean;
 import com.ispw.uniride.bean.RegistrationBean;
-import com.ispw.uniride.bean.UserBean;
 import com.ispw.uniride.controller.LoginController;
 import com.ispw.uniride.controller.Session;
 import com.ispw.uniride.exceptions.InvalidInputException;

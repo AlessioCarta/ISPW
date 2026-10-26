@@ -33,12 +33,10 @@ public class ManageRidesCLI {
                 return;
             }
             try {
-                if (choice == 1) {
-                    manageOfferedRides();
-                } else if (choice == 2) {
-                    manageBookings();
-                } else {
-                    System.out.println("Opzione non valida.");
+                switch (choice) {
+                    case 1 -> manageOfferedRides();
+                    case 2 -> manageBookings();
+                    default -> System.out.println("Opzione non valida.");
                 }
             } catch (Exception e) {
                 // Eccezioni di dominio e di persistenza risalite da ManageRidesController
