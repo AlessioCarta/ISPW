@@ -3,7 +3,6 @@ package com.ispw.uniride.boundary;
 import com.ispw.uniride.config.LocationCatalog;
 import com.ispw.uniride.bean.RegistrationBean;
 import com.ispw.uniride.controller.LoginController;
-import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -46,7 +45,7 @@ public class RegisterBoundary {
         // l'iniezione dei campi @FXML, ma un null-check protegge da un eventuale caricamento
         // FXML incompleto o da un riutilizzo del controller fuori dal contesto atteso.
         if (homeLocationField != null) {
-            homeLocationField.setItems(FXCollections.observableArrayList(LocationCatalog.getAllNames()));
+            LocationAutoComplete.attach(homeLocationField, LocationCatalog.getAllNames());
         }
     }
 

@@ -6,7 +6,6 @@ import com.ispw.uniride.config.LocationCatalog;
 import com.ispw.uniride.config.LocationInfo;
 import com.ispw.uniride.controller.LoginController;
 import com.ispw.uniride.controller.OfferRideController;
-import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -65,8 +64,9 @@ public class OfferRideBoundary {
                 ? LocationCatalog.getNamesSortedByDistanceFrom(home)
                 : LocationCatalog.getAllNames();
 
-        departureField.setItems(FXCollections.observableArrayList(locationNames));
-        destinationField.setItems(FXCollections.observableArrayList(locationNames));
+        // Mentre lo studente scrive, l'elenco si restringe alle località corrispondenti.
+        LocationAutoComplete.attach(departureField, locationNames);
+        LocationAutoComplete.attach(destinationField, locationNames);
 
         if (home != null) {
             // Partenza preimpostata sul comune dello studente...
