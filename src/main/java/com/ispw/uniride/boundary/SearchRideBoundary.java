@@ -49,8 +49,9 @@ public class SearchRideBoundary {
                 ? LocationCatalog.getNamesSortedByDistanceFrom(home)
                 : LocationCatalog.getAllNames();
 
-        departureField.setItems(FXCollections.observableArrayList(locationNames));
-        destinationField.setItems(FXCollections.observableArrayList(locationNames));
+        // Mentre lo studente scrive, l'elenco si restringe alle località corrispondenti.
+        LocationAutoComplete.attach(departureField, locationNames);
+        LocationAutoComplete.attach(destinationField, locationNames);
 
         if (home != null) {
             departureField.setValue(home.name());
