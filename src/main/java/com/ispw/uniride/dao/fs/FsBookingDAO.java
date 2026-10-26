@@ -1,6 +1,7 @@
 package com.ispw.uniride.dao.fs;
 
 import com.ispw.uniride.dao.BookingDAO;
+import com.ispw.uniride.exceptions.PersistenceException;
 import com.ispw.uniride.model.Booking;
 import com.ispw.uniride.utils.LoggerCustom;
 
@@ -42,6 +43,9 @@ public class FsBookingDAO implements BookingDAO {
                 }
             } catch (IOException e) {
                 LoggerCustom.error("Failed to create bookings.csv", e);
+                // Senza file non è possibile salvare nulla: meglio fallire subito che lasciar
+                // credere all'utente che le operazioni successive vadano a buon fine.
+                throw new PersistenceException("Impossibile creare il file dati bookings.csv.", e);
             }
         }
     }
@@ -65,8 +69,10 @@ public class FsBookingDAO implements BookingDAO {
         Map<String, Booking> loaded = new HashMap<>();
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
+            int lineNumber = 0;
             while ((line = br.readLine()) != null) {
-                Booking booking = parseBookingFromCsvLine(line);
+                lineNumber++;
+                Booking booking = parseLineSafely(line, lineNumber);
                 if (booking != null) {
                     loaded.put(booking.getId(), booking);
                 }
@@ -75,7 +81,26 @@ public class FsBookingDAO implements BookingDAO {
             lastModified = file.lastModified();
         } catch (IOException e) {
             LoggerCustom.error("Error reading bookings.csv", e);
-            cache = loaded;
+            // La cache NON viene sostituita con quella parziale: la successiva riscrittura del
+            // file partirebbe da dati incompleti e cancellerebbe da disco le righe non lette.
+            throw new PersistenceException("Impossibile leggere il file dati bookings.csv.", e);
+        }
+    }
+
+    /**
+     * Converte una riga CSV senza far fallire l'intero caricamento se la riga è corrotta
+     * (es. un numero non valido): la riga viene scartata e segnalata nel log col suo numero.
+     */
+    private static Booking parseLineSafely(String line, int lineNumber) {
+        try {
+            Booking parsed = parseBookingFromCsvLine(line);
+            if (parsed == null) {
+                LoggerCustom.warning("bookings.csv: riga " + lineNumber + " malformata, ignorata.");
+            }
+            return parsed;
+        } catch (RuntimeException e) {
+            LoggerCustom.warning("bookings.csv: riga " + lineNumber + " non valida (" + e.getMessage() + "), ignorata.");
+            return null;
         }
     }
 
@@ -84,7 +109,7 @@ public class FsBookingDAO implements BookingDAO {
      * @return il Booking ricostruito, oppure {@code null} se la riga è malformata.
      */
     private static Booking parseBookingFromCsvLine(String line) {
-        String[] parts = line.split(",");
+        String[] parts = line.split(",", -1);
         if (parts.length < MIN_CSV_FIELDS) {
             return null;
         }
@@ -122,9 +147,14 @@ public class FsBookingDAO implements BookingDAO {
                 for (Booking b : cache.values()) {
                     pw.println(b.getId() + "," + b.getRideId() + "," + b.getPassengerUsername() + "," + b.getState());
                 }
+                // PrintWriter non lancia IOException in scrittura: l'errore va interrogato a mano.
+                if (pw.checkError()) {
+                    throw new IOException("Scrittura incompleta su " + FILE_PATH);
+                }
                 lastModified = new File(FILE_PATH).lastModified();
             } catch (IOException e) {
                 LoggerCustom.error("Error writing bookings.csv", e);
+                throw new PersistenceException("Impossibile salvare le prenotazioni sul file bookings.csv.", e);
             }
         }
     }
@@ -133,8 +163,18 @@ public class FsBookingDAO implements BookingDAO {
     public void saveBooking(Booking booking) {
         refreshCache();
         synchronized (LOCK) {
-            cache.put(booking.getId(), booking);
-            rewriteFileFromCache();
+            Booking previous = cache.put(booking.getId(), booking);
+            try {
+                rewriteFileFromCache();
+            } catch (PersistenceException e) {
+                // Scrittura fallita: si riporta la cache allo stato precedente (vedi FsRideDAO).
+                if (previous == null) {
+                    cache.remove(booking.getId());
+                } else {
+                    cache.put(booking.getId(), previous);
+                }
+                throw e;
+            }
         }
     }
 

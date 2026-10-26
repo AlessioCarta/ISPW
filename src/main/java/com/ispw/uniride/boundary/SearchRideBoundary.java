@@ -6,6 +6,7 @@ import com.ispw.uniride.config.LocationInfo;
 import com.ispw.uniride.controller.SearchRideController;
 import com.ispw.uniride.controller.Session;
 import com.ispw.uniride.model.Student;
+import com.ispw.uniride.exceptions.PersistenceException;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -83,7 +84,15 @@ public class SearchRideBoundary {
         String departure = readCity(departureField);
         String destination = readCity(destinationField);
 
-        List<RideBean> rides = searchRideController.searchRides(departure, destination);
+        List<RideBean> rides;
+        try {
+            rides = searchRideController.searchRides(departure, destination);
+        } catch (PersistenceException e) {
+            // Senza questo catch un guasto dello storage verrebbe confuso con "nessun risultato".
+            messageLabel.setText(e.getMessage());
+            messageLabel.setTextFill(javafx.scene.paint.Color.RED);
+            return;
+        }
 
         // ObservableList: a differenza di una List normale, la ListView si aggiorna
         // automaticamente quando il suo contenuto osservato cambia.

@@ -1,6 +1,7 @@
 package com.ispw.uniride.dao.sql;
 
 import com.ispw.uniride.dao.RideDAO;
+import com.ispw.uniride.exceptions.PersistenceException;
 import com.ispw.uniride.model.Ride;
 import com.ispw.uniride.model.state.AvailableState;
 import com.ispw.uniride.model.state.CancelledState;
@@ -34,27 +35,38 @@ public class JdbcRideDAO implements RideDAO {
             // Disattiviamo l'autocommit: il salvataggio del Ride e la ricostruzione della lista
             // passeggeri devono avvenire come un'unica transazione atomica (vedi replacePassengers).
             connection.setAutoCommit(false);
-            try (PreparedStatement stmt = connection.prepareStatement(upsertRide)) {
-                // I "?" sono parametri legati per posizione: PreparedStatement previene ogni
-                // SQL injection, i valori non vengono mai concatenati come stringa nella query.
-                stmt.setString(1, ride.getId());
-                stmt.setString(2, ride.getDriverUsername());
-                stmt.setString(3, ride.getDeparture());
-                stmt.setString(4, ride.getDestination());
-                stmt.setString(5, ride.getDate());
-                stmt.setString(6, ride.getDepartureTime());
-                stmt.setInt(7, ride.getTotalSeats());
-                stmt.setInt(8, ride.getAvailableSeats());
-                stmt.setDouble(9, ride.getBasePrice());
-                stmt.setString(10, ride.getStatus());
-                stmt.executeUpdate();
+            try {
+                executeRideUpsert(connection, upsertRide, ride);
+                replacePassengers(connection, ride);
+                // Solo se ENTRAMBE le operazioni sono andate a buon fine si conferma la transazione.
+                connection.commit();
+            } catch (SQLException e) {
+                // Rollback esplicito: lo standard JDBC non garantisce cosa accada alle modifiche
+                // non confermate alla chiusura della connessione, quindi non ci si affida a close().
+                connection.rollback();
+                throw e;
             }
-            replacePassengers(connection, ride);
-            // Solo se ENTRAMBE le operazioni sono andate a buon fine si conferma la transazione:
-            // in caso di eccezione, nessun commit avviene e il database resta nello stato precedente.
-            connection.commit();
         } catch (SQLException e) {
             LoggerCustom.error("Errore nel salvataggio del passaggio su database", e);
+            throw new PersistenceException("Impossibile salvare il passaggio: database non disponibile.", e);
+        }
+    }
+
+    private void executeRideUpsert(Connection connection, String upsertRide, Ride ride) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(upsertRide)) {
+            // I "?" sono parametri legati per posizione: PreparedStatement previene ogni
+            // SQL injection, i valori non vengono mai concatenati come stringa nella query.
+            stmt.setString(1, ride.getId());
+            stmt.setString(2, ride.getDriverUsername());
+            stmt.setString(3, ride.getDeparture());
+            stmt.setString(4, ride.getDestination());
+            stmt.setString(5, ride.getDate());
+            stmt.setString(6, ride.getDepartureTime());
+            stmt.setInt(7, ride.getTotalSeats());
+            stmt.setInt(8, ride.getAvailableSeats());
+            stmt.setDouble(9, ride.getBasePrice());
+            stmt.setString(10, ride.getStatus());
+            stmt.executeUpdate();
         }
     }
 
@@ -132,20 +144,30 @@ public class JdbcRideDAO implements RideDAO {
     public void deleteRide(String id) {
         try (Connection connection = JdbcSupport.getConnection()) {
             connection.setAutoCommit(false);
-            // Si cancellano prima le righe collegate in ride_passengers (che referenziano
-            // rides.id via foreign key) e solo dopo la riga in rides stessa: l'ordine inverso
-            // fallirebbe per violazione del vincolo di integrità referenziale.
-            try (PreparedStatement deletePassengers = connection.prepareStatement("DELETE FROM ride_passengers WHERE ride_id = ?")) {
-                deletePassengers.setString(1, id);
-                deletePassengers.executeUpdate();
+            try {
+                deleteRideRows(connection, id);
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
             }
-            try (PreparedStatement deleteRide = connection.prepareStatement("DELETE FROM rides WHERE id = ?")) {
-                deleteRide.setString(1, id);
-                deleteRide.executeUpdate();
-            }
-            connection.commit();
         } catch (SQLException e) {
             LoggerCustom.error("Errore nell'eliminazione del passaggio dal database", e);
+            throw new PersistenceException("Impossibile eliminare il passaggio: database non disponibile.", e);
+        }
+    }
+
+    private void deleteRideRows(Connection connection, String id) throws SQLException {
+        // Si cancellano prima le righe collegate in ride_passengers (che referenziano
+        // rides.id via foreign key) e solo dopo la riga in rides stessa: l'ordine inverso
+        // fallirebbe per violazione del vincolo di integrità referenziale.
+        try (PreparedStatement deletePassengers = connection.prepareStatement("DELETE FROM ride_passengers WHERE ride_id = ?")) {
+            deletePassengers.setString(1, id);
+            deletePassengers.executeUpdate();
+        }
+        try (PreparedStatement deleteRide = connection.prepareStatement("DELETE FROM rides WHERE id = ?")) {
+            deleteRide.setString(1, id);
+            deleteRide.executeUpdate();
         }
     }
 
@@ -174,6 +196,7 @@ public class JdbcRideDAO implements RideDAO {
             }
         } catch (SQLException e) {
             LoggerCustom.error("Errore nella lettura dei passaggi dal database", e);
+            throw new PersistenceException("Impossibile leggere i passaggi: database non disponibile.", e);
         }
         return rides;
     }

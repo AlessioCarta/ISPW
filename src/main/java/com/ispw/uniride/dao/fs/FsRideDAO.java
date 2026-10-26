@@ -1,6 +1,7 @@
 package com.ispw.uniride.dao.fs;
 
 import com.ispw.uniride.dao.RideDAO;
+import com.ispw.uniride.exceptions.PersistenceException;
 import com.ispw.uniride.model.Ride;
 import com.ispw.uniride.model.state.AvailableState;
 import com.ispw.uniride.model.state.CancelledState;
@@ -57,6 +58,9 @@ public class FsRideDAO implements RideDAO {
                 }
             } catch (IOException e) {
                 LoggerCustom.error("Failed to create rides.csv", e);
+                // Senza file non è possibile salvare nulla: meglio fallire subito che lasciar
+                // credere all'utente che le operazioni successive vadano a buon fine.
+                throw new PersistenceException("Impossibile creare il file dati rides.csv.", e);
             }
         }
     }
@@ -87,9 +91,11 @@ public class FsRideDAO implements RideDAO {
         Map<String, Ride> loaded = new HashMap<>();
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
+            int lineNumber = 0;
             // Ogni riga del CSV rappresenta un Ride: la si converte e la si indicizza per id.
             while ((line = br.readLine()) != null) {
-                Ride ride = parseRideFromCsvLine(line);
+                lineNumber++;
+                Ride ride = parseLineSafely(line, lineNumber);
                 if (ride != null) {
                     loaded.put(ride.getId(), ride);
                 }
@@ -100,9 +106,26 @@ public class FsRideDAO implements RideDAO {
             lastModified = file.lastModified();
         } catch (IOException e) {
             LoggerCustom.error("Error reading rides.csv", e);
-            // Anche in caso di errore assegniamo la cache (parziale/vuota): meglio un elenco
-            // corse vuoto che un'eccezione non gestita propagata al Controller.
-            cache = loaded;
+            // La cache NON viene sostituita con quella parziale: la successiva riscrittura del
+            // file partirebbe da dati incompleti e cancellerebbe da disco le righe non lette.
+            throw new PersistenceException("Impossibile leggere il file dati rides.csv.", e);
+        }
+    }
+
+    /**
+     * Converte una riga CSV senza far fallire l'intero caricamento se la riga è corrotta
+     * (es. un numero non valido): la riga viene scartata e segnalata nel log col suo numero.
+     */
+    private static Ride parseLineSafely(String line, int lineNumber) {
+        try {
+            Ride parsed = parseRideFromCsvLine(line);
+            if (parsed == null) {
+                LoggerCustom.warning("rides.csv: riga " + lineNumber + " malformata, ignorata.");
+            }
+            return parsed;
+        } catch (RuntimeException e) {
+            LoggerCustom.warning("rides.csv: riga " + lineNumber + " non valida (" + e.getMessage() + "), ignorata.");
+            return null;
         }
     }
 
@@ -115,7 +138,7 @@ public class FsRideDAO implements RideDAO {
     private static Ride parseRideFromCsvLine(String line) {
         String[] parts = line.split(",", -1);
         // Riga troppo corta: probabilmente scrittura incompleta o corruzione — la si scarta
-        // silenziosamente invece di lanciare un'eccezione che bloccherebbe l'intero caricamento.
+        // (parseLineSafely la segnala nel log) invece di bloccare l'intero caricamento.
         if (parts.length < MIN_CSV_FIELDS) {
             return null;
         }
@@ -173,12 +196,17 @@ public class FsRideDAO implements RideDAO {
                 for (Ride r : cache.values()) {
                     pw.println(formatRideAsCsvLine(r));
                 }
+                // PrintWriter non lancia IOException in scrittura: l'errore va interrogato a mano.
+                if (pw.checkError()) {
+                    throw new IOException("Scrittura incompleta su " + FILE_PATH);
+                }
                 // Aggiorniamo subito lastModified al valore post-scrittura: evita che la prossima
                 // refreshCache() interpreti la nostra stessa scrittura come "modifica esterna"
                 // e ricarichi inutilmente da file quello che abbiamo appena scritto.
                 lastModified = new File(FILE_PATH).lastModified();
             } catch (IOException e) {
                 LoggerCustom.error("Error writing rides.csv", e);
+                throw new PersistenceException("Impossibile salvare i passaggi sul file rides.csv.", e);
             }
         }
     }
@@ -206,8 +234,15 @@ public class FsRideDAO implements RideDAO {
         // sia stato modificato da un altro processo), poi si applica la modifica e si riscrive.
         refreshCache();
         synchronized (LOCK) {
-            cache.put(ride.getId(), ride);
-            rewriteFileFromCache();
+            Ride previous = cache.put(ride.getId(), ride);
+            try {
+                rewriteFileFromCache();
+            } catch (PersistenceException e) {
+                // Scrittura fallita: si riporta la cache allo stato precedente, così RAM e file
+                // restano coerenti e il dato non salvato non "compare" fino al riavvio.
+                restore(ride.getId(), previous);
+                throw e;
+            }
         }
     }
 
@@ -274,8 +309,21 @@ public class FsRideDAO implements RideDAO {
     public void deleteRide(String id) {
         refreshCache();
         synchronized (LOCK) {
+            Ride previous = cache.remove(id);
+            try {
+                rewriteFileFromCache();
+            } catch (PersistenceException e) {
+                restore(id, previous);
+                throw e;
+            }
+        }
+    }
+
+    private static void restore(String id, Ride previous) {
+        if (previous == null) {
             cache.remove(id);
-            rewriteFileFromCache();
+        } else {
+            cache.put(id, previous);
         }
     }
 }

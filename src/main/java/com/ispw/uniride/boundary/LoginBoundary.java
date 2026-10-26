@@ -2,6 +2,7 @@ package com.ispw.uniride.boundary;
 
 import com.ispw.uniride.bean.UserBean;
 import com.ispw.uniride.controller.LoginController;
+import com.ispw.uniride.exceptions.PersistenceException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -46,14 +47,21 @@ public class LoginBoundary {
         UserBean bean = new UserBean(username, password);
 
         // De-eleva la gestione applicativa al Control layer
-        if (loginController.login(bean)) {
-            messageLabel.setText("Login Effettuato!");
-            messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
+        try {
+            if (loginController.login(bean)) {
+                messageLabel.setText("Login Effettuato!");
+                messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
 
-            // Effettua lo switch del Layout grafico solo ad operazione BCE conclusa
-            loadDashboard();
-        } else {
-            messageLabel.setText("Credenziali non valide!");
+                // Effettua lo switch del Layout grafico solo ad operazione BCE conclusa
+                loadDashboard();
+            } else {
+                messageLabel.setText("Credenziali non valide!");
+                messageLabel.setTextFill(javafx.scene.paint.Color.RED);
+            }
+        } catch (PersistenceException e) {
+            // Guasto dello storage: va distinto da "credenziali errate", altrimenti l'utente
+            // crederebbe di aver sbagliato password.
+            messageLabel.setText(e.getMessage());
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }

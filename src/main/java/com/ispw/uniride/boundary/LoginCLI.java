@@ -2,6 +2,7 @@ package com.ispw.uniride.boundary;
 
 import com.ispw.uniride.bean.UserBean;
 import com.ispw.uniride.controller.LoginController;
+import com.ispw.uniride.exceptions.PersistenceException;
 
 import java.util.Scanner;
 
@@ -41,12 +42,16 @@ public class LoginCLI {
                 // sa (e non deve sapere) se i dati arrivano da un form o dalla console.
                 UserBean bean = new UserBean(username, password);
 
-                if (loginController.login(bean)) {
-                    System.out.println("Login effettuato con successo!");
-                    // Login riuscito: passa il controllo al menu testuale post-autenticazione.
-                    new StudentCLI().start();
-                } else {
-                    System.out.println("Credenziali non valide. Accesso Negato.");
+                try {
+                    if (loginController.login(bean)) {
+                        System.out.println("Login effettuato con successo!");
+                        // Login riuscito: passa il controllo al menu testuale post-autenticazione.
+                        new StudentCLI().start();
+                    } else {
+                        System.out.println("Credenziali non valide. Accesso Negato.");
+                    }
+                } catch (PersistenceException e) {
+                    System.out.println("Errore: " + e.getMessage());
                 }
             } else if (choice.equals("2")) {
                 System.out.print("Nome Completo: ");

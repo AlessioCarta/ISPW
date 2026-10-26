@@ -1,6 +1,7 @@
 package com.ispw.uniride.dao.sql;
 
 import com.ispw.uniride.dao.StudentDAO;
+import com.ispw.uniride.exceptions.PersistenceException;
 import com.ispw.uniride.model.Student;
 import com.ispw.uniride.utils.LoggerCustom;
 
@@ -33,6 +34,7 @@ public class JdbcStudentDAO implements StudentDAO {
             stmt.executeUpdate();
         } catch (SQLException e) {
             LoggerCustom.error("Errore nel salvataggio dello studente su database", e);
+            throw new PersistenceException("Impossibile salvare l'utente: database non disponibile.", e);
         }
     }
 
@@ -51,8 +53,10 @@ public class JdbcStudentDAO implements StudentDAO {
             }
         } catch (SQLException e) {
             LoggerCustom.error("Errore nella lettura dello studente dal database", e);
+            throw new PersistenceException("Impossibile leggere i dati utente: database non disponibile.", e);
         }
-        // Nessuna riga trovata (o errore SQL): ritorna null, come da contratto di StudentDAO,
+        // Nessuna riga trovata: ritorna null, come da contratto di StudentDAO (un errore SQL invece
+        // risale come PersistenceException, per non confonderlo con "utente inesistente"),
         // interpretato da LoginController come "utente non trovato".
         return null;
     }

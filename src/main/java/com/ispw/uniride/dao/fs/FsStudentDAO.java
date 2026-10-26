@@ -1,6 +1,7 @@
 package com.ispw.uniride.dao.fs;
 
 import com.ispw.uniride.dao.StudentDAO;
+import com.ispw.uniride.exceptions.PersistenceException;
 import com.ispw.uniride.model.Student;
 import com.ispw.uniride.utils.LoggerCustom;
 
@@ -50,6 +51,9 @@ public class FsStudentDAO implements StudentDAO {
                 }
             } catch (IOException e) {
                 LoggerCustom.error("Failed to create students.csv", e);
+                // Senza file non è possibile salvare nulla: meglio fallire subito che lasciar
+                // credere all'utente che le operazioni successive vadano a buon fine.
+                throw new PersistenceException("Impossibile creare il file dati students.csv.", e);
             }
         }
     }
@@ -76,8 +80,10 @@ public class FsStudentDAO implements StudentDAO {
         Map<String, Student> loaded = new HashMap<>();
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
+            int lineNumber = 0;
             while ((line = br.readLine()) != null) {
-                Student student = parseStudentFromCsvLine(line);
+                lineNumber++;
+                Student student = parseLineSafely(line, lineNumber);
                 if (student != null) {
                     loaded.put(student.getUsername(), student);
                 }
@@ -86,7 +92,26 @@ public class FsStudentDAO implements StudentDAO {
             lastModified = file.lastModified();
         } catch (IOException e) {
             LoggerCustom.error("Error reading students.csv", e);
-            cache = loaded;
+            // La cache NON viene sostituita con quella parziale: la successiva riscrittura del
+            // file partirebbe da dati incompleti e cancellerebbe da disco le righe non lette.
+            throw new PersistenceException("Impossibile leggere il file dati students.csv.", e);
+        }
+    }
+
+    /**
+     * Converte una riga CSV senza far fallire l'intero caricamento se la riga è corrotta
+     * (es. un numero non valido): la riga viene scartata e segnalata nel log col suo numero.
+     */
+    private static Student parseLineSafely(String line, int lineNumber) {
+        try {
+            Student parsed = parseStudentFromCsvLine(line);
+            if (parsed == null) {
+                LoggerCustom.warning("students.csv: riga " + lineNumber + " malformata, ignorata.");
+            }
+            return parsed;
+        } catch (RuntimeException e) {
+            LoggerCustom.warning("students.csv: riga " + lineNumber + " non valida (" + e.getMessage() + "), ignorata.");
+            return null;
         }
     }
 
@@ -96,7 +121,7 @@ public class FsStudentDAO implements StudentDAO {
      * @return lo Student ricostruito, oppure {@code null} se la riga è malformata.
      */
     private static Student parseStudentFromCsvLine(String line) {
-        String[] parts = line.split(",");
+        String[] parts = line.split(",", -1);
         if (parts.length < MIN_CSV_FIELDS) {
             return null;
         }
@@ -117,6 +142,11 @@ public class FsStudentDAO implements StudentDAO {
                 String homeLocation = student.getHomeLocation() != null ? student.getHomeLocation() : "";
                 String phoneNumber = student.getPhoneNumber() != null ? student.getPhoneNumber() : "";
                 pw.println(student.getUsername() + "," + student.getPassword() + "," + student.getFullName() + "," + homeLocation + "," + phoneNumber);
+                // PrintWriter non lancia IOException in scrittura: l'errore va interrogato a mano,
+                // prima di aggiornare la cache con uno Student che su disco non c'è.
+                if (pw.checkError()) {
+                    throw new IOException("Scrittura incompleta su " + FILE_PATH);
+                }
                 // Aggiorniamo la cache in RAM solo se già popolata: se nessuno l'ha ancora letta
                 // (cache == null), la prossima refreshCache() la costruirà da zero includendo
                 // anche questa nuova riga appena scritta.
@@ -128,6 +158,7 @@ public class FsStudentDAO implements StudentDAO {
                 lastModified = new File(FILE_PATH).lastModified();
             } catch (IOException e) {
                 LoggerCustom.error("Error saving student to CSV", e);
+                throw new PersistenceException("Impossibile salvare l'utente sul file students.csv.", e);
             }
         }
     }
