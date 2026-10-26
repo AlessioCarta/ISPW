@@ -142,6 +142,11 @@ public class SearchRideController {
             return true;
         }
 
-        return false; // Altrimenti ritorna l'informazione di rigetto dell'iscrizione.
+        // bookSeat fallisce anche su una corsa annullata o completata: false resta riservato al
+        // solo caso "posti esauriti", che è l'unico messaggio mostrato dalle Boundary per false.
+        if (!"FULL".equals(ride.getStatus())) {
+            throw new RideActionException("Questa corsa non è più prenotabile: è stata annullata o completata.");
+        }
+        return false; // Posti esauriti.
     }
 }

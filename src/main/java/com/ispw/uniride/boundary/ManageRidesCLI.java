@@ -31,7 +31,7 @@ public class ManageRidesCLI {
         } catch (Exception e) {
             // Cattura eventuali eccezioni di dominio risalite da ManageRidesController
             // (es. tentativo di annullare una prenotazione già chiusa).
-            System.out.println("Errore: " + e.getMessage());
+            System.out.println("Errore: " + ErrorMessages.forUser(e));
         }
     }
 

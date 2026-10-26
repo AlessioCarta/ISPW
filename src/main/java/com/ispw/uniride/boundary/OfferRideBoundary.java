@@ -121,7 +121,7 @@ public class OfferRideBoundary {
         } catch (Exception e) {
             // Cattura anche le eccezioni di dominio (RideActionException, UserNotAuthorizedException)
             // risalite da OfferRideController, mostrandone il messaggio così com'è.
-            messageLabel.setText("Errore: " + e.getMessage());
+            messageLabel.setText("Errore: " + ErrorMessages.forUser(e));
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }
@@ -145,6 +145,7 @@ public class OfferRideBoundary {
             stage.setTitle("UniRide - Dashboard");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore ritorno alla Dashboard", e);
+            ErrorMessages.showViewLoadError();
         }
     }
 }

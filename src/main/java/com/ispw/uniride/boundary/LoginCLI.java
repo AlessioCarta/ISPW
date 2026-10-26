@@ -72,7 +72,7 @@ public class LoginCLI {
                 } catch (Exception e) {
                     // Le eccezioni di dominio (username duplicato, password troppo corta)
                     // vengono qui intercettate e stampate, stesso ruolo di un Controller Grafico.
-                    System.out.println("Errore: " + e.getMessage());
+                    System.out.println("Errore: " + ErrorMessages.forUser(e));
                 }
             } else if (choice.equals("3")) {
                 // Esce dal ciclo di menu principale, terminando il programma CLI.

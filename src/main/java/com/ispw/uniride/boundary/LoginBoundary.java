@@ -82,6 +82,7 @@ public class LoginBoundary {
             stage.setTitle("UniRide - Registrazione");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Register", e);
+            ErrorMessages.showViewLoadError();
         }
     }
 
@@ -95,6 +96,7 @@ public class LoginBoundary {
         } catch (IOException e) {
             // Sfrutta il Logger custom per nascondere il noioso stack trace standard
             com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Dashboard", e);
+            ErrorMessages.showViewLoadError();
         }
     }
 }

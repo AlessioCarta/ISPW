@@ -121,4 +121,23 @@ class SearchRideControllerTest {
         Session.getInstance().logout();
         assertThrows(UserNotAuthorizedException.class, () -> searchRideController.bookRide("qualsiasi-id"));
     }
+
+    /**
+     * Una corsa annullata non è "piena": la prenotazione deve fallire con un motivo esplicito
+     * invece di restituire false, che le Boundary mostrano come "Posti esauriti!".
+     */
+    @Test
+    void testBookCancelledRideExplainsWhy() throws Exception {
+        String departure = "Partenza." + System.nanoTime();
+        String destination = "Destinazione." + System.nanoTime();
+        String driver = "driver." + System.nanoTime();
+        loginAs(driver);
+        offerRideController.offerRide(new RideBean(departure, destination, FUTURE_DATE, "08:30", 2, 20.0));
+        String rideId = searchRideController.searchRides(departure, destination).get(0).getId();
+        new com.ispw.uniride.controller.ManageRidesController().cancelOfferedRide(rideId);
+
+        loginAs("passenger." + System.nanoTime());
+        RideActionException ex = assertThrows(RideActionException.class, () -> searchRideController.bookRide(rideId));
+        assertEquals("Questa corsa non è più prenotabile: è stata annullata o completata.", ex.getMessage());
+    }
 }

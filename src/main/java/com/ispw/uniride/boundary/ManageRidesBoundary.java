@@ -143,7 +143,7 @@ public class ManageRidesBoundary {
 
             refreshPendingRequests();
         } catch (Exception e) {
-            messageLabel.setText(e.getMessage());
+            messageLabel.setText(ErrorMessages.forUser(e));
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }
@@ -162,7 +162,7 @@ public class ManageRidesBoundary {
             List<BookingBean> pending = controller.getPendingRequestsForRide(selectedRide.getId());
             pendingRequestsList.setItems(FXCollections.observableArrayList(pending));
         } catch (Exception e) {
-            messageLabel.setText(e.getMessage());
+            messageLabel.setText(ErrorMessages.forUser(e));
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }
@@ -185,7 +185,7 @@ public class ManageRidesBoundary {
             // della richiesta sì, quindi le liste vanno comunque ricaricate.
             refreshData();
         } catch (Exception e) {
-            messageLabel.setText(ERROR_PREFIX + e.getMessage());
+            messageLabel.setText(ERROR_PREFIX + ErrorMessages.forUser(e));
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }
@@ -206,7 +206,7 @@ public class ManageRidesBoundary {
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
             refreshData();
         } catch (Exception e) {
-            messageLabel.setText(ERROR_PREFIX + e.getMessage());
+            messageLabel.setText(ERROR_PREFIX + ErrorMessages.forUser(e));
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }
@@ -227,7 +227,7 @@ public class ManageRidesBoundary {
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
             refreshData();
         } catch (Exception e) {
-            messageLabel.setText(ERROR_PREFIX + e.getMessage());
+            messageLabel.setText(ERROR_PREFIX + ErrorMessages.forUser(e));
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }
@@ -249,7 +249,7 @@ public class ManageRidesBoundary {
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
             refreshData(); // ricarica le liste
         } catch (Exception e) {
-            messageLabel.setText(ERROR_PREFIX + e.getMessage());
+            messageLabel.setText(ERROR_PREFIX + ErrorMessages.forUser(e));
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }
@@ -271,7 +271,7 @@ public class ManageRidesBoundary {
             messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
             refreshData(); // ricarica le liste
         } catch (Exception e) {
-            messageLabel.setText(ERROR_PREFIX + e.getMessage());
+            messageLabel.setText(ERROR_PREFIX + ErrorMessages.forUser(e));
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }
@@ -286,6 +286,7 @@ public class ManageRidesBoundary {
             stage.setTitle("UniRide - Dashboard");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore ritorno alla Dashboard", e);
+            ErrorMessages.showViewLoadError();
         }
     }
 }

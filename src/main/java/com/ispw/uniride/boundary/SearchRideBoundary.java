@@ -147,7 +147,7 @@ public class SearchRideBoundary {
                 messageLabel.setTextFill(javafx.scene.paint.Color.RED);
             }
         } catch (Exception e) {
-            messageLabel.setText("Errore: " + e.getMessage());
+            messageLabel.setText("Errore: " + ErrorMessages.forUser(e));
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }
     }
@@ -162,6 +162,7 @@ public class SearchRideBoundary {
             stage.setTitle("UniRide - Dashboard");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore ritorno alla Dashboard", e);
+            ErrorMessages.showViewLoadError();
         }
     }
 }

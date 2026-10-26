@@ -47,6 +47,7 @@ public class StudentDashboardBoundary {
             stage.setTitle("UniRide - Offri Passaggio");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Offri Passaggio", e);
+            ErrorMessages.showViewLoadError();
         }
     }
 
@@ -61,6 +62,7 @@ public class StudentDashboardBoundary {
             stage.setTitle("UniRide - Cerca Passaggio");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Cerca Passaggio", e);
+            ErrorMessages.showViewLoadError();
         }
     }
 
@@ -75,6 +77,7 @@ public class StudentDashboardBoundary {
             stage.setTitle("UniRide - Le Mie Corse");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Manage Rides", e);
+            ErrorMessages.showViewLoadError();
         }
     }
 
@@ -92,6 +95,7 @@ public class StudentDashboardBoundary {
             stage.setTitle("UniRide - Login");
         } catch (IOException e) {
             com.ispw.uniride.utils.LoggerCustom.error("Errore caricamento Login", e);
+            ErrorMessages.showViewLoadError();
         }
     }
 }

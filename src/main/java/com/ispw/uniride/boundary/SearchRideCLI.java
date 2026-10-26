@@ -62,7 +62,7 @@ public class SearchRideCLI {
                     System.out.println("Impossibile prenotare (posti esauriti).");
                 }
             } catch (Exception e) {
-                System.err.println("Errore: " + e.getMessage());
+                System.err.println("Errore: " + ErrorMessages.forUser(e));
             }
         }
     }

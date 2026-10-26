@@ -39,7 +39,7 @@ public class OfferRideCLI {
         } catch (Exception e) {
             // Le eccezioni di validazione (campi obbligatori, posti/costo non validi) risalite
             // dal Controller Applicativo vengono stampate su stderr invece che su stdout.
-            System.err.println("Errore: " + e.getMessage());
+            System.err.println("Errore: " + ErrorMessages.forUser(e));
         }
     }
 }
