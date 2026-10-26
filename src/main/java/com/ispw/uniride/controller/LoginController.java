@@ -1,5 +1,6 @@
 package com.ispw.uniride.controller;
 
+import com.ispw.uniride.bean.ProfileBean;
 import com.ispw.uniride.bean.UserBean;
 import com.ispw.uniride.dao.DAOFactory;
 import com.ispw.uniride.dao.StudentDAO;
@@ -124,6 +125,19 @@ public class LoginController {
 
         Student newStudent = new Student(normalizedUsername, hashedPassword, normalizedFullName, normalizedLocation, normalizedPhone);
         studentDAO.saveStudent(newStudent);
+    }
+
+    /**
+     * Espone alla Boundary il profilo dell'utente loggato come Bean, così che la View non debba
+     * mai accedere direttamente alla Sessione né all'entità {@code Student} (che contiene la password).
+     * @return il profilo dell'utente loggato, oppure {@code null} se nessuno ha effettuato l'accesso.
+     */
+    public ProfileBean getLoggedUserProfile() {
+        Student student = Session.getInstance().getLoggedUser();
+        if (student == null) {
+            return null;
+        }
+        return new ProfileBean(student.getUsername(), student.getFullName(), student.getHomeLocation());
     }
 
     /**

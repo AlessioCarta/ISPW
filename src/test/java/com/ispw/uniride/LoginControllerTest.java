@@ -1,5 +1,6 @@
 package com.ispw.uniride;
 
+import com.ispw.uniride.bean.ProfileBean;
 import com.ispw.uniride.bean.UserBean;
 import com.ispw.uniride.controller.LoginController;
 import com.ispw.uniride.controller.Session;
@@ -161,5 +162,23 @@ class LoginControllerTest {
 
         assertThrows(UserNotAuthorizedException.class, () -> controller.registerUser(username, "password123", "Duplicato", null));
         assertTrue(controller.login(new UserBean(username + " ", "password123")));
+    }
+
+    /**
+     * Il profilo esposto alla Boundary riflette l'utente loggato (senza password) ed è null
+     * dopo il logout.
+     */
+    @Test
+    void testLoggedUserProfileExposedAsBean() throws UserNotAuthorizedException {
+        String username = uniqueUsername("profilo.test");
+        controller.registerUser(username, "password123", "Utente Profilo", "Roma");
+        assertTrue(controller.login(new UserBean(username, "password123")));
+
+        ProfileBean profile = controller.getLoggedUserProfile();
+        assertEquals("Utente Profilo", profile.getFullName());
+        assertEquals("Roma", profile.getHomeLocation());
+
+        controller.logout();
+        assertNull(controller.getLoggedUserProfile());
     }
 }

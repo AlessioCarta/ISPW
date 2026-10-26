@@ -1,11 +1,11 @@
 package com.ispw.uniride.boundary;
 
+import com.ispw.uniride.bean.ProfileBean;
 import com.ispw.uniride.bean.RideBean;
 import com.ispw.uniride.config.LocationCatalog;
 import com.ispw.uniride.config.LocationInfo;
+import com.ispw.uniride.controller.LoginController;
 import com.ispw.uniride.controller.SearchRideController;
-import com.ispw.uniride.controller.Session;
-import com.ispw.uniride.model.Student;
 import com.ispw.uniride.exceptions.PersistenceException;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -42,7 +42,7 @@ public class SearchRideBoundary {
         // Se lo studente ha dichiarato una posizione riconosciuta, mostra prima le località più
         // vicine a lui e preseleziona partenza/destinazione plausibili (paese di residenza e
         // ateneo più vicino), lasciando comunque piena libertà di cercare qualunque altra tratta.
-        Student loggedUser = Session.getInstance().getLoggedUser();
+        ProfileBean loggedUser = new LoginController().getLoggedUserProfile();
         LocationInfo home = loggedUser != null ? LocationCatalog.findByName(loggedUser.getHomeLocation()) : null;
 
         List<String> locationNames = home != null
