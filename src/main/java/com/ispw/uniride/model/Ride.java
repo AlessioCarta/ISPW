@@ -7,6 +7,7 @@ import com.ispw.uniride.model.state.FullState;
 import com.ispw.uniride.model.state.RideState;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -97,9 +98,12 @@ public class Ride implements Subject {
     // parte sempre da availableSeats = totalSeats, qui invece si ripristina il valore reale salvato).
     public void setAvailableSeats(int availableSeats) { this.availableSeats = availableSeats; }
 
-    public List<String> getPassengerUsernames() { return passengerUsernames; }
+    // Vista in sola lettura: aggiungere o togliere passeggeri dall'esterno aggirerebbe bookSeat()/
+    // cancelSeat() e quindi il Pattern State (posti disponibili e stato non verrebbero aggiornati).
+    public List<String> getPassengerUsernames() { return Collections.unmodifiableList(passengerUsernames); }
     // Usato dai DAO per ripopolare la lista passeggeri letta da storage senza passare da bookSeat().
-    public void setPassengerUsernames(List<String> usernames) { this.passengerUsernames = usernames; }
+    // Copia difensiva: la lista del chiamante non resta collegata allo stato interno di Ride.
+    public void setPassengerUsernames(List<String> usernames) { this.passengerUsernames = new ArrayList<>(usernames); }
     public void addPassengerUsername(String username) {
         // Evita duplicati: uno stesso username non deve comparire due volte nella lista passeggeri.
         if (!this.passengerUsernames.contains(username)) {

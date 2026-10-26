@@ -3,10 +3,6 @@ package com.ispw.uniride.dao.fs;
 import com.ispw.uniride.dao.RideDAO;
 import com.ispw.uniride.exceptions.PersistenceException;
 import com.ispw.uniride.model.Ride;
-import com.ispw.uniride.model.state.AvailableState;
-import com.ispw.uniride.model.state.CancelledState;
-import com.ispw.uniride.model.state.CompletedState;
-import com.ispw.uniride.model.state.FullState;
 import com.ispw.uniride.model.state.RideState;
 import com.ispw.uniride.utils.LoggerCustom;
 
@@ -160,7 +156,7 @@ public class FsRideDAO implements RideDAO {
         Ride ride = new Ride(parts[1], parts[2], parts[3], parts[4], Integer.parseInt(parts[5]), Double.parseDouble(parts[7]), departureTime);
         ride.setId(parts[0]);
         ride.setAvailableSeats(Integer.parseInt(parts[6]));
-        ride.setState(parseState(parts[8]));
+        ride.setState(RideState.fromStatus(parts[8]));
 
         // I campi dopo il decimo (indice MIN_CSV_FIELDS) sono, uno per uno, gli username dei
         // passeggeri prenotati: numero variabile, per questo non fanno parte dei campi fissi.
@@ -170,28 +166,6 @@ public class FsRideDAO implements RideDAO {
             }
         }
         return ride;
-    }
-
-    /**
-     * Ricostruisce l'istanza di {@link RideState} concreta a partire dalla sigla testuale persistita.
-     */
-    private static RideState parseState(String status) {
-        // Traduzione stringa -> oggetto State: il CSV non può salvare direttamente un'istanza
-        // Java, quindi si persiste solo l'etichetta testuale e la si "reidrata" a un oggetto
-        // State concreto qui, in lettura.
-        switch (status) {
-            case "AVAILABLE":
-                return new AvailableState();
-            case "COMPLETED":
-                return new CompletedState();
-            case "CANCELLED":
-                return new CancelledState();
-            default:
-                // Qualunque valore non riconosciuto (compreso "FULL") ricade su FullState:
-                // scelta prudente, un Ride "sconosciuto" viene trattato come non prenotabile
-                // piuttosto che come liberamente prenotabile.
-                return new FullState();
-        }
     }
 
     private void rewriteFile(Map<String, Ride> current) {

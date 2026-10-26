@@ -3,10 +3,6 @@ package com.ispw.uniride.dao.sql;
 import com.ispw.uniride.dao.RideDAO;
 import com.ispw.uniride.exceptions.PersistenceException;
 import com.ispw.uniride.model.Ride;
-import com.ispw.uniride.model.state.AvailableState;
-import com.ispw.uniride.model.state.CancelledState;
-import com.ispw.uniride.model.state.CompletedState;
-import com.ispw.uniride.model.state.FullState;
 import com.ispw.uniride.model.state.RideState;
 import com.ispw.uniride.utils.LoggerCustom;
 
@@ -15,7 +11,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Implementazione DAO su database relazionale (H2, via JDBC standard) per l'entità {@link Ride}.
@@ -191,9 +190,10 @@ public class JdbcRideDAO implements RideDAO {
             binder.bind(stmt);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    rides.add(mapRow(connection, rs));
+                    rides.add(mapRow(rs));
                 }
             }
+            loadPassengers(connection, rides);
         } catch (SQLException e) {
             LoggerCustom.error("Errore nella lettura dei passaggi dal database", e);
             throw new PersistenceException("Impossibile leggere i passaggi: database non disponibile.", e);
@@ -201,7 +201,7 @@ public class JdbcRideDAO implements RideDAO {
         return rides;
     }
 
-    private Ride mapRow(Connection connection, ResultSet rs) throws SQLException {
+    private Ride mapRow(ResultSet rs) throws SQLException {
         // Come per la lettura da CSV: il costruttore pubblico genera un id nuovo e imposta
         // availableSeats=totalSeats, quindi sovrascriviamo subito dopo con i valori reali letti
         // dalla riga del database (setId, setAvailableSeats, setState).
@@ -216,33 +216,35 @@ public class JdbcRideDAO implements RideDAO {
         );
         ride.setId(rs.getString("id"));
         ride.setAvailableSeats(rs.getInt("available_seats"));
-        ride.setState(parseState(rs.getString("status")));
-
-        // Per ogni Ride letto, una query aggiuntiva recupera i suoi passeggeri dalla tabella di
-        // collegamento: costa una query in più per riga, accettabile per i volumi di un prototipo.
-        try (PreparedStatement stmt = connection.prepareStatement("SELECT username FROM ride_passengers WHERE ride_id = ?")) {
-            stmt.setString(1, ride.getId());
-            try (ResultSet passengers = stmt.executeQuery()) {
-                while (passengers.next()) {
-                    ride.addPassengerUsername(passengers.getString("username"));
-                }
-            }
-        }
+        ride.setState(RideState.fromStatus(rs.getString("status")));
         return ride;
     }
 
-    private RideState parseState(String status) {
-        // Stessa logica di traduzione stringa -> oggetto State usata da FsRideDAO: il database,
-        // come il CSV, può persistere solo la sigla testuale, mai un'istanza Java direttamente.
-        switch (status) {
-            case "AVAILABLE":
-                return new AvailableState();
-            case "COMPLETED":
-                return new CompletedState();
-            case "CANCELLED":
-                return new CancelledState();
-            default:
-                return new FullState();
+    /**
+     * Recupera i passeggeri di tutti i Ride letti con un'unica query sulla tabella di collegamento,
+     * invece di una query aggiuntiva per ogni Ride (problema "N+1").
+     */
+    private void loadPassengers(Connection connection, List<Ride> rides) throws SQLException {
+        if (rides.isEmpty()) {
+            return;
+        }
+        Map<String, Ride> byId = new HashMap<>();
+        for (Ride ride : rides) {
+            byId.put(ride.getId(), ride);
+        }
+        // Un segnaposto "?" per ogni id: i valori restano parametri legati, mai concatenati nella query.
+        String placeholders = String.join(", ", Collections.nCopies(byId.size(), "?"));
+        String sql = "SELECT ride_id, username FROM ride_passengers WHERE ride_id IN (" + placeholders + ")";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            int index = 1;
+            for (String id : byId.keySet()) {
+                stmt.setString(index++, id);
+            }
+            try (ResultSet passengers = stmt.executeQuery()) {
+                while (passengers.next()) {
+                    byId.get(passengers.getString("ride_id")).addPassengerUsername(passengers.getString("username"));
+                }
+            }
         }
     }
 }
