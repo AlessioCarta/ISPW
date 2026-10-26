@@ -1,0 +1,57 @@
+%%{init: {"theme": "default"}}%%
+classDiagram
+    direction TB
+    class RideDAO {
+        <<interface>>
+        +saveRide(Ride)
+        +getAllRides() List~Ride~
+        +getAvailableRides(String, String) List~Ride~
+        +getRideById(String) Ride
+        +updateRide(Ride)
+        +getRidesByDriver(String) List~Ride~
+        +getRidesByPassenger(String) List~Ride~
+        +deleteRide(String)
+    }
+    class StudentDAO {
+        <<interface>>
+        +saveStudent(Student)
+        +getStudentByUsername(String) Student
+    }
+    class BookingDAO {
+        <<interface>>
+        +saveBooking(Booking)
+        +getBookingById(String) Booking
+        +getBookingsByRide(String) List~Booking~
+        +getBookingsByPassenger(String) List~Booking~
+        +updateBooking(Booking)
+    }
+    class MemoryRideDAO {
+        -storage : MemoryStorage
+    }
+    class MemoryStudentDAO {
+        -storage : MemoryStorage
+    }
+    class MemoryBookingDAO {
+        -storage : MemoryStorage
+    }
+    class MemoryStorage {
+        <<Singleton>>
+        -instance : MemoryStorage$
+        -studentsMap : Map~String, Student~
+        -ridesMap : Map~String, Ride~
+        -bookingsMap : Map~String, Booking~
+        +getInstance() MemoryStorage$
+    }
+    RideDAO <|.. MemoryRideDAO
+    StudentDAO <|.. MemoryStudentDAO
+    BookingDAO <|.. MemoryBookingDAO
+    MemoryRideDAO --> MemoryStorage : uses
+    MemoryStudentDAO --> MemoryStorage : uses
+    MemoryBookingDAO --> MemoryStorage : uses
+    style RideDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style StudentDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style BookingDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style MemoryRideDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style MemoryStudentDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style MemoryBookingDAO fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style MemoryStorage fill:#EEEEEE,stroke:#666666,color:#222222,stroke-width:1.5px

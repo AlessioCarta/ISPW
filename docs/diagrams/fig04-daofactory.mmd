@@ -1,0 +1,42 @@
+%%{init: {"theme": "default"}}%%
+classDiagram
+    direction TB
+    class DAOFactory {
+        <<abstract, Singleton>>
+        -instance : DAOFactory$
+        +getInstance() DAOFactory$
+        +setInstance(DAOFactory)$
+        +getRideDAO() RideDAO*
+        +getStudentDAO() StudentDAO*
+        +getBookingDAO() BookingDAO*
+    }
+    class MemoryDAOFactory {
+        +getRideDAO() RideDAO
+        +getStudentDAO() StudentDAO
+        +getBookingDAO() BookingDAO
+    }
+    class FsDAOFactory {
+        +getRideDAO() RideDAO
+        +getStudentDAO() StudentDAO
+        +getBookingDAO() BookingDAO
+    }
+    class SqlDAOFactory {
+        +getRideDAO() RideDAO
+        +getStudentDAO() StudentDAO
+        +getBookingDAO() BookingDAO
+    }
+    class Config {
+        +PERSISTENCE_TYPE : DBType$
+        +COST_STRATEGY_TYPE : StrategyType$
+        ~resolvePersistenceType(String) DBType$
+    }
+    DAOFactory <|-- MemoryDAOFactory : extends
+    DAOFactory <|-- FsDAOFactory : extends
+    DAOFactory <|-- SqlDAOFactory : extends
+    DAOFactory ..> Config : reads PERSISTENCE_TYPE in getInstance()
+    note for Config "PERSISTENCE_TYPE comes from the uniride.persistence system property (MEMORY by default)"
+    style DAOFactory fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style MemoryDAOFactory fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style FsDAOFactory fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style SqlDAOFactory fill:#FDE2E2,stroke:#C0392B,color:#641E16,stroke-width:1.5px
+    style Config fill:#EEEEEE,stroke:#666666,color:#222222,stroke-width:1.5px

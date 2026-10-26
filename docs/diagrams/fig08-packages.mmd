@@ -1,0 +1,56 @@
+%%{init: {"theme": "default", "themeVariables": {"clusterBkg": "#FAFAFA", "clusterBorder": "#AAAAAA", "fontSize": "16px"}, "flowchart": {"nodeSpacing": 30, "rankSpacing": 60}}}%%
+flowchart TB
+    subgraph BND["Boundary Layer (com.ispw.uniride.boundary)"]
+        direction LR
+        B1["LoginBoundary /<br/>RegisterBoundary"]
+        B2["StudentDashboardBoundary"]
+        B3["OfferRideBoundary /<br/>SearchRideBoundary"]
+        B4["ManageRidesBoundary"]
+        B5["CliMain + *CLI"]
+        B1 ~~~ B2 ~~~ B3 ~~~ B4 ~~~ B5
+    end
+    subgraph BEAN["Bean Layer (com.ispw.uniride.bean)"]
+        direction LR
+        N1["UserBean / RegistrationBean"]
+        N2["RideBean / BookingBean"]
+        N3["ProfileBean"]
+        N1 ~~~ N2 ~~~ N3
+    end
+    subgraph CTL["Control Layer (com.ispw.uniride.controller)"]
+        direction LR
+        C1["LoginController"]
+        C2["OfferRideController /<br/>SearchRideController"]
+        C3["ManageRidesController"]
+        C4["Session «Singleton»"]
+        C1 ~~~ C2 ~~~ C3 ~~~ C4
+    end
+    subgraph ENT["Entity Layer (com.ispw.uniride.model)"]
+        direction LR
+        E1["Student"]
+        E2["Ride + RideState"]
+        E3["Booking"]
+        E1 ~~~ E2 ~~~ E3
+    end
+    subgraph DAOL["DAO Layer (com.ispw.uniride.dao)"]
+        direction LR
+        D1["DAOFactory «Abstract Factory»"]
+        D2["RideDAO / StudentDAO /<br/>BookingDAO"]
+        D1 ~~~ D2
+    end
+    BND -- "fills and reads" --> BEAN
+    BND -- "invokes" --> CTL
+    CTL -- "exchanges" --> BEAN
+    CTL -- "manipulates" --> ENT
+    CTL -- "persists through" --> DAOL
+    DAOL -- "reads / writes" --> ENT
+
+    classDef b fill:#DBEEFF,stroke:#2B6CB0,color:#1A365D
+    classDef n fill:#FFF3D6,stroke:#B7791F,color:#744210
+    classDef c fill:#E3FAEA,stroke:#2F855A,color:#1C4532
+    classDef e fill:#FFF8DC,stroke:#B8860B,color:#5F4B00
+    classDef d fill:#FDE2E2,stroke:#C0392B,color:#641E16
+    class B1,B2,B3,B4,B5 b
+    class N1,N2,N3 n
+    class C1,C2,C3,C4 c
+    class E1,E2,E3 e
+    class D1,D2 d
