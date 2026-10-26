@@ -37,9 +37,9 @@ class PasswordHasherTest {
     }
 
     @Test
-    void testDemoUserCanLogInWithHashedSeed() {
+    void testDemoUserCanLogInWithHashedSeed() throws Exception {
         assertTrue(new com.ispw.uniride.controller.LoginController()
-                .login(new com.ispw.uniride.bean.UserBean("mario.rossi", "password")));
+                .login(TestBeans.user("mario.rossi", "password")));
         new com.ispw.uniride.controller.LoginController().logout();
     }
 }

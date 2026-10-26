@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Implementazione concreta di {@link BookingDAO} per la famiglia File System.
@@ -22,13 +23,13 @@ public class FsBookingDAO implements BookingDAO {
     private static final String FILE_PATH = "bookings.csv";
     private static final Object LOCK = new Object();
 
-    // Numero minimo di campi attesi su una riga CSV valida (id, rideId, passengerUsername, state).
+    // Numero minimo di campi attesi su una riga CSV valida (id, rideId, passengerUsername, state, [requestedAt]).
     private static final int MIN_CSV_FIELDS = 4;
 
     // Static Cache: condivisa fra tutte le istanze di FsBookingDAO.
-    // volatile: la cache viene letta anche fuori dal lock (vedi refreshCache), quindi ogni
+    // AtomicReference: la cache viene letta anche fuori dal lock (vedi refreshCache), quindi ogni
     // thread deve vedere subito il riferimento aggiornato o azzerato da un altro thread.
-    private static volatile Map<String, Booking> cache = null;
+    private static final AtomicReference<Map<String, Booking>> CACHE = new AtomicReference<>();
     private static volatile long lastModified = 0;
 
     public FsBookingDAO() {
@@ -56,14 +57,14 @@ public class FsBookingDAO implements BookingDAO {
         File file = new File(FILE_PATH);
         // Si lavora su un riferimento locale: un altro thread potrebbe azzerare il campo cache
         // (invalidazione dopo una scrittura fallita) mentre questo lo sta ancora usando.
-        Map<String, Booking> current = cache;
+        Map<String, Booking> current = CACHE.get();
         // Stesso pattern check-lock-check delle altre Fs*DAO: evita ricariche non necessarie.
         if (current == null || file.lastModified() > lastModified) {
             synchronized (LOCK) {
-                if (cache == null || file.lastModified() > lastModified) {
+                if (CACHE.get() == null || file.lastModified() > lastModified) {
                     loadCacheFromFile(file);
                 }
-                current = cache;
+                current = CACHE.get();
             }
         }
         return current;
@@ -84,7 +85,7 @@ public class FsBookingDAO implements BookingDAO {
                     loaded.put(booking.getId(), booking);
                 }
             }
-            cache = loaded;
+            CACHE.set(loaded);
             lastModified = file.lastModified();
         } catch (IOException e) {
             LoggerCustom.error("Error reading bookings.csv", e);
@@ -112,7 +113,7 @@ public class FsBookingDAO implements BookingDAO {
     }
 
     /**
-     * Converte una riga CSV (id, rideId, passengerUsername, state) in un'istanza di {@link Booking}.
+     * Converte una riga CSV (id, rideId, passengerUsername, state, [requestedAt]) in un'istanza di {@link Booking}.
      * @return il Booking ricostruito, oppure {@code null} se la riga è malformata.
      */
     private static Booking parseBookingFromCsvLine(String line) {
@@ -125,6 +126,8 @@ public class FsBookingDAO implements BookingDAO {
         Booking booking = new Booking(parts[1], parts[2]);
         booking.setId(parts[0]);
         applyState(booking, parts[3]);
+        // Quinto campo facoltativo: le righe scritte prima della scadenza a 24h non lo hanno.
+        booking.setRequestedAt(parts.length > MIN_CSV_FIELDS && !parts[4].isBlank() ? Long.parseLong(parts[4].trim()) : 0);
         return booking;
     }
 
@@ -142,6 +145,8 @@ public class FsBookingDAO implements BookingDAO {
             booking.reject();
         } else if (Booking.CANCELLED.equals(state)) {
             booking.cancel();
+        } else if (Booking.EXPIRED.equals(state)) {
+            booking.expire();
         }
         // REQUESTED: nessuna transizione necessaria, è lo stato iniziale del costruttore.
     }
@@ -152,7 +157,7 @@ public class FsBookingDAO implements BookingDAO {
             // di verità dopo una modifica, il file viene sempre allineato per intero.
             try (PrintWriter pw = new PrintWriter(new FileWriter(FILE_PATH, false))) {
                 for (Booking b : current.values()) {
-                    pw.println(b.getId() + "," + b.getRideId() + "," + b.getPassengerUsername() + "," + b.getState());
+                    pw.println(b.getId() + "," + b.getRideId() + "," + b.getPassengerUsername() + "," + b.getState() + "," + b.getRequestedAt());
                 }
                 // PrintWriter non lancia IOException in scrittura: l'errore va interrogato a mano.
                 if (pw.checkError()) {
@@ -176,7 +181,7 @@ public class FsBookingDAO implements BookingDAO {
             } catch (PersistenceException e) {
                 // Scrittura fallita: la cache viene scartata e ricaricata dal file alla prossima
                 // lettura (stessa motivazione di FsRideDAO.invalidateCache).
-                cache = null;
+                CACHE.set(null);
                 throw e;
             }
         }

@@ -6,24 +6,24 @@ package com.ispw.uniride.bean;
  * dover esporre direttamente le Entity {@code Booking}/{@code Ride}.
  */
 public class BookingBean {
-    private String bookingId;
-    private String rideId;
-    private String departure;
-    private String destination;
-    private String date;
+    private final String bookingId;
+    private final String rideId;
+    private final String departure;
+    private final String destination;
+    private final String date;
 
     // Nome della "controparte": per il guidatore è il passeggero richiedente, per il
     // passeggero è il guidatore del passaggio.
-    private String counterpartName;
+    private final String counterpartName;
 
     // Numero di telefono della controparte (facoltativo, {@code null} se non dichiarato): mostrato
     // solo qui, mai in un elenco di ricerca pubblico, perché esiste già una richiesta di passaggio
     // concreta fra i due studenti — è il punto in cui ha senso potersi scrivere per accordarsi
     // sul luogo d'incontro esatto.
-    private String counterpartPhone;
+    private final String counterpartPhone;
 
     // Stato della richiesta: REQUESTED, CONFIRMED, REJECTED o CANCELLED (vedi Booking).
-    private String state;
+    private final String state;
 
     // Gli 8 parametri sono tutti campi primitivi/String indipendenti di sola visualizzazione (una
     // riga della ListView): introdurre un oggetto Builder o un value-object annidato avrebbe

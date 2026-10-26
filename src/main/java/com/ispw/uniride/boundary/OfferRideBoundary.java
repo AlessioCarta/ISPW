@@ -43,7 +43,7 @@ public class OfferRideBoundary {
     @FXML private TextField priceField;
     @FXML private Label messageLabel;
 
-    private OfferRideController offerRideController = new OfferRideController();
+    private final OfferRideController offerRideController = new OfferRideController();
 
     /**
      * Popola i menu a tendina delle località e il contatore dei posti al caricamento della vista.
@@ -85,18 +85,16 @@ public class OfferRideBoundary {
     @FXML
     public void handleSubmit(ActionEvent event) {
         try {
-            String departure = readCity(departureField);
-            String destination = readCity(destinationField);
-            // DatePicker può essere vuoto (nessuna data scelta): in tal caso si passa una
-            // stringa vuota, che sarà poi il Controller Applicativo a rifiutare come invalida.
-            String date = dateField.getValue() != null ? dateField.getValue().format(DATE_FORMAT) : "";
-            String departureTime = departureTimeField.getText() != null ? departureTimeField.getText().trim() : "";
-            int seats = seatsField.getValue();
-            // parseDouble può lanciare NumberFormatException se il campo non contiene un
-            // numero valido: gestito esplicitamente nel catch sottostante.
-            double price = Double.parseDouble(priceField.getText());
-
-            RideBean bean = new RideBean(departure, destination, date, departureTime, seats, price);
+            // I setter del Bean controllano il formato di ogni campo (obbligatori, data, orario,
+            // numeri): la Boundary si limita a raccogliere i valori dai controlli grafici.
+            // Un DatePicker vuoto produce null, che il Bean rifiuta come data mancante.
+            RideBean bean = new RideBean();
+            bean.setDeparture(readCity(departureField));
+            bean.setDestination(readCity(destinationField));
+            bean.setDate(dateField.getValue() != null ? dateField.getValue().format(DATE_FORMAT) : null);
+            bean.setDepartureTime(departureTimeField.getText());
+            bean.setTotalSeats(String.valueOf(seatsField.getValue()));
+            bean.setBasePrice(priceField.getText());
             offerRideController.offerRide(bean);
 
             messageLabel.setText("Passaggio offerto con successo!");
@@ -113,14 +111,9 @@ public class OfferRideBoundary {
             seatsField.getValueFactory().setValue(3);
             priceField.clear();
 
-        } catch (NumberFormatException _) {
-            // Il nome della variabile "_" (unnamed pattern, Java 21+) segnala esplicitamente
-            // che l'eccezione catturata non serve al corpo del catch, solo il suo verificarsi.
-            messageLabel.setText("Errore: I campi numerici non sono validi.");
-            messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         } catch (Exception e) {
-            // Cattura anche le eccezioni di dominio (RideActionException, UserNotAuthorizedException)
-            // risalite da OfferRideController, mostrandone il messaggio così com'è.
+            // Errori di formato (InvalidInputException dal Bean) e di dominio (RideActionException,
+            // UserNotAuthorizedException da OfferRideController), mostrati con il loro messaggio.
             messageLabel.setText("Errore: " + ErrorMessages.forUser(e));
             messageLabel.setTextFill(javafx.scene.paint.Color.RED);
         }

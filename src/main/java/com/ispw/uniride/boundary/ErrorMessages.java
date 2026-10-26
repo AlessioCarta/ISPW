@@ -1,5 +1,6 @@
 package com.ispw.uniride.boundary;
 
+import com.ispw.uniride.exceptions.InvalidInputException;
 import com.ispw.uniride.exceptions.PersistenceException;
 import com.ispw.uniride.exceptions.RideActionException;
 import com.ispw.uniride.exceptions.RideNotFoundException;
@@ -25,7 +26,7 @@ final class ErrorMessages {
     static String forUser(Exception e) {
         if (e instanceof RideActionException || e instanceof RideNotFoundException
                 || e instanceof UserNotAuthorizedException || e instanceof UserNotFoundException
-                || e instanceof PersistenceException) {
+                || e instanceof InvalidInputException || e instanceof PersistenceException) {
             return e.getMessage();
         }
         LoggerCustom.error("Errore imprevisto nella Boundary", e);

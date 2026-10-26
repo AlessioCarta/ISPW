@@ -22,9 +22,9 @@ public class MemoryStorage {
 
     // Le tre "tabelle" in RAM, indicizzate per chiave primaria logica (username o id) per un
     // accesso a tempo costante invece di scorrere liste.
-    private Map<String, Student> studentsMap;
-    private Map<String, Ride> ridesMap;
-    private Map<String, Booking> bookingsMap;
+    private final Map<String, Student> studentsMap;
+    private final Map<String, Ride> ridesMap;
+    private final Map<String, Booking> bookingsMap;
 
     private MemoryStorage() {
         // Inizializzazione delle mappe vuote alla prima (e unica) creazione dell'istanza.

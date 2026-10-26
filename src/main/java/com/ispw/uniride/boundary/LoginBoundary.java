@@ -2,6 +2,7 @@ package com.ispw.uniride.boundary;
 
 import com.ispw.uniride.bean.UserBean;
 import com.ispw.uniride.controller.LoginController;
+import com.ispw.uniride.exceptions.InvalidInputException;
 import com.ispw.uniride.exceptions.PersistenceException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -33,21 +34,20 @@ public class LoginBoundary {
 
     // Riferimento allo strato Control. Essendo una classe JavaFX istanziata dall'FXMLLoader, la dependency injection manuale
     // qui funge da inizializzazione statica sicura.
-    private LoginController loginController = new LoginController();
+    private final LoginController loginController = new LoginController();
 
     /**
      * Intercetta l'evento di Click sul pulsante grafico di autenticazione.
      */
     @FXML
     public void handleLogin(ActionEvent event) {
-        String username = usernameField.getText();
-        String password = passwordField.getText();
-
-        // Incapsula e nasconde la natura dell'I/O dal livello superiore passando solo DTO.
-        UserBean bean = new UserBean(username, password);
-
         // De-eleva la gestione applicativa al Control layer
         try {
+            // Incapsula e nasconde la natura dell'I/O dal livello superiore passando solo DTO:
+            // i setter del Bean verificano che i campi non siano vuoti.
+            UserBean bean = new UserBean();
+            bean.setUsername(usernameField.getText());
+            bean.setPassword(passwordField.getText());
             if (loginController.login(bean)) {
                 messageLabel.setText("Login Effettuato!");
                 messageLabel.setTextFill(javafx.scene.paint.Color.GREEN);
@@ -58,7 +58,7 @@ public class LoginBoundary {
                 messageLabel.setText("Credenziali non valide!");
                 messageLabel.setTextFill(javafx.scene.paint.Color.RED);
             }
-        } catch (PersistenceException e) {
+        } catch (InvalidInputException | PersistenceException e) {
             // Guasto dello storage: va distinto da "credenziali errate", altrimenti l'utente
             // crederebbe di aver sbagliato password.
             messageLabel.setText(e.getMessage());

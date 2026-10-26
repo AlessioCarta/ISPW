@@ -35,7 +35,7 @@ public class ManageRidesBoundary {
     @FXML private ListView<BookingBean> bookedList;
     @FXML private Label messageLabel;
 
-    private ManageRidesController controller = new ManageRidesController();
+    private final ManageRidesController controller = new ManageRidesController();
 
     @FXML
     public void initialize() {

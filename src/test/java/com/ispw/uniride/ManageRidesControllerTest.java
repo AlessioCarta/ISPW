@@ -62,7 +62,7 @@ class ManageRidesControllerTest {
         String destination = unique("Destinazione");
 
         loginAs(driver);
-        offerRideController.offerRide(new RideBean(departure, destination, FUTURE_DATE, "08:30", 2, 20.0));
+        offerRideController.offerRide(TestBeans.ride(departure, destination, FUTURE_DATE, "08:30", 2, 20.0));
         List<RideBean> found = searchRideController.searchRides(departure, destination);
         String rideId = found.get(0).getId();
 
@@ -212,7 +212,7 @@ class ManageRidesControllerTest {
         String departure = unique("Partenza");
         String destination = unique("Destinazione");
         loginAs(driver);
-        offerRideController.offerRide(new RideBean(departure, destination, FUTURE_DATE, "08:30", 2, 20.0));
+        offerRideController.offerRide(TestBeans.ride(departure, destination, FUTURE_DATE, "08:30", 2, 20.0));
         String rideId = searchRideController.searchRides(departure, destination).get(0).getId();
 
         loginAs(passenger);
@@ -274,5 +274,37 @@ class ManageRidesControllerTest {
         for (Booking booking : DAOFactory.getInstance().getBookingDAO().getBookingsByRide(s.rideId())) {
             assertEquals(Booking.REJECTED, booking.getState());
         }
+    }
+
+    /**
+     * Una richiesta rimasta senza risposta per più di 24 ore scade: non viene più proposta al
+     * guidatore, il posto torna disponibile e una risposta tardiva viene rifiutata.
+     */
+    @Test
+    void testRequestExpiresAfter24HoursWithoutResponse() throws Exception {
+        Scenario s = offerAndRequestBooking();
+        Booking booking = DAOFactory.getInstance().getBookingDAO().getBookingsByRide(s.rideId()).get(0);
+        booking.setRequestedAt(System.currentTimeMillis() - Booking.RESPONSE_TIME_LIMIT_MILLIS - 60_000);
+        DAOFactory.getInstance().getBookingDAO().updateBooking(booking);
+
+        loginAs(s.driver());
+        assertTrue(manageRidesController.getPendingRequestsForRide(s.rideId()).isEmpty());
+        assertEquals(Booking.EXPIRED, DAOFactory.getInstance().getBookingDAO().getBookingById(booking.getId()).getState());
+        assertEquals(2, DAOFactory.getInstance().getRideDAO().getRideById(s.rideId()).getAvailableSeats());
+
+        String bookingId = booking.getId();
+        RideActionException ex = assertThrows(RideActionException.class, () -> manageRidesController.confirmBooking(bookingId));
+        assertEquals("La richiesta è scaduta: sono trascorse 24 ore senza risposta.", ex.getMessage());
+    }
+
+    /**
+     * Una richiesta recente, entro le 24 ore, resta in attesa della risposta del guidatore.
+     */
+    @Test
+    void testRecentRequestDoesNotExpire() throws Exception {
+        Scenario s = offerAndRequestBooking();
+
+        loginAs(s.driver());
+        assertEquals(1, manageRidesController.getPendingRequestsForRide(s.rideId()).size());
     }
 }

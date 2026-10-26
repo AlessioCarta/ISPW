@@ -10,7 +10,7 @@ import com.ispw.uniride.model.Student;
  */
 public class MemoryStudentDAO implements StudentDAO {
     // Riferimento al Singleton condiviso con le altre famiglie di DAO In-Memory.
-    private MemoryStorage storage;
+    private final MemoryStorage storage;
 
     public MemoryStudentDAO() {
         this.storage = MemoryStorage.getInstance();
