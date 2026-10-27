@@ -1,0 +1,88 @@
+<!doctype html><html><head><meta charset="utf-8"><title>VOPC Request Booking</title><style>
+*{box-sizing:border-box} body{margin:0;width:1500px;background:#fff;font-family:"Trebuchet MS",Verdana,Arial,sans-serif;position:relative}
+#wrap{position:relative;padding:20px 30px}
+.band{position:relative;border:2px solid #CCCCCC;background:#FAFAFA;border-radius:6px;margin:0 0 70px 0;padding:44px 20px 26px;display:flex;justify-content:center;gap:70px;align-items:flex-start}
+.band:last-child{margin-bottom:0}
+.band .title{position:absolute;top:10px;left:16px;font-size:20px;font-weight:bold;color:#444}
+.cls{border:2px solid;min-width:300px;font-size:17px;background:#fff}
+.cls .name{text-align:center;font-weight:bold;padding:10px 12px;border-bottom:2px solid}
+.cls .st{display:block;font-weight:normal;font-size:15px}
+.cls .sec{padding:8px 14px;border-bottom:2px solid;min-height:16px;line-height:1.5}
+.cls .sec:last-child{border-bottom:none}
+.u{text-decoration:underline}
+.b{background:#DBEEFF;border-color:#2B6CB0;color:#1A365D}.b *{border-color:#2B6CB0}
+.n{background:#FFF3D6;border-color:#B7791F;color:#744210}.n *{border-color:#B7791F}
+.c{background:#E3FAEA;border-color:#2F855A;color:#1C4532}.c *{border-color:#2F855A}
+.e{background:#FFF8DC;border-color:#B8860B;color:#5F4B00}.e *{border-color:#B8860B}
+svg{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+.lbl{font-size:15px;fill:#222;paint-order:stroke;stroke:#fff;stroke-width:6px}
+</style></head><body><div id="wrap">
+
+<div class="band"><span class="title">Boundary</span>
+ <div class="cls b" id="SRB"><div class="name">SearchRideBoundary</div>
+  <div class="sec">-departureField : ComboBox&lt;String&gt;<br>-destinationField : ComboBox&lt;String&gt;<br>-resultsList : ListView&lt;RideBean&gt;<br>-messageLabel : Label</div>
+  <div class="sec">+handleSearch(ActionEvent)<br>+handleBook(ActionEvent)</div></div>
+</div>
+
+<div class="band"><span class="title">Bean</span>
+ <div class="cls n" id="RB"><div class="name">RideBean</div>
+  <div class="sec">-id : String<br>-departure : String<br>-destination : String<br>-date : String<br>-departureTime : String<br>-availableSeats : int<br>-driver : String<br>-computedPrice : double</div>
+  <div class="sec">+getId() : String<br>+getDeparture() : String<br>+getDestination() : String<br>+getComputedPrice() : double</div></div>
+</div>
+
+<div class="band"><span class="title">Control</span>
+ <div class="cls c" id="RE"><div class="name">RequestExpiry</div>
+  <div class="sec"></div><div class="sec u">+expireOverdue(List&lt;Booking&gt;)</div></div>
+ <div class="cls c" id="SRC"><div class="name">SearchRideController</div>
+  <div class="sec"></div><div class="sec">+searchRides(String, String) : List&lt;RideBean&gt;<br>+bookRide(String) : bool</div></div>
+ <div class="cls c" id="SES"><div class="name"><span class="st">«Singleton»</span>Session</div>
+  <div class="sec">-loggedUser : Student</div><div class="sec"><span class="u">+getInstance() : Session</span><br>+getLoggedUser() : Student</div></div>
+</div>
+
+<div class="band"><span class="title">Entity</span>
+ <div class="cls e" id="BK"><div class="name">Booking</div>
+  <div class="sec">-id : String<br>-rideId : String<br>-passengerUsername : String<br>-state : String<br>-requestedAt : long</div>
+  <div class="sec">+isResponseOverdue(long) : bool<br>+expire() : bool</div></div>
+ <div class="cls e" id="RD"><div class="name">Ride</div>
+  <div class="sec">-id : String<br>-driverUsername : String<br>-availableSeats : int<br>-state : RideState<br>-passengerUsernames : List&lt;String&gt;</div>
+  <div class="sec">+bookSeat(Observer, String) : bool<br>+cancelSeat(String) : bool<br>+getStatus() : String</div></div>
+ <div class="cls e" id="ST"><div class="name">Student</div>
+  <div class="sec">-username : String<br>-fullName : String</div><div class="sec"></div></div>
+</div>
+</div>
+<svg id="svg"></svg>
+<script>
+const svg=document.getElementById("svg"), NS="http://www.w3.org/2000/svg";
+svg.setAttribute("width",document.body.scrollWidth); svg.setAttribute("height",document.body.scrollHeight);
+function R(id){const r=document.getElementById(id).getBoundingClientRect();return {l:r.left+scrollX,r:r.right+scrollX,t:r.top+scrollY,b:r.bottom+scrollY,cx:r.left+scrollX+r.width/2,cy:r.top+scrollY+r.height/2};}
+function el(n,a,txt){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(txt)e.textContent=txt;svg.appendChild(e);return e;}
+const defs=el("defs",{}),mk=document.createElementNS(NS,"marker");
+for(const [k,v] of Object.entries({id:"open",markerWidth:14,markerHeight:14,refX:12,refY:7,orient:"auto"}))mk.setAttribute(k,v);
+const mp=document.createElementNS(NS,"path");mp.setAttribute("d","M1,1 L12,7 L1,13");mp.setAttribute("fill","none");mp.setAttribute("stroke","#333");mp.setAttribute("stroke-width","1.8");mk.appendChild(mp);defs.appendChild(mk);
+function line(pts,dashed){el("path",{d:"M"+pts.map(p=>p.join(",")).join(" L"),fill:"none",stroke:"#333","stroke-width":"1.8","stroke-dasharray":dashed?"7,5":"none","marker-end":"url(#open)"});}
+function label(x,y,t,anchor){el("text",{x,y,class:"lbl","text-anchor":anchor||"start"},t);}
+const SRB=R("SRB"),RB=R("RB"),SRC=R("SRC"),RE=R("RE"),SES=R("SES"),BK=R("BK"),RD=R("RD"),ST=R("ST");
+// Boundary -> Bean
+line([[SRB.cx,SRB.b],[SRB.cx,RB.t]],true); label(SRB.cx+10,(SRB.b+RB.t)/2+5,"uses");
+// Boundary -> Controller, around the Bean band on the right
+const X1=RB.r+110, Y1=SRC.t-34;
+line([[SRB.r,SRB.cy],[X1,SRB.cy],[X1,Y1],[SRC.cx+110,Y1],[SRC.cx+110,SRC.t]],true); label(X1+10,(SRB.cy+Y1)/2,"searchRides / bookRide");
+// Controller -> Bean
+line([[SRC.cx-110,SRC.t],[SRC.cx-110,RB.b]],true); label(SRC.cx-120,(SRC.t+RB.b)/2+5,"creates","end");
+// Controller -> RequestExpiry / Session
+line([[SRC.l,SRC.cy],[RE.r,SRC.cy]],true);
+line([[SRC.r,SRC.cy],[SES.l,SRC.cy]],true);
+// Controller -> Ride
+line([[SRC.cx,SRC.b],[SRC.cx,RD.t]],true); label(SRC.cx+10,(SRC.b+RD.t)/2+5,"bookSeat");
+// Controller -> Booking
+const Y2=SRC.b+50;
+line([[SRC.cx-110,SRC.b],[SRC.cx-110,Y2],[BK.cx+70,Y2],[BK.cx+70,BK.t]],true); label((SRC.cx-110+BK.cx+70)/2,Y2-8,"creates","middle");
+// RequestExpiry -> Booking
+const X3=BK.cx-70;
+line([[X3,RE.b],[X3,BK.t]],true); label(X3-10,(RE.b+BK.t)/2+5,"expire","end");
+// Session -> Student
+line([[ST.cx,SES.b],[ST.cx,ST.t]],false); label(ST.cx+10,(SES.b+ST.t)/2+5,"loggedUser"); label(ST.cx+10,ST.t-8,"0..1");
+// Ride -> Booking
+const Y4=RD.t+70;
+line([[RD.l,Y4],[BK.r,Y4]],false); label((RD.l+BK.r)/2,Y4-10,"has","middle"); label(RD.l-6,Y4+22,"1","end"); label(BK.r+8,Y4+22,"0..*");
+</script></body></html>
